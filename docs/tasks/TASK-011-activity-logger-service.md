@@ -42,15 +42,15 @@ No constructor dependencies → auto-resolvable from Laravel's container.
 #### Fluent Context Setters
 
 Each accepts a string ID **or** the corresponding Eloquent model.  When a model
-is passed, `apiary_id` and `hive_id` are auto-resolved from it if not already
+is passed, `superpos_id` and `hive_id` are auto-resolved from it if not already
 set — eliminating the need for callers to manually thread IDs.
 
 | Method                              | Sets         | Auto-resolves from model        |
 |-------------------------------------|--------------|---------------------------------|
-| `forApiary(string\|Apiary $apiary)` | `apiary_id`  | —                               |
-| `forHive(string\|Hive $hive)`       | `hive_id`    | `apiary_id`                     |
-| `byAgent(string\|Agent $agent)`     | `agent_id`   | `apiary_id`, `hive_id`          |
-| `onTask(string\|Task $task)`        | `task_id`    | `apiary_id`, `hive_id`          |
+| `forApiary(string\|Superpos $apiary)` | `superpos_id`  | —                               |
+| `forHive(string\|Hive $hive)`       | `hive_id`    | `superpos_id`                     |
+| `byAgent(string\|Agent $agent)`     | `agent_id`   | `superpos_id`, `hive_id`          |
+| `onTask(string\|Task $task)`        | `task_id`    | `superpos_id`, `hive_id`          |
 
 All return `static` (new cloned instance).
 
@@ -60,7 +60,7 @@ All return `static` (new cloned instance).
 public function log(string $action, array $details = []): ActivityLog
 ```
 
-Creates and returns an `ActivityLog` entry.  `apiary_id` auto-assignment
+Creates and returns an `ActivityLog` entry.  `superpos_id` auto-assignment
 is still handled by the `BelongsToApiary` trait when not explicitly set.
 
 ## Usage Examples
@@ -95,9 +95,9 @@ $hiveLogger->byAgent($agent)->log('agent.registered');
 
 - `log()` creates an ActivityLog entry with correct fields
 - `forApiary()` sets apiary context (model and string)
-- `forHive()` sets hive context and auto-resolves apiary_id from model
-- `byAgent()` sets agent context and auto-resolves apiary_id + hive_id
-- `onTask()` sets task context and auto-resolves apiary_id + hive_id
+- `forHive()` sets hive context and auto-resolves superpos_id from model
+- `byAgent()` sets agent context and auto-resolves superpos_id + hive_id
+- `onTask()` sets task context and auto-resolves superpos_id + hive_id
 - Fluent chaining produces correct combined context
 - String IDs work identically to model instances
 - Immutability — original instance is not mutated by chaining
@@ -110,6 +110,6 @@ $hiveLogger->byAgent($agent)->log('agent.registered');
 
 - [ ] `App\Services\ActivityLogger` class created
 - [ ] Fluent builder API with immutable clone semantics
-- [ ] Auto-resolves apiary_id/hive_id from model objects
+- [ ] Auto-resolves superpos_id/hive_id from model objects
 - [ ] All tests pass
 - [ ] No regressions in existing test suite

@@ -10,7 +10,7 @@
 #   - CLI-direct transport (openclaw agent / openclaw message send)
 #   - Gateway transport (opt-in fallback)
 #   - Fail-fast diagnostics when CLI is unavailable
-#   - Transport selection via APIARY_WAKE_TRANSPORT
+#   - Transport selection via SUPERPOS_WAKE_TRANSPORT
 
 set -euo pipefail
 
@@ -19,9 +19,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Reuse the Shell SDK test harness
 source "${SCRIPT_DIR}/../../shell/tests/test_harness.sh"
 
-# We need the SDK loaded (provides APIARY_OK, etc.)
-source "${SCRIPT_DIR}/../../shell/src/apiary-sdk.sh"
-_APIARY_SDK_LOADED=1
+# We need the SDK loaded (provides SUPERPOS_OK, etc.)
+source "${SCRIPT_DIR}/../../shell/src/superpos-sdk.sh"
+_SUPERPOS_SDK_LOADED=1
 
 # ── helpers ──────────────────────────────────────────────────────
 
@@ -29,12 +29,12 @@ _tmp_dir=$(mktemp -d)
 trap 'rm -rf "$_tmp_dir"' EXIT
 
 _setup() {
-    export APIARY_CONFIG_DIR="$_tmp_dir"
-    export APIARY_WAKE_ENABLED="true"
-    export APIARY_WAKE_SESSION="test-session-123"
-    export APIARY_WAKE_LOG="${_tmp_dir}/wake.log"
-    export APIARY_WAKE_DEBOUNCE_SECS="5"
-    export APIARY_WAKE_TRANSPORT="cli"
+    export SUPERPOS_CONFIG_DIR="$_tmp_dir"
+    export SUPERPOS_WAKE_ENABLED="true"
+    export SUPERPOS_WAKE_SESSION="test-session-123"
+    export SUPERPOS_WAKE_LOG="${_tmp_dir}/wake.log"
+    export SUPERPOS_WAKE_DEBOUNCE_SECS="5"
+    export SUPERPOS_WAKE_TRANSPORT="cli"
     rm -f "${_tmp_dir}/wake_seen.json"
     rm -f "${_tmp_dir}/wake.log"
     _WAKE_INVOCATIONS=0
@@ -45,7 +45,7 @@ _setup() {
     unset -f openclaw timeout curl 2>/dev/null || true
 
     # Re-source to pick up env changes
-    source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+    source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 
     # Override _wake_send with a tracking mock.
     # We mock at this level (not the CLI binary) because openclaw calls
@@ -447,7 +447,7 @@ _setup
 _WAKE_INVOCATIONS=0
 task_json=$(_make_pr_comment_task "wake-real" 500 "org/real-project" 42 "[urgent] Production broken")
 
-apiary_webhook_wake "$task_json" "wake-real"
+superpos_webhook_wake "$task_json" "wake-real"
 
 assert_eq "$_WAKE_INVOCATIONS" "1" "sends wake for real nested payload"
 assert_contains "$_WAKE_LAST_MESSAGE" "org/real-project" "wake message includes repo from nested payload"
@@ -491,8 +491,8 @@ assert_ne "$seen3" "0" "different key is not seen"
 describe "Deduplication — expired debounce"
 
 _setup
-export APIARY_WAKE_DEBOUNCE_SECS=0
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_DEBOUNCE_SECS=0
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 
 _wake_mark_seen "task-old:comment-old"
 sleep 1
@@ -514,7 +514,7 @@ _setup
 _WAKE_INVOCATIONS=0
 task_json=$(_make_pr_comment_task "wake-t1" 100 "org/repo" 3 "Please review")
 
-apiary_webhook_wake "$task_json" "wake-t1"
+superpos_webhook_wake "$task_json" "wake-t1"
 
 assert_eq "$_WAKE_INVOCATIONS" "1" "sends exactly one wake via CLI"
 assert_eq "$_WAKE_LAST_SESSION" "test-session-123" "targets correct session"
@@ -530,7 +530,7 @@ _setup
 _WAKE_INVOCATIONS=0
 task_json=$(_make_pr_comment_task_with_invoke "wake-invoke" 143)
 
-apiary_webhook_wake "$task_json" "wake-invoke"
+superpos_webhook_wake "$task_json" "wake-invoke"
 
 assert_eq "$_WAKE_INVOCATIONS" "1" "invoke wake: sends one wake"
 assert_contains "$_WAKE_LAST_MESSAGE" "Invoke instructions: Apply fix and report back" \
@@ -546,7 +546,7 @@ _setup
 _WAKE_INVOCATIONS=0
 task_json=$(_make_pr_comment_task_with_mixed_invoke "wake-invoke-mixed" 144)
 
-apiary_webhook_wake "$task_json" "wake-invoke-mixed"
+superpos_webhook_wake "$task_json" "wake-invoke-mixed"
 
 assert_eq "$_WAKE_INVOCATIONS" "1" "invoke mixed wake: sends one wake"
 assert_contains "$_WAKE_LAST_MESSAGE" "Invoke instructions: Top-level instructions" \
@@ -559,12 +559,12 @@ assert_contains "$_WAKE_LAST_MESSAGE" "Invoke context: {\"source\":\"top-level\"
 describe "Wake — disabled skips invocation"
 
 _setup
-export APIARY_WAKE_ENABLED="false"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_ENABLED="false"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 _WAKE_INVOCATIONS=0
 
 task_json=$(_make_pr_comment_task "wake-t2" 101)
-apiary_webhook_wake "$task_json" "wake-t2"
+superpos_webhook_wake "$task_json" "wake-t2"
 
 assert_eq "$_WAKE_INVOCATIONS" "0" "does not invoke when disabled"
 
@@ -573,12 +573,12 @@ assert_eq "$_WAKE_INVOCATIONS" "0" "does not invoke when disabled"
 describe "Wake — missing session skips invocation"
 
 _setup
-export APIARY_WAKE_SESSION=""
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_SESSION=""
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 _WAKE_INVOCATIONS=0
 
 task_json=$(_make_pr_comment_task "wake-t3" 102)
-apiary_webhook_wake "$task_json" "wake-t3"
+superpos_webhook_wake "$task_json" "wake-t3"
 
 assert_eq "$_WAKE_INVOCATIONS" "0" "does not invoke without session"
 
@@ -590,11 +590,11 @@ _setup
 _WAKE_INVOCATIONS=0
 task_json=$(_make_pr_comment_task "wake-t4" 200 "org/repo" 5 "Review please")
 
-apiary_webhook_wake "$task_json" "wake-t4"
+superpos_webhook_wake "$task_json" "wake-t4"
 assert_eq "$_WAKE_INVOCATIONS" "1" "first wake succeeds"
 
 # Second call with same task+comment should be deduped
-apiary_webhook_wake "$task_json" "wake-t4"
+superpos_webhook_wake "$task_json" "wake-t4"
 assert_eq "$_WAKE_INVOCATIONS" "1" "second wake is deduped"
 
 # ── Wake: non-PR-comment task does not invoke ──────────────────
@@ -616,7 +616,7 @@ push_task=$(jq -n '{
     }
 }')
 
-apiary_webhook_wake "$push_task" "wake-push"
+superpos_webhook_wake "$push_task" "wake-push"
 
 assert_eq "$_WAKE_INVOCATIONS" "0" "does not wake for non-comment webhook"
 
@@ -628,7 +628,7 @@ _setup
 _WAKE_INVOCATIONS=0
 
 set +e
-apiary_webhook_wake "" "wake-empty"
+superpos_webhook_wake "" "wake-empty"
 rc=$?
 set -e
 
@@ -636,7 +636,7 @@ assert_eq "$rc" "0" "returns 0 on empty task JSON"
 assert_eq "$_WAKE_INVOCATIONS" "0" "does not invoke on empty input"
 
 set +e
-apiary_webhook_wake '{"invalid' "wake-bad"
+superpos_webhook_wake '{"invalid' "wake-bad"
 rc=$?
 set -e
 
@@ -651,7 +651,7 @@ _setup
 _WAKE_INVOCATIONS=0
 task_json=$(_make_pr_comment_task "wake-log1" 300)
 
-apiary_webhook_wake "$task_json" "wake-log1" 2>/dev/null
+superpos_webhook_wake "$task_json" "wake-log1" 2>/dev/null
 
 if [[ -f "${_tmp_dir}/wake.log" ]]; then
     log_content=$(cat "${_tmp_dir}/wake.log")
@@ -668,7 +668,7 @@ fi
 describe "CLI transport — _wake_send_cli invokes openclaw agent"
 
 _setup
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 
 # Mock openclaw binary to capture args
 _cli_capture_dir="${_tmp_dir}/cli_capture"
@@ -701,7 +701,7 @@ assert_contains "$_captured_args" "--message Hello from CLI" "cli-wake: passes m
 describe "CLI transport — _wake_send_alert_cli invokes openclaw message send"
 
 _setup
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 
 _cli_capture_dir="${_tmp_dir}/cli_capture_alert"
 mkdir -p "$_cli_capture_dir"
@@ -733,7 +733,7 @@ assert_contains "$_captured_args" "--message Test alert" "cli-alert: passes mess
 describe "CLI transport — openclaw failure returns error"
 
 _setup
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 _WAKE_CLI_AVAILABLE=1
 
 openclaw() {
@@ -757,7 +757,7 @@ assert_ne "$rc" "0" "cli-fail: returns non-zero on openclaw error"
 describe "CLI transport — unavailable CLI produces fail-fast error"
 
 _setup
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 _WAKE_CLI_AVAILABLE=0
 rm -f "${_tmp_dir}/wake.log"
 
@@ -847,7 +847,7 @@ describe "Wake — source code does not invoke invalid openclaw CLI subcommands"
 
 # Verify the implementation file contains no invalid openclaw CLI invocations
 # (sessions_send, session send as two-word command, message.send with dot)
-_wake_src="${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+_wake_src="${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 set +e
 _cli_hits=$(grep -cE 'openclaw (sessions_send|session send|message\.send)' "$_wake_src" 2>/dev/null)
 set -e
@@ -868,7 +868,7 @@ assert_ne "${_cli_msg_hits:-0}" "0" "correct-cli: source contains 'openclaw mess
 describe "Transport — default transport is CLI"
 
 _setup
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 assert_eq "$_WAKE_TRANSPORT" "cli" "transport-default: defaults to cli"
 
 # ── Transport: disabled wake does not pre-validate CLI at source ──
@@ -876,8 +876,8 @@ assert_eq "$_WAKE_TRANSPORT" "cli" "transport-default: defaults to cli"
 describe "Transport — disabled wake skips eager CLI validation"
 
 _setup
-export APIARY_WAKE_ENABLED="false"
-export APIARY_WAKE_TRANSPORT="cli"
+export SUPERPOS_WAKE_ENABLED="false"
+export SUPERPOS_WAKE_TRANSPORT="cli"
 rm -f "${_tmp_dir}/wake.log"
 
 # Simulate no openclaw on PATH; source should remain quiet when disabled.
@@ -889,7 +889,7 @@ command() {
     builtin command "$@"
 }
 
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 
 assert_eq "${_WAKE_CLI_AVAILABLE:-0}" "0" "transport-disabled: CLI not eagerly validated"
 if [[ -f "${_tmp_dir}/wake.log" ]]; then
@@ -900,30 +900,30 @@ fi
 
 # ── Transport: env override to gateway ─────────────────────────
 
-describe "Transport — APIARY_WAKE_TRANSPORT=gateway selects gateway"
+describe "Transport — SUPERPOS_WAKE_TRANSPORT=gateway selects gateway"
 
 _setup
-export APIARY_WAKE_TRANSPORT="gateway"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_TRANSPORT="gateway"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 assert_eq "$_WAKE_TRANSPORT" "gateway" "transport-gw: env override works"
 
 # ── Transport: value is normalized to lowercase ────────────────
 
-describe "Transport — APIARY_WAKE_TRANSPORT normalization handles uppercase"
+describe "Transport — SUPERPOS_WAKE_TRANSPORT normalization handles uppercase"
 
 _setup
-export APIARY_WAKE_TRANSPORT="CLI"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_TRANSPORT="CLI"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 assert_eq "$_WAKE_TRANSPORT" "cli" "transport-norm: uppercase normalized to cli"
 assert_eq "${_WAKE_TRANSPORT_INVALID:-0}" "0" "transport-norm: normalized value remains valid"
 
 # ── Transport: invalid value fails fast ────────────────────────
 
-describe "Transport — invalid APIARY_WAKE_TRANSPORT is rejected"
+describe "Transport — invalid SUPERPOS_WAKE_TRANSPORT is rejected"
 
 _setup
-export APIARY_WAKE_TRANSPORT="clii"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_TRANSPORT="clii"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 assert_eq "${_WAKE_TRANSPORT_INVALID:-0}" "1" "transport-invalid: invalid flag set"
 
 set +e
@@ -937,7 +937,7 @@ assert_eq "$rc" "1" "transport-invalid: _wake_send fails fast"
 describe "Transport — _wake_send dispatches to CLI by default"
 
 _setup
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 _WAKE_TRANSPORT="cli"
 _CLI_DISPATCH_HIT=0
 _GW_DISPATCH_HIT=0
@@ -951,11 +951,11 @@ assert_eq "$_GW_DISPATCH_HIT" "0" "dispatch-cli: _wake_send_gateway NOT called"
 
 # ── Transport: _wake_send dispatches to gateway when configured ──
 
-describe "Transport — _wake_send dispatches to gateway when APIARY_WAKE_TRANSPORT=gateway"
+describe "Transport — _wake_send dispatches to gateway when SUPERPOS_WAKE_TRANSPORT=gateway"
 
 _setup
-export APIARY_WAKE_TRANSPORT="gateway"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_TRANSPORT="gateway"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 _CLI_DISPATCH_HIT=0
 _GW_DISPATCH_HIT=0
 
@@ -973,8 +973,8 @@ assert_eq "$_CLI_DISPATCH_HIT" "0" "dispatch-gw: _wake_send_cli NOT called"
 describe "Gateway transport — _wake_send_gateway constructs correct request"
 
 _setup
-export APIARY_WAKE_TRANSPORT="gateway"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_TRANSPORT="gateway"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 
 # Mock curl: writes captured args to files (survives command substitution subshell)
 _curl_capture_dir="${_tmp_dir}/curl_capture"
@@ -1003,9 +1003,9 @@ curl() {
     return 0
 }
 
-export APIARY_WAKE_GATEWAY_URL="http://test-gw:9999"
-export APIARY_WAKE_GATEWAY_TOKEN="test-token-abc"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_GATEWAY_URL="http://test-gw:9999"
+export SUPERPOS_WAKE_GATEWAY_TOKEN="test-token-abc"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 
 rm -f "${_curl_capture_dir}"/{url,body,auth}
 
@@ -1036,8 +1036,8 @@ assert_contains "$_body_message" "Hello gateway" "gateway-unit: payload message 
 describe "Gateway transport — handles HTTP errors"
 
 _setup
-export APIARY_WAKE_TRANSPORT="gateway"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_TRANSPORT="gateway"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 
 curl() {
     echo "503"
@@ -1056,8 +1056,8 @@ assert_ne "$rc" "0" "gateway-error: returns non-zero on HTTP 503"
 describe "Gateway transport — handles curl failure"
 
 _setup
-export APIARY_WAKE_TRANSPORT="gateway"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_TRANSPORT="gateway"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 
 curl() {
     return 7  # connection refused
@@ -1075,8 +1075,8 @@ assert_ne "$rc" "0" "gateway-curl-fail: returns non-zero when curl errors"
 describe "Alert gateway — _wake_send_alert_gateway constructs correct request"
 
 _setup
-export APIARY_WAKE_TRANSPORT="gateway"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_TRANSPORT="gateway"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 
 _curl_capture_dir="${_tmp_dir}/curl_capture_alert"
 mkdir -p "$_curl_capture_dir"
@@ -1104,9 +1104,9 @@ curl() {
     return 0
 }
 
-export APIARY_WAKE_GATEWAY_URL="http://test-gw:9999"
-export APIARY_WAKE_GATEWAY_TOKEN="test-token-abc"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_GATEWAY_URL="http://test-gw:9999"
+export SUPERPOS_WAKE_GATEWAY_TOKEN="test-token-abc"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 
 rm -f "${_curl_capture_dir}"/{url,body,auth}
 
@@ -1178,15 +1178,15 @@ _setup_dual_mocks() {
 describe "Dual-delivery — both wake and alert succeed"
 
 _setup
-export APIARY_WAKE_ALERT_ENABLED="true"
-export APIARY_WAKE_ALERT_TELEGRAM="@myuser"
-export APIARY_WAKE_ALERT_CHANNEL="telegram"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_ALERT_ENABLED="true"
+export SUPERPOS_WAKE_ALERT_TELEGRAM="@myuser"
+export SUPERPOS_WAKE_ALERT_CHANNEL="telegram"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 _setup_dual_mocks
 
 task_json=$(_make_pr_comment_task "dual-t1" 600 "org/dual-repo" 20 "[urgent] Fix deploy")
 
-apiary_webhook_wake "$task_json" "dual-t1"
+superpos_webhook_wake "$task_json" "dual-t1"
 
 assert_eq "$_WAKE_INVOCATIONS" "1" "dual: internal wake invoked"
 assert_eq "$_ALERT_INVOCATIONS" "1" "dual: visible alert invoked"
@@ -1201,14 +1201,14 @@ assert_contains "$_ALERT_LAST_MESSAGE" "urgent" "dual: alert includes severity"
 describe "Dual-delivery — alert disabled, only wake fires"
 
 _setup
-export APIARY_WAKE_ALERT_ENABLED="false"
-export APIARY_WAKE_ALERT_TELEGRAM="@myuser"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_ALERT_ENABLED="false"
+export SUPERPOS_WAKE_ALERT_TELEGRAM="@myuser"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 _setup_dual_mocks
 
 task_json=$(_make_pr_comment_task "dual-t2" 601 "org/no-alert" 21 "No alert expected")
 
-apiary_webhook_wake "$task_json" "dual-t2"
+superpos_webhook_wake "$task_json" "dual-t2"
 
 assert_eq "$_WAKE_INVOCATIONS" "1" "alert-off: internal wake invoked"
 assert_eq "$_ALERT_INVOCATIONS" "0" "alert-off: no visible alert sent"
@@ -1218,14 +1218,14 @@ assert_eq "$_ALERT_INVOCATIONS" "0" "alert-off: no visible alert sent"
 describe "Dual-delivery — alert enabled but no telegram target"
 
 _setup
-export APIARY_WAKE_ALERT_ENABLED="true"
-export APIARY_WAKE_ALERT_TELEGRAM=""
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_ALERT_ENABLED="true"
+export SUPERPOS_WAKE_ALERT_TELEGRAM=""
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 _setup_dual_mocks
 
 task_json=$(_make_pr_comment_task "dual-t3" 602 "org/no-tgt" 22 "Missing target")
 
-apiary_webhook_wake "$task_json" "dual-t3"
+superpos_webhook_wake "$task_json" "dual-t3"
 
 assert_eq "$_WAKE_INVOCATIONS" "1" "no-target: internal wake invoked"
 assert_eq "$_ALERT_INVOCATIONS" "0" "no-target: no visible alert sent"
@@ -1235,10 +1235,10 @@ assert_eq "$_ALERT_INVOCATIONS" "0" "no-target: no visible alert sent"
 describe "Dual-delivery — alert failure does not crash, wake still succeeds"
 
 _setup
-export APIARY_WAKE_ALERT_ENABLED="true"
-export APIARY_WAKE_ALERT_TELEGRAM="@failuser"
-export APIARY_WAKE_ALERT_CHANNEL="telegram"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_ALERT_ENABLED="true"
+export SUPERPOS_WAKE_ALERT_TELEGRAM="@failuser"
+export SUPERPOS_WAKE_ALERT_CHANNEL="telegram"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 _WAKE_INVOCATIONS=0
 _ALERT_INVOCATIONS=0
 
@@ -1255,7 +1255,7 @@ _wake_send_alert() {
 task_json=$(_make_pr_comment_task "dual-t4" 603 "org/alert-fail" 23 "Alert will fail")
 
 set +e
-apiary_webhook_wake "$task_json" "dual-t4"
+superpos_webhook_wake "$task_json" "dual-t4"
 rc=$?
 set -e
 
@@ -1274,10 +1274,10 @@ fi
 describe "Dual-delivery — wake fails, alert succeeds, event marked seen"
 
 _setup
-export APIARY_WAKE_ALERT_ENABLED="true"
-export APIARY_WAKE_ALERT_TELEGRAM="@wake-fail-user"
-export APIARY_WAKE_ALERT_CHANNEL="telegram"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_ALERT_ENABLED="true"
+export SUPERPOS_WAKE_ALERT_TELEGRAM="@wake-fail-user"
+export SUPERPOS_WAKE_ALERT_CHANNEL="telegram"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 _WAKE_INVOCATIONS=0
 _ALERT_INVOCATIONS=0
 
@@ -1301,13 +1301,13 @@ _wake_send_alert() {
 
 task_json=$(_make_pr_comment_task "dual-wf1" 700 "org/wake-fail" 30 "Wake will fail, alert ok")
 
-apiary_webhook_wake "$task_json" "dual-wf1"
+superpos_webhook_wake "$task_json" "dual-wf1"
 assert_eq "$_ALERT_INVOCATIONS" "1" "wake-fail-alert-ok: alert was sent"
 
 # Key assertion: event must be marked seen even though wake failed
 # Second call should be deduped (alert succeeded → seen marker written)
 _ALERT_INVOCATIONS=0
-apiary_webhook_wake "$task_json" "dual-wf1"
+superpos_webhook_wake "$task_json" "dual-wf1"
 assert_eq "$_ALERT_INVOCATIONS" "0" "wake-fail-alert-ok: second alert deduped (seen marker written on first alert success)"
 
 # Verify log records wake failure and alert success
@@ -1322,10 +1322,10 @@ fi
 describe "Dual-delivery — both fail, event not marked seen (allows retry)"
 
 _setup
-export APIARY_WAKE_ALERT_ENABLED="true"
-export APIARY_WAKE_ALERT_TELEGRAM="@both-fail-user"
-export APIARY_WAKE_ALERT_CHANNEL="telegram"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_ALERT_ENABLED="true"
+export SUPERPOS_WAKE_ALERT_TELEGRAM="@both-fail-user"
+export SUPERPOS_WAKE_ALERT_CHANNEL="telegram"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 _WAKE_INVOCATIONS=0
 _ALERT_INVOCATIONS=0
 
@@ -1342,7 +1342,7 @@ _wake_send_alert() {
 task_json=$(_make_pr_comment_task "dual-bf1" 701 "org/both-fail" 31 "Both will fail")
 
 set +e
-apiary_webhook_wake "$task_json" "dual-bf1"
+superpos_webhook_wake "$task_json" "dual-bf1"
 rc=$?
 set -e
 
@@ -1351,7 +1351,7 @@ assert_eq "$rc" "0" "both-fail: returns 0 (fail-soft)"
 # Key assertion: event NOT marked seen → second attempt should NOT be deduped
 _WAKE_INVOCATIONS=0
 _ALERT_INVOCATIONS=0
-apiary_webhook_wake "$task_json" "dual-bf1"
+superpos_webhook_wake "$task_json" "dual-bf1"
 assert_eq "$_WAKE_INVOCATIONS" "1" "both-fail: second wake attempted (not deduped)"
 assert_eq "$_ALERT_INVOCATIONS" "1" "both-fail: second alert attempted (not deduped)"
 
@@ -1360,19 +1360,19 @@ assert_eq "$_ALERT_INVOCATIONS" "1" "both-fail: second alert attempted (not dedu
 describe "Dual-delivery — dedupe prevents duplicate alert"
 
 _setup
-export APIARY_WAKE_ALERT_ENABLED="true"
-export APIARY_WAKE_ALERT_TELEGRAM="@dedup-user"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_ALERT_ENABLED="true"
+export SUPERPOS_WAKE_ALERT_TELEGRAM="@dedup-user"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 _setup_dual_mocks
 
 task_json=$(_make_pr_comment_task "dual-t5" 604 "org/dedup" 24 "Dedup test")
 
-apiary_webhook_wake "$task_json" "dual-t5"
+superpos_webhook_wake "$task_json" "dual-t5"
 assert_eq "$_WAKE_INVOCATIONS" "1" "dedup-dual: first wake sent"
 assert_eq "$_ALERT_INVOCATIONS" "1" "dedup-dual: first alert sent"
 
 # Second call with same task+comment should be deduped (both wake and alert)
-apiary_webhook_wake "$task_json" "dual-t5"
+superpos_webhook_wake "$task_json" "dual-t5"
 assert_eq "$_WAKE_INVOCATIONS" "1" "dedup-dual: second wake deduped"
 assert_eq "$_ALERT_INVOCATIONS" "1" "dedup-dual: second alert deduped"
 
@@ -1381,13 +1381,13 @@ assert_eq "$_ALERT_INVOCATIONS" "1" "dedup-dual: second alert deduped"
 describe "Dual-delivery — severity icon in alert message"
 
 _setup
-export APIARY_WAKE_ALERT_ENABLED="true"
-export APIARY_WAKE_ALERT_TELEGRAM="@icon-user"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
+export SUPERPOS_WAKE_ALERT_ENABLED="true"
+export SUPERPOS_WAKE_ALERT_TELEGRAM="@icon-user"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
 _setup_dual_mocks
 
 task_json=$(_make_pr_comment_task "dual-t6" 605 "org/icon" 25 "[high] Needs attention")
-apiary_webhook_wake "$task_json" "dual-t6"
+superpos_webhook_wake "$task_json" "dual-t6"
 assert_contains "$_ALERT_LAST_MESSAGE" "high" "icon: high severity in alert"
 
 
@@ -1516,7 +1516,7 @@ _setup
 _WAKE_INVOCATIONS=0
 task_json=$(_make_whitespace_body_task "p2-wake" 8003 "org/ws-wake" 82 "Wake with whitespace body")
 
-apiary_webhook_wake "$task_json" "p2-wake"
+superpos_webhook_wake "$task_json" "p2-wake"
 
 assert_eq "$_WAKE_INVOCATIONS" "1" "p2-wake: wake sent despite whitespace .body"
 assert_contains "$_WAKE_LAST_MESSAGE" "org/ws-wake" "p2-wake: message includes repo"

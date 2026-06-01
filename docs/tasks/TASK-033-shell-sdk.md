@@ -2,24 +2,24 @@
 
 **Status:** Review
 **Branch:** `task/033-shell-sdk`
-**PR:** https://github.com/Apiary-AI/Apiary-SaaS/pull/40
+**PR:** https://github.com/Superpos-AI/superpos-app/pull/40
 **Depends On:** 014 (Agent registration), 015 (Heartbeat), 016 (Task creation), 017 (Polling/claiming), 018 (Progress/completion), 020 (Knowledge API)
 
 ## Objective
 
-Ship a pure Bash SDK that wraps the Apiary v1 API, giving agent developers a
+Ship a pure Bash SDK that wraps the Superpos v1 API, giving agent developers a
 zero-dependency (beyond curl + jq) client for the core agent, task, and
 knowledge workflows. Usable both as a sourced library and as a standalone CLI
 tool, suitable for CI pipelines and ad-hoc scripting.
 
 ## Requirements
 
-### Library (`src/apiary-sdk.sh`)
+### Library (`src/superpos-sdk.sh`)
 - Pure Bash 4+, curl + jq as only external dependencies
-- Dependency check function (`apiary_check_deps`)
-- Bearer token auth header management via `APIARY_TOKEN` env var
-- Apiary JSON envelope (`{ data, meta, errors }`) unwrapping via jq
-- Configurable timeout (`APIARY_TIMEOUT`), debug mode (`APIARY_DEBUG=1`)
+- Dependency check function (`superpos_check_deps`)
+- Bearer token auth header management via `SUPERPOS_TOKEN` env var
+- Superpos JSON envelope (`{ data, meta, errors }`) unwrapping via jq
+- Configurable timeout (`SUPERPOS_TIMEOUT`), debug mode (`SUPERPOS_DEBUG=1`)
 - stdout/stderr split: data to stdout, errors/debug to stderr
 
 ### Exit code mapping
@@ -33,15 +33,15 @@ tool, suitable for CI pipelines and ad-hoc scripting.
 - `7` — missing dependencies
 
 ### Endpoints covered (18 functions)
-1. **Agent auth:** `apiary_register`, `apiary_login`, `apiary_logout`, `apiary_me`
-2. **Agent lifecycle:** `apiary_heartbeat`, `apiary_update_status`
-3. **Tasks:** `apiary_create_task`, `apiary_poll_tasks`, `apiary_claim_task`, `apiary_update_progress`, `apiary_complete_task`, `apiary_fail_task`
-4. **Knowledge:** `apiary_list_knowledge`, `apiary_search_knowledge`, `apiary_get_knowledge`, `apiary_create_knowledge`, `apiary_update_knowledge`, `apiary_delete_knowledge`
+1. **Agent auth:** `superpos_register`, `superpos_login`, `superpos_logout`, `superpos_me`
+2. **Agent lifecycle:** `superpos_heartbeat`, `superpos_update_status`
+3. **Tasks:** `superpos_create_task`, `superpos_poll_tasks`, `superpos_claim_task`, `superpos_update_progress`, `superpos_complete_task`, `superpos_fail_task`
+4. **Knowledge:** `superpos_list_knowledge`, `superpos_search_knowledge`, `superpos_get_knowledge`, `superpos_create_knowledge`, `superpos_update_knowledge`, `superpos_delete_knowledge`
 
-### CLI wrapper (`bin/apiary-cli`)
+### CLI wrapper (`bin/superpos-cli`)
 - Standalone executable wrapping all SDK functions
-- Subcommand interface: `apiary-cli <command> [options]`
-- Usage help on `apiary-cli help` or no arguments
+- Subcommand interface: `superpos-cli <command> [options]`
+- Usage help on `superpos-cli help` or no arguments
 
 ### Examples
 - `quickstart.sh` — register, create task, store knowledge
@@ -67,8 +67,8 @@ tool, suitable for CI pipelines and ad-hoc scripting.
 
 ## Files Changed
 
-- `sdk/shell/src/apiary-sdk.sh` — core library
-- `sdk/shell/bin/apiary-cli` — CLI wrapper
+- `sdk/shell/src/superpos-sdk.sh` — core library
+- `sdk/shell/bin/superpos-cli` — CLI wrapper
 - `sdk/shell/README.md` — SDK documentation
 - `sdk/shell/examples/quickstart.sh` — quickstart example
 - `sdk/shell/examples/worker_agent.sh` — worker loop example

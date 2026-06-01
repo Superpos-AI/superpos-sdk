@@ -12,7 +12,7 @@ Implement a scheduled per-agent "knowledge fillin" task that proactively writes/
 
 ## Background
 
-Knowledge production in Apiary today is **reactive**:
+Knowledge production in Superpos today is **reactive**:
 
 - **`KnowledgeCompiler` / `KnowledgeCompilerTriggerService`** — fires per task completion, channel resolution, or batch threshold and extracts structured entries from raw data. It sees one unit of work at a time.
 - **`KnowledgeCurator` (TASK-225)** — runs scheduled health/maintenance passes over existing entries (stale, orphan, broken links, contradictions). It does not *write new knowledge*, only grades and recommends.
@@ -27,7 +27,7 @@ This task introduces a **per-agent, scheduled, proactive** pass analogous to the
 
 - [ ] FR-1: New task type `knowledge_fillin` (analogous to `dream`), excluded from triggering further fillins/dreams.
 - [ ] FR-2: Per-agent enable/schedule lives on the `Agent` model as new columns `knowledge_fillin_enabled` (boolean, default `false`) and `knowledge_fillin_schedule` (string, cron expression, nullable) — mirroring the existing `Agent.dream_enabled` column (`app/Models/Agent.php`). This matches the canonical per-agent reflection toggle pattern. The write scope for emitted entries is a separate configuration value with enum `"hive" | "apiary" | "agent:{agent_id}"`; for agent-scoped writes the string is interpolated with the agent's ULID (e.g. `scope: "agent:01HZX..."`) to match the shape that `KnowledgeController::validateScope()` enforces and that `KnowledgeApiTest` / `ContextAssemblyTest` exercise (`'scope' => 'agent:'.$agent->id`). The scope value is derived from `config('apiary.knowledge.fillin.default_scope')` unless overridden per-agent in `Agent.metadata` (non-authoritative hint).
-- [ ] FR-3: Scheduled via the existing Apiary schedule mechanism (TASK-078); one schedule per agent when enabled. Toggling `Agent.knowledge_fillin_enabled` (and/or updating `Agent.knowledge_fillin_schedule`) creates, updates, or deletes the corresponding schedule — the `Agent` columns are the single source of truth, not `AgentPersona` settings.
+- [ ] FR-3: Scheduled via the existing Superpos schedule mechanism (TASK-078); one schedule per agent when enabled. Toggling `Agent.knowledge_fillin_enabled` (and/or updating `Agent.knowledge_fillin_schedule`) creates, updates, or deletes the corresponding schedule — the `Agent` columns are the single source of truth, not `AgentPersona` settings.
 - [ ] FR-4: Task payload contains a lookback window (e.g., last 7 days by default) of the agent's activity:
   - Recent completed tasks (IDs + results or summaries)
   - Recent channel messages the agent authored or was mentioned in
@@ -101,6 +101,7 @@ Schema::table('agents', function (Blueprint $table) {
 - **Scope alignment.** The configured `scope` determines both which activity is included in the payload and where entries are written. Valid values match the existing knowledge scope model (`KnowledgeController::validateScope()`): `"hive"`, `"apiary"`, or `"agent:{agent_id}"` (where `{agent_id}` is the executing agent's ULID). An agent-scope fillin only sees/writes that agent's own `agent:{id}`-scoped knowledge; hive-scope sees hive activity; apiary-scope (if permitted) aggregates cross-hive signal. Scope is identity-only — privacy/visibility of each emitted entry is set independently via `KnowledgeEntry.visibility` (`public` or `private`).
 - **Schedule hygiene.** Default `0 3 * * *` (daily at 03:00) is deliberately off-peak and paired with Curator's 02:00 slot (TASK-225). Fillin runs *after* Curator so it sees fresh health signals and can react to "thin topics" recommendations.
 - **Overlap policy.** Use schedule `overlap: skip` by default — if the previous fillin is still running (unusual but possible for large lookbacks), skip the next run rather than stacking.
+- **Default scope flipped to `hive` (post-merge).** The initial implementation defaulted `knowledge.fillin.default_scope` to `agent`, which wrote every fillin entry to the executing agent's private `agent:{id}` scope. That defeats the point of fillin — shared-brain is the point, not private pockets of insight no other agent can see. Default is now `hive`, with graceful fallback to `agent:{id}` via `coerceHiveScope()` when the executing agent lacks `knowledge.write` (mirrors the existing `coerceApiaryScope()` fallback). The coercion emits a `knowledge.fillin.scope_coerced` activity log entry (`from=hive, to=agent:<id>, reason=missing_knowledge.write`) so operators can spot permission gaps. Motivation: agent-scope was a permission-safety default, not a correctness default — flipping the default makes the common case (cross-cutting patterns / decisions / invariants) visible to the hive and the dashboard, while the fallback preserves the permission-safety property.
 
 ## Open questions
 

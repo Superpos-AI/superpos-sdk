@@ -2,7 +2,7 @@
 
 **Status:** done
 **Branch:** `task/075-dead-letter-requeue-api`
-**PR:** [#115](https://github.com/Apiary-AI/Apiary-SaaS/pull/115)
+**PR:** [#115](https://github.com/Superpos-AI/superpos-app/pull/115)
 **Depends On:** TASK-074
 **Blocked By:** —
 

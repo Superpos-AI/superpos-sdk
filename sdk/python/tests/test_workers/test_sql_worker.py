@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from apiary_sdk.workers.sql import SqlWorker
+from superpos_sdk.workers.sql import SqlWorker
 
-BASE_URL = "https://apiary.test"
+BASE_URL = "https://superpos.test"
 HIVE_ID = "01HXYZ00000000000000000001"
 SQLITE_CS = "sqlite:///:memory:"
 

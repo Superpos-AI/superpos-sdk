@@ -19,7 +19,7 @@ source "${SCRIPT_DIR}/../../shell/tests/test_harness.sh"
 _tmp_dir=$(mktemp -d)
 trap 'rm -rf "$_tmp_dir"' EXIT
 
-export APIARY_CONFIG_DIR="$_tmp_dir"
+export SUPERPOS_CONFIG_DIR="$_tmp_dir"
 PENDING_DIR="${_tmp_dir}/pending"
 mkdir -p "${PENDING_DIR}/events"
 
@@ -38,7 +38,7 @@ _daemon_build_event_dispatch_text() {
     local event_type="$2"
     local event_id="$3"
 
-    local text="apiary:event:${event_type}:${event_id}"
+    local text="superpos:event:${event_type}:${event_id}"
 
     local instructions
     instructions=$(echo "$event_json" | jq -r '.invoke.instructions // empty' 2>/dev/null) || instructions=""
@@ -122,18 +122,18 @@ describe "Event dispatch text building"
 
 # Test: exec-ready event includes invoke in dispatch text
 result=$(_daemon_build_event_dispatch_text "$EXEC_READY_EVENT" "task.assigned" "EVT001")
-assert_contains "$result" "apiary:event:task.assigned:EVT001" "dispatch text includes event reference"
+assert_contains "$result" "superpos:event:task.assigned:EVT001" "dispatch text includes event reference"
 assert_contains "$result" "invoke.instructions: Handle this PR comment" "dispatch text includes invoke instructions"
 assert_contains "$result" "invoke.context:" "dispatch text includes invoke context"
 assert_contains "$result" "my-repo" "dispatch text includes context data"
 
 # Test: legacy event produces reference-only text
 result=$(_daemon_build_event_dispatch_text "$LEGACY_EVENT" "agent.status" "EVT002")
-assert_eq "$result" "apiary:event:agent.status:EVT002" "legacy event dispatch is reference-only"
+assert_eq "$result" "superpos:event:agent.status:EVT002" "legacy event dispatch is reference-only"
 
 # Test: null invoke instructions produces reference-only text
 result=$(_daemon_build_event_dispatch_text "$NULL_INVOKE_EVENT" "task.assigned" "EVT003")
-assert_eq "$result" "apiary:event:task.assigned:EVT003" "null invoke produces reference-only text"
+assert_eq "$result" "superpos:event:task.assigned:EVT003" "null invoke produces reference-only text"
 
 # Test: invoke with instructions but null context omits context line
 result=$(_daemon_build_event_dispatch_text "$INVOKE_NO_CONTEXT" "task.assigned" "EVT005")

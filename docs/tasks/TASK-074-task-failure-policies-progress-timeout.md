@@ -2,7 +2,7 @@
 
 **Status:** done
 **Branch:** `task/074-failure-policies-timeout`
-**PR:** [#113](https://github.com/Apiary-AI/Apiary-SaaS/pull/113)
+**PR:** [#113](https://github.com/Superpos-AI/superpos-app/pull/113)
 **Depends On:** TASK-008
 **Blocked By:** —
 

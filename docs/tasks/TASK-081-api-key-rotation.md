@@ -6,7 +6,7 @@
 | Priority    | High                                        |
 | Depends On  | TASK-012 (Agent auth via Sanctum)            |
 | Branch      | `task/081-api-key-rotation` (merged)         |
-| PR          | [#131](https://github.com/Apiary-AI/Apiary-SaaS/pull/131) |
+| PR          | [#131](https://github.com/Superpos-AI/superpos-app/pull/131) |
 
 ## Objective
 
@@ -72,9 +72,9 @@ Expired grace keys are automatically cleaned up:
 - `app/Http/Controllers/Api/AgentAuthController.php` — grace-key login logic
 - `app/Http/Requests/RotateKeyRequest.php` — validation
 - `routes/api.php` — new routes
-- `sdk/python/src/apiary_sdk/client.py` — `rotate_key()`, `revoke_previous_key()`, `key_status()`
-- `sdk/shell/src/apiary-sdk.sh` — `apiary_rotate_key`, `apiary_revoke_previous_key`, `apiary_key_status`
-- `sdk/shell/bin/apiary-cli` — `key-rotate`, `key-revoke`, `key-status` commands
+- `sdk/python/src/superpos_sdk/client.py` — `rotate_key()`, `revoke_previous_key()`, `key_status()`
+- `sdk/shell/src/superpos-sdk.sh` — `superpos_rotate_key`, `superpos_revoke_previous_key`, `superpos_key_status`
+- `sdk/shell/bin/superpos-cli` — `key-rotate`, `key-revoke`, `key-status` commands
 - `tests/Feature/AgentKeyRotationTest.php` — 28 tests
 
 ## Test Coverage (28 tests, 187 assertions)

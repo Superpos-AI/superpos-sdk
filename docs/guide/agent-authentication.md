@@ -1,6 +1,6 @@
 # Agent Authentication
 
-Apiary uses [Laravel Sanctum](https://laravel.com/docs/sanctum) to authenticate
+Superpos uses [Laravel Sanctum](https://laravel.com/docs/sanctum) to authenticate
 agents via API tokens. Every agent registers with a **secret**, receives a
 **bearer token**, and includes that token in subsequent API requests. This page
 covers the full auth lifecycle, endpoint reference, security model, and
@@ -9,7 +9,7 @@ troubleshooting tips.
 ## Architecture Overview
 
 ```text
-Agent (external process)              Apiary Platform
+Agent (external process)              Superpos Platform
 ─────────────────────────             ──────────────────
                                       ┌──────────────────┐
   1. POST /register ───────────────►  │ AgentAuthController│
@@ -38,7 +38,7 @@ Agent (external process)              Apiary Platform
 
 ### Two Layers of Hashing
 
-Apiary stores **three** hashed credentials per agent:
+Superpos stores **three** hashed credentials per agent:
 
 1. **`agents.api_token_hash`** — bcrypt hash of the agent's registration
    **secret**. Used during `/login` to verify identity.
@@ -97,7 +97,7 @@ Create a new agent in a hive and receive a Sanctum bearer token.
       "name": "DeployBot",
       "type": "deployment",
       "hive_id": "01JFWXYZ01JFWXYZ01JFWXYZ01",
-      "apiary_id": "01JFQABC01JFQABC01JFQABC01",
+      "superpos_id": "01JFQABC01JFQABC01JFQABC01",
       "status": "offline",
       "capabilities": ["deploy", "rollback"]
     },
@@ -111,7 +111,7 @@ Create a new agent in a hive and receive a Sanctum bearer token.
 
 ::: tip
 Store both `token` and `refresh_token` immediately — each is shown only once.
-Apiary stores only hashed values internally.
+Superpos stores only hashed values internally.
 :::
 
 ### POST /api/v1/agents/login
@@ -144,7 +144,7 @@ explicitly revoked.
       "name": "DeployBot",
       "type": "deployment",
       "hive_id": "01JFWXYZ01JFWXYZ01JFWXYZ01",
-      "apiary_id": "01JFQABC01JFQABC01JFQABC01",
+      "superpos_id": "01JFQABC01JFQABC01JFQABC01",
       "status": "offline"
     },
     "token": "2|xyz789uvw012...",
@@ -194,7 +194,7 @@ Use this path for UI-managed agents where only token credentials are provided.
       "name": "DeployBot",
       "type": "deployment",
       "hive_id": "01JFWXYZ01JFWXYZ01JFWXYZ01",
-      "apiary_id": "01JFQABC01JFQABC01JFQABC01",
+      "superpos_id": "01JFQABC01JFQABC01JFQABC01",
       "status": "offline"
     },
     "token": "3|new-access-token...",
@@ -225,7 +225,7 @@ Authorization: Bearer 1|abc123def456ghi789...
     "name": "DeployBot",
     "type": "deployment",
     "hive_id": "01JFWXYZ01JFWXYZ01JFWXYZ01",
-    "apiary_id": "01JFQABC01JFQABC01JFQABC01",
+    "superpos_id": "01JFQABC01JFQABC01JFQABC01",
     "status": "offline",
     "capabilities": ["deploy", "rollback"],
     "metadata": { "version": "1.0" },
@@ -254,7 +254,7 @@ After logout, the revoked token returns `401` on any subsequent request.
 
 ## Auth Flow for Polling Agents
 
-Apiary agents **never receive inbound connections** — they poll outbound.
+Superpos agents **never receive inbound connections** — they poll outbound.
 A typical agent lifecycle looks like this:
 
 ```text
@@ -278,7 +278,7 @@ A typical agent lifecycle looks like this:
 ```python
 import requests
 
-BASE = "https://apiary.example.com/api/v1/agents"
+BASE = "https://superpos.example.com/api/v1/agents"
 
 # First run — register
 resp = requests.post(f"{BASE}/register", json={
@@ -298,7 +298,7 @@ print(me.json()["data"]["name"])  # "my-agent"
 
 ```bash
 # Register
-curl -X POST https://apiary.example.com/api/v1/agents/register \
+curl -X POST https://superpos.example.com/api/v1/agents/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "shell-agent",
@@ -310,11 +310,11 @@ curl -X POST https://apiary.example.com/api/v1/agents/register \
 TOKEN="1|abc123..."
 
 # Check identity
-curl https://apiary.example.com/api/v1/agents/me \
+curl https://superpos.example.com/api/v1/agents/me \
   -H "Authorization: Bearer $TOKEN"
 
 # Logout
-curl -X POST https://apiary.example.com/api/v1/agents/logout \
+curl -X POST https://superpos.example.com/api/v1/agents/logout \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -335,7 +335,7 @@ refresh token is rotated on each issuance and only the latest one remains valid.
 | Bearer token | `personal_access_tokens.token` | SHA-256 |
 
 Plaintext access/refresh tokens are returned exactly once in auth responses.
-Apiary never stores or logs them.
+Superpos never stores or logs them.
 
 ### Revocation
 
@@ -361,7 +361,7 @@ To enable expiration, set `expiration` in `config/sanctum.php`:
 
 ## Guard and Provider Configuration
 
-Apiary defines a dedicated Sanctum guard for agents, separate from the
+Superpos defines a dedicated Sanctum guard for agents, separate from the
 dashboard's session-based web guard.
 
 **config/auth.php:**
@@ -408,7 +408,7 @@ trait from Sanctum, enabling it to create and manage its own tokens.
 
 | Aspect | Community Edition | Cloud Edition |
 |--------|-------------------|---------------|
-| Apiary | Single `default` apiary | Multi-tenant, per-org apiaries |
+| Superpos | Single `default` apiary | Multi-tenant, per-org apiaries |
 | Hive scoping | All agents in `default` hive (or explicitly created hives) | Agents scoped to tenant's hives |
 | Token isolation | Tokens belong to one agent | Same — tokens belong to one agent |
 | Registration | Open (no invite required) | May require org-level invitation (future) |
@@ -422,7 +422,7 @@ apiary, while Cloud scopes agents to the tenant's apiary.
 ## Activity Logging
 
 Every authentication event is recorded in the
-[activity log](./activity-log.md):
+activity log:
 
 | Action | Logged On | Details |
 |--------|-----------|---------|
@@ -430,10 +430,8 @@ Every authentication event is recorded in the
 | `agent.login` | Login | `{ token_name: "agent-api" }` |
 | `agent.logout` | Logout | `{ token_id: <int> }` |
 
-All entries include `apiary_id`, `hive_id`, and `agent_id` context for
-audit filtering. See the
-[ActivityLogger Service](./activity-logger.md) guide for the fluent API used
-internally.
+All entries include `superpos_id`, `hive_id`, and `agent_id` context for
+audit filtering.
 
 ## Common Pitfalls and Troubleshooting
 

@@ -1,6 +1,6 @@
 # Shell SDK
 
-The `apiary-sdk.sh` library provides a pure Bash client for the Apiary v1 API.
+The `superpos-sdk.sh` library provides a pure Bash client for the Superpos v1 API.
 It wraps agent authentication, task lifecycle, and knowledge store operations
 using `curl` and `jq`, with stable exit codes for CI/script integration.
 
@@ -20,13 +20,13 @@ before the agent can create tasks, write knowledge, etc.
 
 | Function | Required permission |
 |----------|---------------------|
-| `apiary_create_task` | `tasks.create` |
-| `apiary_claim_task` | `tasks.claim` |
-| `apiary_complete_task` / `apiary_fail_task` / `apiary_update_progress` | `tasks.update` |
-| `apiary_create_knowledge` / `apiary_update_knowledge` / `apiary_delete_knowledge` | `knowledge.write` (+ `knowledge.write_apiary` for apiary-scoped entries) |
-| `apiary_list_knowledge` / `apiary_search_knowledge` / `apiary_get_knowledge` | `knowledge.read` |
+| `superpos_create_task` | `tasks.create` |
+| `superpos_claim_task` | `tasks.claim` |
+| `superpos_complete_task` / `superpos_fail_task` / `superpos_update_progress` | `tasks.update` |
+| `superpos_create_knowledge` / `superpos_update_knowledge` / `superpos_delete_knowledge` | `knowledge.write` (+ `knowledge.write_apiary` for apiary-scoped entries) |
+| `superpos_list_knowledge` / `superpos_search_knowledge` / `superpos_get_knowledge` | `knowledge.read` |
 
-Grant permissions via the Apiary dashboard or CLI:
+Grant permissions via the Superpos dashboard or CLI:
 
 ```bash
 php artisan apiary:grant-permission <agent-id> tasks.create
@@ -34,7 +34,7 @@ php artisan apiary:grant-permission <agent-id> knowledge.write
 ```
 
 Endpoints that only require authentication (register, login, heartbeat,
-`apiary_update_status`, `apiary_me`, `apiary_logout`) work immediately after
+`superpos_update_status`, `superpos_me`, `superpos_logout`) work immediately after
 registration.
 
 Calling a privileged function without the required permission returns exit
@@ -43,60 +43,60 @@ code 4 (HTTP 403).
 ## Quick start
 
 > **Note:** The example below assumes the agent has been granted `tasks.create`
-> permission. Without it, `apiary_create_task` will return exit code 4.
+> permission. Without it, `superpos_create_task` will return exit code 4.
 
 ```bash
 #!/usr/bin/env bash
-source /path/to/sdk/shell/src/apiary-sdk.sh
+source /path/to/sdk/shell/src/superpos-sdk.sh
 
-export APIARY_BASE_URL="http://localhost:8080"
+export SUPERPOS_BASE_URL="http://localhost:8080"
 
 # Register a new agent (token is stored automatically)
-apiary_register -n "my-agent" -h "$HIVE_ID" -s "my-secure-secret-16+"
+superpos_register -n "my-agent" -h "$HIVE_ID" -s "my-secure-secret-16+"
 
 # Create a task (requires tasks.create permission)
-task=$(apiary_create_task "$HIVE_ID" -t "summarize" -d '{"text": "Hello world"}')
+task=$(superpos_create_task "$HIVE_ID" -t "summarize" -d '{"text": "Hello world"}')
 echo "Task $(echo "$task" | jq -r '.id') created"
 ```
 
 ## Authentication
 
-The SDK supports two auth flows. Both store the token in `APIARY_TOKEN`
+The SDK supports two auth flows. Both store the token in `SUPERPOS_TOKEN`
 automatically.
 
 ### Register a new agent
 
 ```bash
-source apiary-sdk.sh
-export APIARY_BASE_URL="http://localhost:8080"
+source superpos-sdk.sh
+export SUPERPOS_BASE_URL="http://localhost:8080"
 
-apiary_register -n "my-agent" -h "$HIVE_ID" -s "change-me-to-something-secure"
-# APIARY_TOKEN is now set — all subsequent calls are authenticated
+superpos_register -n "my-agent" -h "$HIVE_ID" -s "change-me-to-something-secure"
+# SUPERPOS_TOKEN is now set — all subsequent calls are authenticated
 ```
 
 ### Login with existing credentials
 
 ```bash
-apiary_login -i "$AGENT_ID" -s "$SECRET"
+superpos_login -i "$AGENT_ID" -s "$SECRET"
 ```
 
 ### Pre-configured token
 
 ```bash
-export APIARY_TOKEN="your-bearer-token"
+export SUPERPOS_TOKEN="your-bearer-token"
 ```
 
 ## Agent lifecycle
 
 ```bash
 # Send heartbeat (call periodically to stay "online")
-apiary_heartbeat -m '{"cpu": 42, "memory_mb": 512}'
+superpos_heartbeat -m '{"cpu": 42, "memory_mb": 512}'
 
 # Update status
-apiary_update_status "busy"   # online | busy | idle | offline | error
+superpos_update_status "busy"   # online | busy | idle | offline | error
 
 # Get own profile
-apiary_me | jq .
+superpos_me | jq .
 ```
 
 ## Task operations
@@ -107,13 +107,13 @@ apiary_me | jq .
 ### Create a task
 
 ```bash
-task=$(apiary_create_task "$HIVE_ID" \
+task=$(superpos_create_task "$HIVE_ID" \
     -t "process" \
     -p 3 \
     -c "code" \
     -d '{"input": "data"}' \
     -I "Fix failing checks and report back" \
-    -X '{"repo":"Apiary-AI/Apiary-SDK","pr":123}' \
+    -X '{"repo":"Superpos-AI/superpos-sdk","pr":123}' \
     -T 300 \
     -r 5)
 ```
@@ -131,27 +131,27 @@ for the same field, top-level `invoke.*` takes precedence.
 
 ```bash
 # Poll for available tasks
-tasks=$(apiary_poll_tasks "$HIVE_ID" -c "code" -l 5)
+tasks=$(superpos_poll_tasks "$HIVE_ID" -c "code" -l 5)
 
 count=$(echo "$tasks" | jq 'length')
 if [[ "$count" -gt 0 ]]; then
     task_id=$(echo "$tasks" | jq -r '.[0].id')
 
     # Atomically claim a task (exit 6 if already claimed)
-    apiary_claim_task "$HIVE_ID" "$task_id"
+    superpos_claim_task "$HIVE_ID" "$task_id"
 
     # Report progress (0-100)
-    apiary_update_progress "$HIVE_ID" "$task_id" -p 50 -m "Halfway"
+    superpos_update_progress "$HIVE_ID" "$task_id" -p 50 -m "Halfway"
 
     # Complete with result
-    apiary_complete_task "$HIVE_ID" "$task_id" -r '{"output": "done"}'
+    superpos_complete_task "$HIVE_ID" "$task_id" -r '{"output": "done"}'
 fi
 ```
 
 ### Mark a task as failed
 
 ```bash
-apiary_fail_task "$HIVE_ID" "$task_id" \
+superpos_fail_task "$HIVE_ID" "$task_id" \
     -e '{"type": "ValueError", "message": "Bad input"}' \
     -m "Unhandled error"
 ```
@@ -164,7 +164,7 @@ apiary_fail_task "$HIVE_ID" "$task_id" \
 
 ```bash
 # Create
-entry=$(apiary_create_knowledge "$HIVE_ID" \
+entry=$(superpos_create_knowledge "$HIVE_ID" \
     -k "config.timeout" \
     -v '{"seconds": 30}' \
     -s "hive" \
@@ -174,42 +174,42 @@ entry=$(apiary_create_knowledge "$HIVE_ID" \
 entry_id=$(echo "$entry" | jq -r '.id')
 
 # Read
-apiary_get_knowledge "$HIVE_ID" "$entry_id" | jq .
+superpos_get_knowledge "$HIVE_ID" "$entry_id" | jq .
 
 # List with filters
-apiary_list_knowledge "$HIVE_ID" -k "config.*" -s "hive" -l 10
+superpos_list_knowledge "$HIVE_ID" -k "config.*" -s "hive" -l 10
 
 # Search
-apiary_search_knowledge "$HIVE_ID" -q "timeout"
+superpos_search_knowledge "$HIVE_ID" -q "timeout"
 
 # Update (bumps version)
-apiary_update_knowledge "$HIVE_ID" "$entry_id" -v '{"seconds": 60}'
+superpos_update_knowledge "$HIVE_ID" "$entry_id" -v '{"seconds": 60}'
 
 # Delete
-apiary_delete_knowledge "$HIVE_ID" "$entry_id"
+superpos_delete_knowledge "$HIVE_ID" "$entry_id"
 ```
 
 ## CLI wrapper
 
-The `apiary-cli` script provides a command-line interface for ad-hoc use:
+The `superpos-cli` script provides a command-line interface for ad-hoc use:
 
 ```bash
-export APIARY_BASE_URL="http://localhost:8080"
+export SUPERPOS_BASE_URL="http://localhost:8080"
 
 # Register
-./sdk/shell/bin/apiary-cli register -n "bot" -h "$HIVE_ID" -s "secret-16chars+"
+./sdk/shell/bin/superpos-cli register -n "bot" -h "$HIVE_ID" -s "secret-16chars+"
 
 # Show profile
-./sdk/shell/bin/apiary-cli me | jq .
+./sdk/shell/bin/superpos-cli me | jq .
 
 # Create task
-./sdk/shell/bin/apiary-cli task-create "$HIVE_ID" -t "process" -d '{"input":"x"}'
+./sdk/shell/bin/superpos-cli task-create "$HIVE_ID" -t "process" -d '{"input":"x"}'
 
 # Poll tasks
-./sdk/shell/bin/apiary-cli task-poll "$HIVE_ID" -c "code" -l 5
+./sdk/shell/bin/superpos-cli task-poll "$HIVE_ID" -c "code" -l 5
 
 # All commands
-./sdk/shell/bin/apiary-cli help
+./sdk/shell/bin/superpos-cli help
 ```
 
 ## Error handling
@@ -217,14 +217,14 @@ export APIARY_BASE_URL="http://localhost:8080"
 All API errors map to stable exit codes with error details on stderr:
 
 ```bash
-source apiary-sdk.sh
+source superpos-sdk.sh
 
-if ! result=$(apiary_claim_task "$HIVE_ID" "$TASK_ID" 2>/dev/null); then
+if ! result=$(superpos_claim_task "$HIVE_ID" "$TASK_ID" 2>/dev/null); then
     case $? in
-        $APIARY_ERR_CONFLICT)   echo "Task already claimed" ;;
-        $APIARY_ERR_AUTH)       echo "Token expired — re-authenticate" ;;
-        $APIARY_ERR_NOT_FOUND)  echo "Task not found" ;;
-        $APIARY_ERR_PERMISSION) echo "Missing tasks.claim permission" ;;
+        $SUPERPOS_ERR_CONFLICT)   echo "Task already claimed" ;;
+        $SUPERPOS_ERR_AUTH)       echo "Token expired — re-authenticate" ;;
+        $SUPERPOS_ERR_NOT_FOUND)  echo "Task not found" ;;
+        $SUPERPOS_ERR_PERMISSION) echo "Missing tasks.claim permission" ;;
         *)                      echo "Unexpected error" ;;
     esac
 fi
@@ -245,18 +245,18 @@ fi
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `APIARY_BASE_URL` | API base URL (required, no trailing slash) | — |
-| `APIARY_TOKEN` | Bearer token (set automatically by register/login) | — |
-| `APIARY_TIMEOUT` | Request timeout in seconds | `30` |
-| `APIARY_DEBUG` | Set to `1` for verbose curl output on stderr | `0` |
+| `SUPERPOS_BASE_URL` | API base URL (required, no trailing slash) | — |
+| `SUPERPOS_TOKEN` | Bearer token (set automatically by register/login) | — |
+| `SUPERPOS_TIMEOUT` | Request timeout in seconds | `30` |
+| `SUPERPOS_DEBUG` | Set to `1` for verbose curl output on stderr | `0` |
 
 ## Debug mode
 
-Set `APIARY_DEBUG=1` to see verbose HTTP output on stderr:
+Set `SUPERPOS_DEBUG=1` to see verbose HTTP output on stderr:
 
 ```bash
-export APIARY_DEBUG=1
-apiary_me   # prints method, URL, headers, response to stderr
+export SUPERPOS_DEBUG=1
+superpos_me   # prints method, URL, headers, response to stderr
 ```
 
 All debug output goes to stderr, keeping stdout clean for piping to `jq`
@@ -264,79 +264,79 @@ or other tools.
 
 ## API reference
 
-### `apiary_register -n NAME -h HIVE_ID -s SECRET [-a APIARY_ID] [-t TYPE] [-c CAPS_JSON] [-m META_JSON]`
+### `superpos_register -n NAME -h HIVE_ID -s SECRET [-a SUPERPOS_ID] [-t TYPE] [-c CAPS_JSON] [-m META_JSON]`
 
 Register agent, store token. Returns agent + token JSON.
 
-### `apiary_login -i AGENT_ID -s SECRET`
+### `superpos_login -i AGENT_ID -s SECRET`
 
 Authenticate, store token. Returns agent + token JSON.
 
-### `apiary_logout`
+### `superpos_logout`
 
-Revoke token, clear `APIARY_TOKEN`.
+Revoke token, clear `SUPERPOS_TOKEN`.
 
-### `apiary_me`
+### `superpos_me`
 
 Get current agent profile.
 
-### `apiary_heartbeat [-m METADATA_JSON]`
+### `superpos_heartbeat [-m METADATA_JSON]`
 
 Send liveness signal.
 
-### `apiary_update_status STATUS`
+### `superpos_update_status STATUS`
 
 Set agent status (online/busy/idle/offline/error).
 
-### `apiary_create_task HIVE_ID -t TYPE [-p PRI] [-a AGENT] [-c CAP] [-d PAYLOAD] [-T TIMEOUT] [-r RETRIES] [-P PARENT] [-x REFS] [-I INSTRUCTIONS] [-X CONTEXT_JSON]`
+### `superpos_create_task HIVE_ID -t TYPE [-p PRI] [-a AGENT] [-c CAP] [-d PAYLOAD] [-T TIMEOUT] [-r RETRIES] [-P PARENT] [-x REFS] [-I INSTRUCTIONS] [-X CONTEXT_JSON]`
 
 Create a task.
 
-### `apiary_poll_tasks HIVE_ID [-c CAPABILITY] [-l LIMIT]`
+### `superpos_poll_tasks HIVE_ID [-c CAPABILITY] [-l LIMIT]`
 
 Poll for claimable tasks.
 
-### `apiary_claim_task HIVE_ID TASK_ID`
+### `superpos_claim_task HIVE_ID TASK_ID`
 
 Atomically claim a task.
 
-### `apiary_update_progress HIVE_ID TASK_ID -p PROGRESS [-m MESSAGE]`
+### `superpos_update_progress HIVE_ID TASK_ID -p PROGRESS [-m MESSAGE]`
 
 Report task progress (0-100).
 
-### `apiary_complete_task HIVE_ID TASK_ID [-r RESULT_JSON] [-m MESSAGE]`
+### `superpos_complete_task HIVE_ID TASK_ID [-r RESULT_JSON] [-m MESSAGE]`
 
 Mark task completed.
 
-### `apiary_fail_task HIVE_ID TASK_ID [-e ERROR_JSON] [-m MESSAGE]`
+### `superpos_fail_task HIVE_ID TASK_ID [-e ERROR_JSON] [-m MESSAGE]`
 
 Mark task failed.
 
-### `apiary_list_knowledge HIVE_ID [-k KEY] [-s SCOPE] [-l LIMIT]`
+### `superpos_list_knowledge HIVE_ID [-k KEY] [-s SCOPE] [-l LIMIT]`
 
 List knowledge entries.
 
-### `apiary_search_knowledge HIVE_ID [-q QUERY] [-s SCOPE] [-l LIMIT]`
+### `superpos_search_knowledge HIVE_ID [-q QUERY] [-s SCOPE] [-l LIMIT]`
 
 Search knowledge entries.
 
-### `apiary_get_knowledge HIVE_ID ENTRY_ID`
+### `superpos_get_knowledge HIVE_ID ENTRY_ID`
 
 Get single knowledge entry.
 
-### `apiary_create_knowledge HIVE_ID -k KEY -v VALUE_JSON [-s SCOPE] [-V VISIBILITY] [-t TTL]`
+### `superpos_create_knowledge HIVE_ID -k KEY -v VALUE_JSON [-s SCOPE] [-V VISIBILITY] [-t TTL]`
 
 Create knowledge entry.
 
-### `apiary_update_knowledge HIVE_ID ENTRY_ID -v VALUE_JSON [-V VISIBILITY] [-t TTL]`
+### `superpos_update_knowledge HIVE_ID ENTRY_ID -v VALUE_JSON [-V VISIBILITY] [-t TTL]`
 
 Update knowledge entry.
 
-### `apiary_delete_knowledge HIVE_ID ENTRY_ID`
+### `superpos_delete_knowledge HIVE_ID ENTRY_ID`
 
 Delete knowledge entry.
 
-### `apiary_check_deps`
+### `superpos_check_deps`
 
 Verify curl and jq are available.
 

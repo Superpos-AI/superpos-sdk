@@ -7,9 +7,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from apiary_sdk.workers.gmail import GmailWorker
+from superpos_sdk.workers.gmail import GmailWorker
 
-BASE_URL = "https://apiary.test"
+BASE_URL = "https://superpos.test"
 HIVE_ID = "01HXYZ00000000000000000001"
 
 # Minimal fake service account JSON

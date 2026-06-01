@@ -2,7 +2,7 @@
 
 **Status:** done
 **Branch:** `task/019-task-timeout-retry`
-**PR:** https://github.com/Apiary-AI/Apiary-SaaS/pull/21
+**PR:** https://github.com/Superpos-AI/superpos-app/pull/21
 **Depends On:** TASK-008 (Task Model), TASK-011 (ActivityLogger Service)
 **Blocked By:** —
 

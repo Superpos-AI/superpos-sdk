@@ -2,13 +2,13 @@
 
 **Status:** done
 **Branch:** `task/022-inertia-react`
-**PR:** https://github.com/Apiary-AI/Apiary-SaaS/pull/24
+**PR:** https://github.com/Superpos-AI/superpos-app/pull/24
 **Depends On:** — (no dependencies)
 **Unlocks:** 023, 024, 025, 026, 027, 028 (all dashboard pages)
 
 ## Requirements
 
-Install the frontend foundation for the Apiary dashboard:
+Install the frontend foundation for the Superpos dashboard:
 
 1. **Inertia.js integration** — server-side adapter (`inertiajs/inertia-laravel`) with `HandleInertiaRequests` middleware sharing apiary/hive context
 2. **React integration** — `@inertiajs/react`, `react`, `react-dom` with Vite React plugin

@@ -5,13 +5,13 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from apiary_sdk import ApiaryClient, ApiaryError, AuthenticationError, ValidationError
-from apiary_sdk.exceptions import (
+from superpos_sdk import AuthenticationError, SuperposClient, SuperposError, ValidationError
+from superpos_sdk.exceptions import (
     ConflictError,
     NotFoundError,
 )
-from apiary_sdk.exceptions import (
-    PermissionError as ApiaryPermissionError,
+from superpos_sdk.exceptions import (
+    PermissionError as SuperposPermissionError,
 )
 
 from .conftest import BASE_URL, TOKEN, envelope
@@ -27,7 +27,7 @@ class TestEnvelopeParsing:
             url=f"{BASE_URL}/api/v1/agents/me",
             json=envelope({"id": "abc", "name": "bot"}),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             result = c.me()
         assert result == {"id": "abc", "name": "bot"}
 
@@ -36,7 +36,7 @@ class TestEnvelopeParsing:
             url=f"{BASE_URL}/api/v1/agents/logout",
             status_code=204,
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             assert c.logout() is None
 
     def test_bearer_token_sent(self, httpx_mock):
@@ -44,7 +44,7 @@ class TestEnvelopeParsing:
             url=f"{BASE_URL}/api/v1/agents/me",
             json=envelope({"id": "x"}),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.me()
         request = httpx_mock.get_request()
         assert request.headers["authorization"] == f"Bearer {TOKEN}"
@@ -55,7 +55,7 @@ class TestEnvelopeParsing:
             status_code=201,
             json=envelope({"agent": {"id": "a"}, "token": "t"}),
         )
-        with ApiaryClient(BASE_URL) as c:
+        with SuperposClient(BASE_URL) as c:
             c.register(name="x", hive_id="h" * 26, secret="s" * 16)
         request = httpx_mock.get_request()
         assert "authorization" not in request.headers
@@ -73,7 +73,7 @@ class TestErrorMapping:
             status_code=401,
             json=envelope(errors=[{"message": "Unauthenticated.", "code": "auth_failed"}]),
         )
-        with ApiaryClient(BASE_URL, token="bad") as c:
+        with SuperposClient(BASE_URL, token="bad") as c:
             with pytest.raises(AuthenticationError) as exc_info:
                 c.me()
         assert exc_info.value.status_code == 401
@@ -85,8 +85,8 @@ class TestErrorMapping:
             status_code=403,
             json=envelope(errors=[{"message": "Forbidden.", "code": "forbidden"}]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
-            with pytest.raises(ApiaryPermissionError) as exc_info:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            with pytest.raises(SuperposPermissionError) as exc_info:
                 c.me()
         assert exc_info.value.status_code == 403
 
@@ -97,7 +97,7 @@ class TestErrorMapping:
             status_code=404,
             json=envelope(errors=[{"message": "Not found.", "code": "not_found"}]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             with pytest.raises(NotFoundError):
                 c.get_knowledge(hive, "NOTFOUND")
 
@@ -109,7 +109,7 @@ class TestErrorMapping:
             status_code=409,
             json=envelope(errors=[{"message": "Task is no longer available.", "code": "conflict"}]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             with pytest.raises(ConflictError) as exc_info:
                 c.claim_task(hive, task)
         assert "no longer available" in str(exc_info.value)
@@ -128,7 +128,7 @@ class TestErrorMapping:
                 ]
             ),
         )
-        with ApiaryClient(BASE_URL) as c:
+        with SuperposClient(BASE_URL) as c:
             with pytest.raises(ValidationError) as exc_info:
                 c.register(name="dup", hive_id="h" * 26, secret="s" * 16)
         assert exc_info.value.errors[0].field == "name"
@@ -150,7 +150,7 @@ class TestErrorMapping:
                 },
             },
         )
-        with ApiaryClient(BASE_URL) as c:
+        with SuperposClient(BASE_URL) as c:
             with pytest.raises(ValidationError) as exc_info:
                 c.register(name="", hive_id="h" * 26, secret="")
         err = exc_info.value
@@ -176,7 +176,7 @@ class TestErrorMapping:
                 },
             },
         )
-        with ApiaryClient(BASE_URL) as c:
+        with SuperposClient(BASE_URL) as c:
             with pytest.raises(ValidationError) as exc_info:
                 c.register(name="x", hive_id="h" * 26, secret="s" * 16)
         err = exc_info.value
@@ -184,39 +184,39 @@ class TestErrorMapping:
         assert err.errors[0].field == "email"
         assert err.errors[0].message == "The email must be a valid email address."
 
-    def test_500_raises_generic_apiary_error(self, httpx_mock):
+    def test_500_raises_generic_superpos_error(self, httpx_mock):
         httpx_mock.add_response(
             url=f"{BASE_URL}/api/v1/agents/me",
             status_code=500,
             json=envelope(errors=[{"message": "Internal error", "code": "server_error"}]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
-            with pytest.raises(ApiaryError) as exc_info:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            with pytest.raises(SuperposError) as exc_info:
                 c.me()
         assert exc_info.value.status_code == 500
 
-    def test_non_json_error_response_raises_apiary_error(self, httpx_mock):
+    def test_non_json_error_response_raises_superpos_error(self, httpx_mock):
         httpx_mock.add_response(
             url=f"{BASE_URL}/api/v1/agents/me",
             status_code=502,
             text="<html><body>Bad Gateway</body></html>",
             headers={"content-type": "text/html"},
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
-            with pytest.raises(ApiaryError) as exc_info:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            with pytest.raises(SuperposError) as exc_info:
                 c.me()
         assert exc_info.value.status_code == 502
         assert "Bad Gateway" in str(exc_info.value)
 
-    def test_non_json_success_response_raises_apiary_error(self, httpx_mock):
+    def test_non_json_success_response_raises_superpos_error(self, httpx_mock):
         httpx_mock.add_response(
             url=f"{BASE_URL}/api/v1/agents/me",
             status_code=200,
             text="OK",
             headers={"content-type": "text/plain"},
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
-            with pytest.raises(ApiaryError) as exc_info:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            with pytest.raises(SuperposError) as exc_info:
                 c.me()
         assert exc_info.value.status_code == 200
         assert "text/plain" in str(exc_info.value)
@@ -233,7 +233,7 @@ class TestLogoutTokenClearing:
             url=f"{BASE_URL}/api/v1/agents/logout",
             status_code=204,
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.logout()
             assert c.token is None
 
@@ -243,8 +243,8 @@ class TestLogoutTokenClearing:
             status_code=500,
             json=envelope(errors=[{"message": "Internal error", "code": "server_error"}]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
-            with pytest.raises(ApiaryError):
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            with pytest.raises(SuperposError):
                 c.logout()
             assert c.token is None
 
@@ -253,7 +253,7 @@ class TestLogoutTokenClearing:
             httpx.ConnectError("connection refused"),
             url=f"{BASE_URL}/api/v1/agents/logout",
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             with pytest.raises(httpx.ConnectError):
                 c.logout()
             assert c.token is None
@@ -266,6 +266,6 @@ class TestLogoutTokenClearing:
 
 class TestContextManager:
     def test_close_is_idempotent(self):
-        c = ApiaryClient(BASE_URL)
+        c = SuperposClient(BASE_URL)
         c.close()
         c.close()  # should not raise

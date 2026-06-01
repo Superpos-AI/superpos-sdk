@@ -36,21 +36,21 @@ agents that want to check for updates without polling tasks.
    agent (null when no persona assigned). Agents check this on every poll cycle.
 
 ### Python SDK
-3. `ApiaryClient.get_persona_version(known_version=None)` — calls the new
+3. `SuperposClient.get_persona_version(known_version=None)` — calls the new
    `/api/v1/persona/version` endpoint. When `known_version` is provided, the
    `changed` field is included in the response.
-4. `ApiaryClient.check_persona_version(known_version)` — convenience bool helper:
+4. `SuperposClient.check_persona_version(known_version)` — convenience bool helper:
    returns `True` when the server version differs from `known_version`.
-5. `ApiaryClient.poll_tasks_with_meta(hive_id, ...)` — like `poll_tasks()` but
+5. `SuperposClient.poll_tasks_with_meta(hive_id, ...)` — like `poll_tasks()` but
    returns the full `{data, meta, errors}` envelope so callers can read
    `meta["persona_version"]` without a second request.
-6. `ApiaryClient._request_envelope(...)` — internal helper returning the full
+6. `SuperposClient._request_envelope(...)` — internal helper returning the full
    envelope (used by `poll_tasks_with_meta`).
 
 ### Shell SDK
-7. `apiary_get_persona_version [-k KNOWN_VERSION]` — calls
+7. `superpos_get_persona_version [-k KNOWN_VERSION]` — calls
    `/api/v1/persona/version`, passing `?known_version=N` when `-k` is provided.
-8. `apiary_check_persona_version -k KNOWN_VERSION` — returns exit code 0 when
+8. `superpos_check_persona_version -k KNOWN_VERSION` — returns exit code 0 when
    changed, 1 when unchanged. Requires jq.
 9. CLI commands: `persona-get-version` and `persona-check-version -k N`.
 
@@ -74,7 +74,7 @@ agents that want to check for updates without polling tasks.
 - [x] Python SDK `get_persona_version(known_version=N)` includes `changed`
 - [x] Python SDK `check_persona_version(N)` returns bool
 - [x] Python SDK `poll_tasks_with_meta()` returns full envelope with `meta.persona_version`
-- [x] Shell SDK `apiary_get_persona_version` with and without `-k`
-- [x] Shell SDK `apiary_check_persona_version -k N` exits 0 on change, 1 on same
+- [x] Shell SDK `superpos_get_persona_version` with and without `-k`
+- [x] Shell SDK `superpos_check_persona_version -k N` exits 0 on change, 1 on same
 - [x] Shell CLI `persona-get-version` and `persona-check-version -k N`
 - [x] All tests pass

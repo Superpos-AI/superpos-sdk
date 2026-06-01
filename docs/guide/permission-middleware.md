@@ -1,6 +1,6 @@
 # Permission Middleware
 
-Apiary enforces granular access control on agent API routes through two
+Superpos enforces granular access control on agent API routes through two
 middleware — `permission` and `role`. Both sit on top of the
 [agent authentication](./agent-authentication.md) layer (Sanctum bearer tokens)
 and are evaluated **after** the agent is authenticated but **before** the
@@ -377,12 +377,12 @@ php artisan test --filter=PermissionMiddlewareTest
 
 ```php
 use App\Models\Agent;
-use App\Models\Apiary;
+use App\Models\Superpos;
 use App\Models\Hive;
 use Laravel\Sanctum\Sanctum;
 
 // Set up agent with permissions
-$apiary = Apiary::factory()->create();
+$apiary = Superpos::factory()->create();
 $hive = Hive::factory()->for($apiary)->create();
 $agent = Agent::factory()->for($hive)->for($apiary)->create();
 

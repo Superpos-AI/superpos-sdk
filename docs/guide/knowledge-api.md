@@ -59,7 +59,7 @@ Content-Type: application/json
 {
   "data": {
     "id": "01J...",
-    "apiary_id": "01J...",
+    "superpos_id": "01J...",
     "hive_id": "01J...",
     "key": "project:backend:architecture",
     "value": { "framework": "laravel", "version": "12" },

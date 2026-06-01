@@ -2,14 +2,14 @@
 
 **Status:** done
 **Branch:** `task/005-apiaries-hives-migration`
-**PR:** [#5](https://github.com/Apiary-AI/Apiary-SaaS/pull/5)
+**PR:** [#5](https://github.com/Superpos-AI/superpos-app/pull/5)
 **Depends on:** TASK-001, TASK-002
 **Blocks:** TASK-006, TASK-007, TASK-008, TASK-009, TASK-010, TASK-031
 
 ## Objective
 
 Create the database migrations for the `apiaries` and `hives` tables (the two
-foundational tables in the Apiary hierarchy) and a seeder that provisions the
+foundational tables in the Superpos hierarchy) and a seeder that provisions the
 default CE apiary and hive using the stable ULIDs from `config('apiary.ce.*')`.
 
 ## Requirements
@@ -18,7 +18,7 @@ default CE apiary and hive using the stable ULIDs from `config('apiary.ce.*')`.
 
 - [x] FR-1: `apiaries` migration creates table per PRODUCT.md schema with ULID primary key
 - [x] FR-2: `hives` migration creates table per PRODUCT.md schema with ULID primary key and foreign key to apiaries
-- [x] FR-3: CE seeder inserts default apiary using `config('apiary.ce.apiary_id')`
+- [x] FR-3: CE seeder inserts default apiary using `config('apiary.ce.superpos_id')`
 - [x] FR-4: CE seeder inserts default hive using `config('apiary.ce.hive_id')` linked to default apiary
 - [x] FR-5: Seeder is idempotent (safe to run multiple times)
 - [x] FR-6: Cloud-only columns (stripe_*, trial_ends_at) are nullable
@@ -27,7 +27,7 @@ default CE apiary and hive using the stable ULIDs from `config('apiary.ce.*')`.
 
 - [x] NFR-1: PSR-12 compliant
 - [x] NFR-2: ULIDs for all primary keys (VARCHAR(26))
-- [x] NFR-3: Proper indexes on slug, apiary_id, and composite unique constraints
+- [x] NFR-3: Proper indexes on slug, superpos_id, and composite unique constraints
 - [x] NFR-4: Works with SQLite (testing) and PostgreSQL (production)
 
 ## Architecture & Design
@@ -44,14 +44,14 @@ default CE apiary and hive using the stable ULIDs from `config('apiary.ce.*')`.
 
 ### Key Design Decisions
 
-- **Migration filename prefix `0001_01_01_*`**: Matches existing Laravel baseline convention; uses `000010`/`000011` to sort after framework tables but before future Apiary migrations.
+- **Migration filename prefix `0001_01_01_*`**: Matches existing Laravel baseline convention; uses `000010`/`000011` to sort after framework tables but before future Superpos migrations.
 - **VARCHAR(26) for ULID PKs**: Not auto-increment — matches ULID convention from CLAUDE.md.
 - **owner_id references users(id)**: Foreign key to Laravel's default users table. Nullable for CE mode (CE may not require a user owner initially); `nullOnDelete` preserves apiary if owner is removed.
 - **Cloud columns nullable**: `stripe_customer_id`, `stripe_subscription_id`, `trial_ends_at` are nullable — unused in CE mode.
 - **settings as JSON**: Uses Laravel's `json()` column type (maps to JSONB on PostgreSQL, TEXT on SQLite).
-- **Composite unique on hives**: `UNIQUE(apiary_id, slug)` ensures slugs unique within an apiary.
+- **Composite unique on hives**: `UNIQUE(superpos_id, slug)` ensures slugs unique within an apiary.
 - **Idempotent seeder**: Insert-only (raw DB, no model dependency) — if bootstrap rows exist they are left untouched so user-customized data is never overwritten on reseed.
-- **Raw DB in seeder**: Avoids dependency on Apiary/Hive model classes (created in TASK-006).
+- **Raw DB in seeder**: Avoids dependency on Superpos/Hive model classes (created in TASK-006).
 
 ## Implementation Plan
 
@@ -85,7 +85,7 @@ default CE apiary and hive using the stable ULIDs from `config('apiary.ce.*')`.
 | Column | Type | Constraints |
 |--------|------|-------------|
 | id | VARCHAR(26) | PRIMARY KEY (ULID) |
-| apiary_id | VARCHAR(26) | NOT NULL, FK → apiaries(id) CASCADE |
+| superpos_id | VARCHAR(26) | NOT NULL, FK → apiaries(id) CASCADE |
 | name | VARCHAR(255) | NOT NULL |
 | slug | VARCHAR(100) | NOT NULL |
 | description | TEXT | NULLABLE |
@@ -93,7 +93,7 @@ default CE apiary and hive using the stable ULIDs from `config('apiary.ce.*')`.
 | is_active | BOOLEAN | DEFAULT TRUE |
 | created_at | TIMESTAMP | NULLABLE |
 | updated_at | TIMESTAMP | NULLABLE |
-| | | UNIQUE(apiary_id, slug) |
+| | | UNIQUE(superpos_id, slug) |
 
 ## API Changes
 
@@ -108,7 +108,7 @@ _None._
 - [x] Hives table exists after migration
 - [x] Hives table has all expected columns
 - [x] Unique index enforced on apiaries(slug)
-- [x] Composite unique enforced on hives(apiary_id, slug)
+- [x] Composite unique enforced on hives(superpos_id, slug)
 - [x] Same slug allowed in different apiaries
 - [x] Cascade delete: deleting apiary removes child hives
 - [x] CE seeder creates default apiary with config ULID

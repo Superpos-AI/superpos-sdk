@@ -80,13 +80,13 @@ one hive exist. While safe in single-tenant CE, this creates a gap:
 
 | Model             | CE Impact | Notes |
 |-------------------|-----------|-------|
-| Hive              | None      | All hives have CE apiary_id |
-| ServiceConnection | None      | All connections have CE apiary_id |
-| KnowledgeEntry    | None      | All entries have CE apiary_id |
-| Event             | None      | All events have CE apiary_id |
-| Connector         | None      | All connectors have CE apiary_id |
-| ProxyLog          | None      | All logs have CE apiary_id |
-| ActivityLog       | None      | All logs have CE apiary_id |
+| Hive              | None      | All hives have CE superpos_id |
+| ServiceConnection | None      | All connections have CE superpos_id |
+| KnowledgeEntry    | None      | All entries have CE superpos_id |
+| Event             | None      | All events have CE superpos_id |
+| Connector         | None      | All connectors have CE superpos_id |
+| ProxyLog          | None      | All logs have CE superpos_id |
+| ActivityLog       | None      | All logs have CE superpos_id |
 
 ### Why Dashboard/API Controllers Are Unaffected
 
@@ -102,7 +102,7 @@ Controllers that don't use it see no behavior change in CE mode.
 
 1. **CE mode: global scope filters by CE hive_id** — verify records with CE
    hive_id are returned, records with other hive_ids are filtered out.
-2. **CE mode: global scope filters by CE apiary_id** — same for apiary.
+2. **CE mode: global scope filters by CE superpos_id** — same for apiary.
 3. **CE mode: withoutGlobalScope bypass** — verify bypass returns all records.
 4. **Cloud mode: existing behavior preserved** — verify context-based
    filtering and fail-closed still work.

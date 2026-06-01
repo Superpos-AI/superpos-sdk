@@ -15,7 +15,7 @@ would traverse rather than testing endpoints in isolation.
 | Scope isolation | Hive-scoped, apiary-scoped, and agent-private knowledge visibility |
 | Permission boundaries | 403 enforcement for tasks.create, tasks.claim, knowledge.read, knowledge.write |
 | Hive isolation | Cross-hive access rejected without `*.cross_hive` permission |
-| Apiary isolation | Cross-apiary access fully blocked |
+| Superpos isolation | Cross-apiary access fully blocked |
 | Race prevention | Double-claim returns 409 Conflict |
 | State machine | Invalid transitions (e.g. progress on pending task) return 409 |
 | Task ownership | Non-claimer cannot update a claimed task |

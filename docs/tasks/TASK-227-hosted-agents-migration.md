@@ -29,7 +29,7 @@ history log (`hosted_agent_deployments`).
   this column so subsequent deploys stay pinned until the user
   explicitly clears or overwrites it.
 - [ ] FR-3: `App\Cloud\Models\HostedAgent` Eloquent model with relationships
-  to `Agent`, `Hive`, `Apiary`, and `deployments()` hasMany.
+  to `Agent`, `Hive`, `Superpos`, and `deployments()` hasMany.
 - [ ] FR-4: `App\Cloud\Models\HostedAgentDeployment` with belongsTo
   `HostedAgent`.
 - [ ] FR-5: `user_env` encrypted at rest using Laravel Crypt cast

@@ -1,4 +1,4 @@
-# Apiary — Feature: Knowledge Graph & Context Assembly
+# Superpos — Feature: Knowledge Graph & Context Assembly
 
 ## Addendum to PRODUCT.md v4.0
 
@@ -16,7 +16,7 @@ What's missing:
 - **No maintenance.** Knowledge gets stale. Nobody checks for contradictions. No "health score" for the knowledge base.
 - **No assembly.** When agent starts a task, it gets the payload and nothing else. It should get the payload + everything it needs to know to do the job well.
 
-As Karpathy puts it: the LLM is a CPU, the context window is RAM. Right now Apiary gives agents a task (instruction) but barely fills their RAM with knowledge. The result: agents re-discover what the system already knows.
+As Karpathy puts it: the LLM is a CPU, the context window is RAM. Right now Superpos gives agents a task (instruction) but barely fills their RAM with knowledge. The result: agents re-discover what the system already knows.
 
 ## 2. Vision
 
@@ -92,7 +92,7 @@ GET /api/v1/hives/{hive}/knowledge/search?q=authentication+refactor&limit=10
 
 ### Layer 2: Knowledge Links + Graph (Phase 2)
 
-Entries link to each other and to other Apiary entities (tasks, channels, agents).
+Entries link to each other and to other Superpos entities (tasks, channels, agents).
 
 #### Link Types
 
@@ -612,7 +612,7 @@ for task in tasks:
     # Persona assembles the system prompt
     system_prompt = client.persona.assemble()
     
-    # Context is already there — assembled by Apiary
+    # Context is already there — assembled by Superpos
     context_block = task.context.to_prompt()
     # Returns formatted text:
     # "## Relevant Knowledge
@@ -854,7 +854,7 @@ Knowledge entries get a richer structure:
 {
   "id": "kn_abc123",
   "key": "decisions:auth-cache",
-  "apiary_id": "...",
+  "superpos_id": "...",
   "hive_id": "...",
   
   "value": {

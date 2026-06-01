@@ -39,7 +39,7 @@ isolation and fail-closed behavior.
 
 ### KnowledgeEntryChanged event
 - Add `apiaryId` property (nullable)
-- Modify `fromEntry()` to capture `apiary_id`
+- Modify `fromEntry()` to capture `superpos_id`
 - Modify `broadcastOn()` to return `apiary.{apiaryId}` channel when scope is `apiary`
 
 ### KnowledgeController

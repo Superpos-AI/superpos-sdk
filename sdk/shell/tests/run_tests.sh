@@ -10,12 +10,12 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "Apiary Shell SDK — Test Suite"
+echo "Superpos Shell SDK — Test Suite"
 echo "=============================="
 
 suites=("$@")
 if [[ ${#suites[@]} -eq 0 ]]; then
-    suites=("client" "agents" "tasks" "knowledge" "schedules" "persona" "service_worker" "runner")
+    suites=("client" "agents" "tasks" "knowledge" "schedules" "persona" "service_worker" "runner" "legacy_env" "sub_agent")
 fi
 
 total_pass=0

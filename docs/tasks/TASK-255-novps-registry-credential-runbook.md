@@ -1,5 +1,13 @@
 # TASK-255: Novps registry credential setup runbook
 
+> **NOTE (updated):** Registry credentials are now provided inline via
+> the `NOVPS_IMAGE_CREDENTIALS` env var and sent per-payload as
+> `source.credentials` in the apply request to NoVPS. This replaces
+> the earlier project-level credential model. The current runbook is
+> [novps-pat-setup.md](../runbooks/novps-pat-setup.md), which covers
+> both NoVPS API token setup and inline image credential configuration
+> (including GHCR PAT). See that runbook's §4 for details.
+
 **Status:** pending (runbook — no code)
 **Branch:** `task/255-novps-registry-credential-runbook`
 **PR:** —
@@ -11,7 +19,7 @@
 ## Objective
 
 Document the manual one-time steps to register a private GHCR credential
-inside the novps.io project that Apiary Cloud uses, so
+inside the novps.io project that Superpos Cloud uses, so
 `ResourceImageType.credentials` in deploy payloads resolves correctly.
 Output: a short runbook in `docs/runbooks/novps-registry-credential.md`.
 
@@ -26,7 +34,7 @@ Output: a short runbook in `docs/runbooks/novps-registry-credential.md`.
   novps dashboard or their `/registry/keys` project endpoint — and how
   to capture the returned credential UUID.
 - [ ] FR-3: Document the environment variable to set:
-  `NOVPS_GHCR_CREDENTIAL_ID=<uuid>` on the Cloud Apiary deployment.
+  `NOVPS_GHCR_CREDENTIAL_ID=<uuid>` on the Cloud Superpos deployment.
 - [ ] FR-4: Document a sanity-check procedure: deploy the `claude-sdk`
   preset into a test hive and confirm pod reaches `running`.
 - [ ] FR-5: Document rotation procedure: register new credential →

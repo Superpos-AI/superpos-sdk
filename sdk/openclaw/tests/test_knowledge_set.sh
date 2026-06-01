@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_knowledge_set.sh — Tests for idempotent knowledge set semantics.
 #
-# Validates that apiary_oc_knowledge_set creates on first call
+# Validates that superpos_oc_knowledge_set creates on first call
 # and updates (instead of 409) when the key already exists.
 
 set -euo pipefail
@@ -12,14 +12,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../../shell/tests/test_harness.sh"
 
 # Load Shell SDK with mocked curl from harness
-export APIARY_BASE_URL="http://localhost:9999"
-export APIARY_TOKEN="test-token"
-export APIARY_HIVE_ID="hive-test-01"
-source "${SCRIPT_DIR}/../../shell/src/apiary-sdk.sh"
-_APIARY_SDK_LOADED=1
+export SUPERPOS_BASE_URL="http://localhost:9999"
+export SUPERPOS_TOKEN="test-token"
+export SUPERPOS_HIVE_ID="hive-test-01"
+source "${SCRIPT_DIR}/../../shell/src/superpos-sdk.sh"
+_SUPERPOS_SDK_LOADED=1
 
 # Source the module under test
-source "${SCRIPT_DIR}/../bin/apiary-knowledge.sh"
+source "${SCRIPT_DIR}/../bin/superpos-knowledge.sh"
 
 # ── Test: create succeeds on new key ──────────────────────────────
 
@@ -30,7 +30,7 @@ mock_response POST "/api/v1/hives/hive-test-01/knowledge" 201 \
     '{"data":{"id":"ke-001","key":"my-key","value":"hello"}}'
 
 set +e
-output=$(apiary_oc_knowledge_set "my-key" '"hello"' 2>&1)
+output=$(superpos_oc_knowledge_set "my-key" '"hello"' 2>&1)
 rc=$?
 set -e
 
@@ -60,7 +60,7 @@ mock_response PUT "/api/v1/hives/hive-test-01/knowledge/ke-existing-99" 200 \
     '{"data":{"id":"ke-existing-99","key":"my-key","value":"new-val"}}'
 
 set +e
-output=$(apiary_oc_knowledge_set "my-key" '"new-val"' 2>&1)
+output=$(superpos_oc_knowledge_set "my-key" '"new-val"' 2>&1)
 rc=$?
 set -e
 
@@ -77,7 +77,7 @@ mock_response POST "/api/v1/hives/hive-test-01/knowledge" 500 \
     '{"data":null,"errors":[{"message":"Internal error"}]}'
 
 set +e
-output=$(apiary_oc_knowledge_set "bad-key" '"val"' 2>&1)
+output=$(superpos_oc_knowledge_set "bad-key" '"val"' 2>&1)
 rc=$?
 set -e
 
@@ -94,7 +94,7 @@ mock_response GET "/api/v1/hives/hive-test-01/knowledge" 200 \
     '{"data":[]}'
 
 set +e
-output=$(apiary_oc_knowledge_set "ghost-key" '"val"' 2>&1)
+output=$(superpos_oc_knowledge_set "ghost-key" '"val"' 2>&1)
 rc=$?
 set -e
 
@@ -110,7 +110,7 @@ mock_response POST "/api/v1/hives/hive-test-01/knowledge" 201 \
     '{"data":{"id":"ke-scoped","key":"scoped-key","value":"v","scope":"apiary"}}'
 
 set +e
-output=$(apiary_oc_knowledge_set "scoped-key" '"v"' "apiary" "public" 2>&1)
+output=$(superpos_oc_knowledge_set "scoped-key" '"v"' "apiary" "public" 2>&1)
 rc=$?
 set -e
 
@@ -140,7 +140,7 @@ mock_response PUT "/api/v1/hives/hive-test-01/knowledge/ke-apiary-01" 200 \
     '{"data":{"id":"ke-apiary-01","key":"shared-key","value":"new","scope":"apiary"}}'
 
 set +e
-output=$(apiary_oc_knowledge_set "shared-key" '"new"' "apiary" 2>&1)
+output=$(superpos_oc_knowledge_set "shared-key" '"new"' "apiary" 2>&1)
 rc=$?
 set -e
 
@@ -171,7 +171,7 @@ mock_response PUT "/api/v1/hives/hive-test-01/knowledge/ke-hive-01" 200 \
     '{"data":{"id":"ke-hive-01","key":"my-key","value":"new","scope":"hive"}}'
 
 set +e
-output=$(apiary_oc_knowledge_set "my-key" '"new"' 2>&1)
+output=$(superpos_oc_knowledge_set "my-key" '"new"' 2>&1)
 rc=$?
 set -e
 
@@ -204,7 +204,7 @@ mock_response PUT "/api/v1/hives/hive-test-01/knowledge/ke-right" 200 \
     '{"data":{"id":"ke-right","key":"config","value":"new","scope":"hive"}}'
 
 set +e
-output=$(apiary_oc_knowledge_set "config" '"new"' 2>&1)
+output=$(superpos_oc_knowledge_set "config" '"new"' 2>&1)
 rc=$?
 set -e
 
@@ -227,7 +227,7 @@ mock_response GET "/api/v1/hives/hive-test-01/knowledge" 200 \
     '{"data":[{"id":"ke-wrong-scope","key":"shared-key","value":"old","scope":"hive"}]}'
 
 set +e
-output=$(apiary_oc_knowledge_set "shared-key" '"new"' "apiary" 2>&1)
+output=$(superpos_oc_knowledge_set "shared-key" '"new"' "apiary" 2>&1)
 rc=$?
 set -e
 

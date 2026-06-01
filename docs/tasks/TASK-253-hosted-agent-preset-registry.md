@@ -11,7 +11,7 @@
 ## Objective
 
 Introduce the preset catalogue that the CRUD API, wizard, and deploy job
-consume. MVP reads from `config/apiary.php` — the shape is designed to
+consume. MVP reads from `config/platform.php` — the shape is designed to
 migrate cleanly to a DB-backed admin CRUD (TASK-254) later.
 
 ## Requirements
@@ -28,18 +28,18 @@ migrate cleanly to a DB-backed admin CRUD (TASK-254) later.
   `replicas` (size+count), `restart_policy`, `models[]`, `model_env_key`,
   `user_env` (schema map).
 - [ ] FR-3: Registry is instantiated from
-  `config('apiary.hosted_agents.presets')` and validates each entry at
+  `config('platform.hosted_agents.presets')` and validates each entry at
   boot — misconfigured preset raises `HostedAgentPresetConfigException`
   before HTTP requests start, not when a user tries to use it.
-- [ ] FR-4: Seed the two MVP presets in `config/apiary.php`:
-    - `claude-sdk` → `ghcr.io/apiary-ai/apiary-slim-agent-claude-sdk`
-      with models `[claude-sonnet-4-5, claude-opus-4-6, claude-haiku-4-5]`
+- [ ] FR-4: Seed the two MVP presets in `config/platform.php`:
+    - `claude-sdk` → `ghcr.io/superpos-ai/superpos-claude-agent`
+      with models `[claude-opus-4-7, claude-sonnet-4-6, claude-haiku-4-5-20251001]`
       and required env `ANTHROPIC_API_KEY`.
-    - `codex-sdk` → `ghcr.io/apiary-ai/apiary-slim-agent-codex-sdk`
-      with models `[gpt-4o, gpt-4o-mini, gpt-5]` and required env
+    - `codex-sdk` → `ghcr.io/superpos-ai/superpos-codex-agent`
+      with models `[gpt-5.4, gpt-5.4-mini, gpt-5.3-codex, gpt-5.2]` and required env
       `OPENAI_API_KEY`.
 - [ ] FR-5: Tag override via env per preset:
-  `APIARY_HOSTED_CLAUDE_TAG`, `APIARY_HOSTED_CODEX_TAG` — defaults to
+  `SUPERPOS_HOSTED_CLAUDE_TAG`, `SUPERPOS_HOSTED_CODEX_TAG` — defaults to
   `latest`.
 - [ ] FR-6: `sanitizedCatalogue(): array` method produces the shape the
   dashboard wizard consumes — omits `image.name`, `command`,
@@ -64,7 +64,7 @@ migrate cleanly to a DB-backed admin CRUD (TASK-254) later.
 | Create | `app/Cloud/Models/HostedAgentPreset.php` | Value object |
 | Create | `app/Cloud/Exceptions/HostedAgentPresetNotFoundException.php` | Typed error |
 | Create | `app/Cloud/Exceptions/HostedAgentPresetConfigException.php` | Typed error |
-| Modify | `config/apiary.php` | Seed the two presets + `enabled` + `app_name_prefix` |
+| Modify | `config/platform.php` | Seed the two presets + `enabled` + `app_name_prefix` |
 
 ### Key Design Decisions
 
@@ -84,7 +84,7 @@ migrate cleanly to a DB-backed admin CRUD (TASK-254) later.
 - [ ] Malformed preset (missing required field) throws
   `HostedAgentPresetConfigException` on registry boot.
 - [ ] `sanitizedCatalogue` strips image.name + command + credential id.
-- [ ] Env override (`APIARY_HOSTED_CLAUDE_TAG`) is picked up.
+- [ ] Env override (`SUPERPOS_HOSTED_CLAUDE_TAG`) is picked up.
 
 ### Feature Tests
 

@@ -6,8 +6,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 source "${SCRIPT_DIR}/../../shell/tests/test_harness.sh"
-source "${SCRIPT_DIR}/../../shell/src/apiary-sdk.sh"
-_APIARY_SDK_LOADED=1
+source "${SCRIPT_DIR}/../../shell/src/superpos-sdk.sh"
+_SUPERPOS_SDK_LOADED=1
 
 _tmp_dir=$(mktemp -d)
 trap 'rm -rf "$_tmp_dir"' EXIT
@@ -29,10 +29,10 @@ _mock_read() { cat "${_MOCK_DIR}/${1}" 2>/dev/null || echo ""; }
 _mock_read_n() { local v; v=$(cat "${_MOCK_DIR}/${1}" 2>/dev/null) || v=0; echo "$v"; }
 
 _setup() {
-    export APIARY_CONFIG_DIR="$_tmp_dir"
-    export APIARY_HIVE_ID="hive-test-reminder"
-    export APIARY_AGENT_ID="test-agent-reminder"
-    export APIARY_CLAIM_TTL=900
+    export SUPERPOS_CONFIG_DIR="$_tmp_dir"
+    export SUPERPOS_HIVE_ID="hive-test-reminder"
+    export SUPERPOS_AGENT_ID="test-agent-reminder"
+    export SUPERPOS_CLAIM_TTL=900
     export PENDING_DIR="${_tmp_dir}/pending"
 
     mkdir -p "$PENDING_DIR"
@@ -62,15 +62,15 @@ _setup() {
     _TRACE_RC=1
     _TRACE_OUTPUT=""
 
-    source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
-    source "${SCRIPT_DIR}/../bin/apiary-task-lifecycle.sh"
+    source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
+    source "${SCRIPT_DIR}/../bin/superpos-task-lifecycle.sh"
 
-    apiary_claim_task() {
+    superpos_claim_task() {
         local n; n=$(cat "${_MOCK_DIR}/claim_calls"); echo $(( n + 1 )) > "${_MOCK_DIR}/claim_calls"
         return $_CLAIM_RC
     }
 
-    apiary_complete_task() {
+    superpos_complete_task() {
         local task_id="$2"
         shift 2
         local n; n=$(cat "${_MOCK_DIR}/complete_calls"); echo $(( n + 1 )) > "${_MOCK_DIR}/complete_calls"
@@ -85,7 +85,7 @@ _setup() {
         return $_COMPLETE_RC
     }
 
-    apiary_fail_task() {
+    superpos_fail_task() {
         local task_id="$2"
         shift 2
         local n; n=$(cat "${_MOCK_DIR}/fail_calls"); echo $(( n + 1 )) > "${_MOCK_DIR}/fail_calls"
@@ -109,7 +109,7 @@ _setup() {
         return $_SEND_RC
     }
 
-    apiary_get_task_trace() {
+    superpos_get_task_trace() {
         if [[ -n "$_TRACE_OUTPUT" ]]; then
             echo "$_TRACE_OUTPUT"
         fi
@@ -149,7 +149,7 @@ _make_reminder_task_nested() {
 # Arguments: task_id [agent_id]
 _write_test_claimed_marker() {
     local task_id="${1:-}"
-    local agent_id="${2:-${APIARY_AGENT_ID:-test-agent-reminder}}"
+    local agent_id="${2:-${SUPERPOS_AGENT_ID:-test-agent-reminder}}"
     local ts
     ts=$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || date '+%s')
     jq -n --arg tid "$task_id" --arg agent "$agent_id" --arg ts "$ts" \
@@ -245,7 +245,7 @@ assert_eq "$([ -f "${PENDING_DIR}/other-1.json" ] && echo exists || echo removed
 describe "Crash recovery — 409 + verified .claimed re-processes reminder (no drop)"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 # Pre-create JSON .claimed marker with matching ownership evidence
 _write_test_claimed_marker "rem-crash"
@@ -280,7 +280,7 @@ assert_eq "$([ -f "${PENDING_DIR}/rem-crash.json" ] && echo exists || echo remov
 describe "Crash recovery — 409 + verified .claimed with delivery failure still fails task properly"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 _SEND_RC=1
 
 _write_test_claimed_marker "rem-crash-delfail"
@@ -309,7 +309,7 @@ assert_eq "$([ -f "${PENDING_DIR}/rem-crash-delfail.claimed" ] && echo exists ||
 describe "Crash recovery — 409 + verified .claimed with terminal API failure saves artifact"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 _write_test_claimed_marker "rem-crash-apifail"
 
@@ -339,7 +339,7 @@ assert_eq "$([ -f "${PENDING_DIR}/rem-crash-apifail.claimed" ] && echo exists ||
 describe "Crash recovery — 409 without .claimed quarantines reminder"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 # No .claimed marker — uncertain ownership
 task_json=$(_make_reminder_task "rem-foreign" "telegram" "111" "Foreign claim")
@@ -367,7 +367,7 @@ assert_eq "$([ -f "${PENDING_DIR}/quarantine/rem-foreign.json" ] && echo quarant
 describe "Ownership gate — 409 + .claimed with wrong agent_id quarantines"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 # Write marker with a different agent_id
 _write_test_claimed_marker "rem-wrong-agent" "other-agent-999"
@@ -397,7 +397,7 @@ assert_eq "$([ -f "${PENDING_DIR}/quarantine/rem-wrong-agent.claimed" ] && echo 
 describe "Ownership gate — 409 + .claimed with stale marker quarantines"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 # Write a valid marker (correct agent, correct task_id) then backdate it
 _write_test_claimed_marker "rem-stale"
@@ -428,7 +428,7 @@ assert_eq "$([ -f "${PENDING_DIR}/quarantine/rem-stale.claimed" ] && echo quaran
 describe "Ownership gate — 409 + legacy plain-text .claimed quarantines"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 # Write old-format plain-text marker (pre-P2)
 echo "rem-legacy" > "${PENDING_DIR}/rem-legacy.claimed"
@@ -458,7 +458,7 @@ assert_eq "$([ -f "${PENDING_DIR}/quarantine/rem-legacy.claimed" ] && echo quara
 describe "Ownership gate — 409 + .claimed with mismatched task_id quarantines"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 # Write marker for a different task_id
 _write_test_claimed_marker "rem-other-task"
@@ -514,7 +514,7 @@ _setup
 
 # Phase 1: claim succeeds, delivery succeeds, complete API fails → artifact saved
 # Override complete_task to fail on first call, succeed on subsequent
-apiary_complete_task() {
+superpos_complete_task() {
     local task_id="$2"
     shift 2
     local n; n=$(cat "${_MOCK_DIR}/complete_calls"); echo $(( n + 1 )) > "${_MOCK_DIR}/complete_calls"
@@ -573,7 +573,7 @@ task_json=$(_make_reminder_task "rem-marker" "telegram" "333" "Marker test")
 echo "$task_json" > "${PENDING_DIR}/rem-marker.json"
 
 # Override complete_task to capture marker before cleanup
-apiary_complete_task() {
+superpos_complete_task() {
     local task_id="$2"
     shift 2
     local n; n=$(cat "${_MOCK_DIR}/complete_calls"); echo $(( n + 1 )) > "${_MOCK_DIR}/complete_calls"
@@ -602,7 +602,7 @@ _marker_content=$(cat "${_MOCK_DIR}/captured_marker" 2>/dev/null) || _marker_con
 marker_tid=$(echo "$_marker_content" | jq -r '.task_id // ""' 2>/dev/null) || marker_tid=""
 marker_agent=$(echo "$_marker_content" | jq -r '.agent_id // ""' 2>/dev/null) || marker_agent=""
 assert_eq "$marker_tid" "rem-marker" "marker: JSON marker contains correct task_id"
-assert_eq "$marker_agent" "$APIARY_AGENT_ID" "marker: JSON marker contains correct agent_id"
+assert_eq "$marker_agent" "$SUPERPOS_AGENT_ID" "marker: JSON marker contains correct agent_id"
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -613,7 +613,7 @@ assert_eq "$marker_agent" "$APIARY_AGENT_ID" "marker: JSON marker contains corre
 describe "Duplicate prevention — local trace blocks re-delivery on 409+.claimed"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 # Simulate: prior run completed fully but crashed before cleanup.
 # .claimed marker exists (verified), local trace exists.
@@ -647,7 +647,7 @@ assert_eq "$([ -f "${PENDING_DIR}/rem-dup-trace.claimed" ] && echo exists || ech
 describe "Duplicate prevention — .delivered marker reconciles without re-send"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 # Simulate: prior run delivered but crashed before cleanup.
 # .claimed and .delivered markers exist, no trace, no .result.json.
@@ -685,7 +685,7 @@ assert_eq "$([ -f "${_tmp_dir}/traces/rem-dup-delivered.json" ] && echo exists |
 describe "Duplicate prevention — .delivered reconciliation API failure saves artifact"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 _write_test_claimed_marker "rem-dup-apifail"
 echo "rem-dup-apifail" > "${PENDING_DIR}/rem-dup-apifail.delivered"
@@ -715,7 +715,7 @@ assert_eq "$([ -f "${PENDING_DIR}/rem-dup-apifail.result.json" ] && echo exists 
 describe "Duplicate prevention — remote trace terminal blocks re-delivery"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 # Simulate: prior run delivered+completed remotely, but no local evidence
 # (.delivered not written or lost). Remote trace shows completed.
@@ -724,7 +724,7 @@ _write_test_claimed_marker "rem-dup-remote"
 # Mock remote trace to return completed status
 _TRACE_RC=0
 _TRACE_OUTPUT='{"data":{"task_id":"rem-dup-remote","status":"completed"}}'
-apiary_get_task_trace() {
+superpos_get_task_trace() {
     if [[ -n "$_TRACE_OUTPUT" ]]; then
         echo "$_TRACE_OUTPUT"
     fi
@@ -757,13 +757,13 @@ assert_eq "$([ -f "${_tmp_dir}/traces/rem-dup-remote.json" ] && echo exists || e
 describe "Duplicate prevention — remote trace cancelled blocks re-delivery"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 _write_test_claimed_marker "rem-dup-cancelled"
 
 _TRACE_RC=0
 _TRACE_OUTPUT='{"data":{"task_id":"rem-dup-cancelled","status":"cancelled"}}'
-apiary_get_task_trace() {
+superpos_get_task_trace() {
     if [[ -n "$_TRACE_OUTPUT" ]]; then
         echo "$_TRACE_OUTPUT"
     fi
@@ -796,13 +796,13 @@ assert_eq "$([ -f "${_tmp_dir}/traces/rem-dup-cancelled.json" ] && echo exists |
 describe "Duplicate prevention — remote trace dead_letter blocks re-delivery"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 _write_test_claimed_marker "rem-dup-deadletter"
 
 _TRACE_RC=0
 _TRACE_OUTPUT='{"data":{"task_id":"rem-dup-deadletter","status":"dead_letter"}}'
-apiary_get_task_trace() {
+superpos_get_task_trace() {
     if [[ -n "$_TRACE_OUTPUT" ]]; then
         echo "$_TRACE_OUTPUT"
     fi
@@ -835,13 +835,13 @@ assert_eq "$([ -f "${_tmp_dir}/traces/rem-dup-deadletter.json" ] && echo exists 
 describe "Duplicate prevention — remote trace expired blocks re-delivery"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 _write_test_claimed_marker "rem-dup-expired"
 
 _TRACE_RC=0
 _TRACE_OUTPUT='{"data":{"task_id":"rem-dup-expired","status":"expired"}}'
-apiary_get_task_trace() {
+superpos_get_task_trace() {
     if [[ -n "$_TRACE_OUTPUT" ]]; then
         echo "$_TRACE_OUTPUT"
     fi
@@ -874,7 +874,7 @@ assert_eq "$([ -f "${_tmp_dir}/traces/rem-dup-expired.json" ] && echo exists || 
 describe "Duplicate prevention — pre-delivery crash still re-delivers correctly"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 # Simulate: genuine pre-delivery crash. Only .claimed exists,
 # no .delivered, no trace, remote trace fails (non-terminal).
@@ -883,7 +883,7 @@ _write_test_claimed_marker "rem-precrash"
 # Remote trace returns failure (no trace available)
 _TRACE_RC=1
 _TRACE_OUTPUT=""
-apiary_get_task_trace() {
+superpos_get_task_trace() {
     if [[ -n "$_TRACE_OUTPUT" ]]; then
         echo "$_TRACE_OUTPUT"
     fi
@@ -923,7 +923,7 @@ task_json=$(_make_reminder_task "rem-dmarker" "telegram" "333" "Delivered marker
 echo "$task_json" > "${PENDING_DIR}/rem-dmarker.json"
 
 # Override complete_task to check .delivered exists before cleanup
-apiary_complete_task() {
+superpos_complete_task() {
     local task_id="$2"
     shift 2
     local n; n=$(cat "${_MOCK_DIR}/complete_calls"); echo $(( n + 1 )) > "${_MOCK_DIR}/complete_calls"
@@ -961,7 +961,7 @@ describe "409 parser — extracts status from conflict response body"
 
 _setup
 
-# Standard Apiary 409 format
+# Standard Superpos 409 format
 body='{"errors":[{"code":"conflict","message":"Task is not in progress. Current status: completed"}]}'
 parsed=$(_lifecycle_parse_409_status "$body")
 assert_eq "$parsed" "completed" "parse_409: extracts 'completed'"
@@ -992,7 +992,7 @@ assert_eq "$parsed" "" "parse_409: empty string for non-conflict code"
 describe "409 handling — delivered + complete 409 (already completed) reconciles cleanly"
 
 _setup
-_COMPLETE_RC=$APIARY_ERR_CONFLICT
+_COMPLETE_RC=$SUPERPOS_ERR_CONFLICT
 _COMPLETE_BODY='{"errors":[{"code":"conflict","message":"Task is not in progress. Current status: completed"}]}'
 
 task_json=$(_make_reminder_task "rem-409-completed" "telegram" "42" "Already completed")
@@ -1022,7 +1022,7 @@ assert_eq "$([ -f "${_tmp_dir}/traces/rem-409-completed.json" ] && echo exists |
 describe "409 handling — delivered + complete 409 (remote failed = timeout race) reconciles"
 
 _setup
-_COMPLETE_RC=$APIARY_ERR_CONFLICT
+_COMPLETE_RC=$SUPERPOS_ERR_CONFLICT
 _COMPLETE_BODY='{"errors":[{"code":"conflict","message":"Task is not in progress. Current status: failed"}]}'
 
 task_json=$(_make_reminder_task "rem-409-failed" "telegram" "42" "Timeout race")
@@ -1052,7 +1052,7 @@ assert_eq "$([ -f "${_tmp_dir}/traces/rem-409-failed.json" ] && echo exists || e
 describe "409 handling — artifact retry with .delivered + 409 failed reconciles"
 
 _setup
-_COMPLETE_RC=$APIARY_ERR_CONFLICT
+_COMPLETE_RC=$SUPERPOS_ERR_CONFLICT
 _COMPLETE_BODY='{"errors":[{"code":"conflict","message":"Task is not in progress. Current status: failed"}]}'
 
 # Simulate: result artifact saved from prior run, .delivered marker exists
@@ -1086,8 +1086,8 @@ assert_eq "$([ -f "${PENDING_DIR}/rem-art-409.json" ] && echo exists || echo rem
 describe "409 handling — .delivered reconciliation + 409 completed = clean"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
-_COMPLETE_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
+_COMPLETE_RC=$SUPERPOS_ERR_CONFLICT
 _COMPLETE_BODY='{"errors":[{"code":"conflict","message":"Task is not in progress. Current status: completed"}]}'
 
 _write_test_claimed_marker "rem-deliv-409"
@@ -1117,8 +1117,8 @@ assert_eq "$([ -f "${PENDING_DIR}/rem-deliv-409.delivered" ] && echo exists || e
 describe "409 handling — .delivered reconciliation + 409 failed (timeout race) reconciles"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
-_COMPLETE_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
+_COMPLETE_RC=$SUPERPOS_ERR_CONFLICT
 _COMPLETE_BODY='{"errors":[{"code":"conflict","message":"Task is not in progress. Current status: failed"}]}'
 
 _write_test_claimed_marker "rem-deliv-race"
@@ -1149,7 +1149,7 @@ describe "409 handling — fail-path 409 reconciles cleanly"
 
 _setup
 _SEND_RC=1  # delivery fails
-_FAIL_RC=$APIARY_ERR_CONFLICT
+_FAIL_RC=$SUPERPOS_ERR_CONFLICT
 _FAIL_BODY='{"errors":[{"code":"conflict","message":"Task is not in progress. Current status: failed"}]}'
 
 task_json=$(_make_reminder_task "rem-fail-409" "telegram" "42" "Fail path 409")

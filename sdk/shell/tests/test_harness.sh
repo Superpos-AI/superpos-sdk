@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_harness.sh — Minimal test framework for apiary-sdk.sh
+# test_harness.sh — Minimal test framework for superpos-sdk.sh
 #
 # Usage:
 #   source tests/test_harness.sh

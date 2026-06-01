@@ -1,6 +1,6 @@
 # Agent SDK Use Cases (Default Scenarios)
 
-This guide standardizes common agent intents into correct Apiary SDK/API calls.
+This guide standardizes common agent intents into correct Superpos SDK/API calls.
 
 Goal: reduce ambiguity, prevent routing mistakes, and keep routing metadata canonical (`target_agent_id`, `task_target_agent_id`, `run_at`) instead of hiding control fields in payload.
 

@@ -2,7 +2,7 @@
 
 **Status:** done
 **Branch:** `task/015-agent-heartbeat-api`
-**PR:** [#14](https://github.com/Apiary-AI/Apiary-SaaS/pull/14)
+**PR:** [#14](https://github.com/Superpos-AI/superpos-app/pull/14)
 **Depends on:** TASK-014
 **Blocks:** TASK-023
 

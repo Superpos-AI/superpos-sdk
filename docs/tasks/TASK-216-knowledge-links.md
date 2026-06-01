@@ -9,7 +9,7 @@
 
 ## Objective
 
-Create the knowledge_links table that connects entries to each other and to other Apiary entities (tasks, channels, agents). This is the core graph infrastructure — entries become nodes, links become edges.
+Create the knowledge_links table that connects entries to each other and to other Superpos entities (tasks, channels, agents). This is the core graph infrastructure — entries become nodes, links become edges.
 
 ## Requirements
 

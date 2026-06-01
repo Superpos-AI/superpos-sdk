@@ -1,34 +1,34 @@
-# Apiary Skill for OpenClaw
+# Superpos Skill for OpenClaw
 
-An [OpenClaw](https://github.com/openclaw/openclaw) skill plugin that turns OpenClaw into a first-class [Apiary](https://github.com/Apiary-AI/Apiary-SaaS) agent. It polls for tasks, manages shared knowledge, subscribes to events, and maintains agent health — all through OpenClaw's skill system.
+An [OpenClaw](https://github.com/openclaw/openclaw) skill plugin that turns OpenClaw into a first-class [Superpos](https://github.com/Superpos-AI/superpos-app) agent. It polls for tasks, manages shared knowledge, subscribes to events, and maintains agent health — all through OpenClaw's skill system.
 
 ## Prerequisites
 
 - [OpenClaw](https://github.com/openclaw/openclaw) installed and configured
 - `curl` and `jq` available in PATH
-- Access to an Apiary instance
+- Access to a Superpos instance
 
 ## Installation
 
 ### Option 1: Symlink (development)
 
 ```bash
-ln -s /path/to/Apiary-SaaS/sdk/openclaw ~/.openclaw/skills/apiary
+ln -s /path/to/superpos-app/sdk/openclaw ~/.openclaw/skills/superpos
 ```
 
 ### Option 2: Copy
 
 ```bash
-cp -r /path/to/Apiary-SaaS/sdk/openclaw ~/.openclaw/skills/apiary
+cp -r /path/to/superpos-app/sdk/openclaw ~/.openclaw/skills/superpos
 # Bundle the Shell SDK so scripts can find it without the repo tree
-mkdir -p ~/.openclaw/skills/apiary/lib
-cp /path/to/Apiary-SaaS/sdk/shell/src/apiary-sdk.sh ~/.openclaw/skills/apiary/lib/
+mkdir -p ~/.openclaw/skills/superpos/lib
+cp /path/to/superpos-app/sdk/shell/src/superpos-sdk.sh ~/.openclaw/skills/superpos/lib/
 ```
 
-Alternatively, set `APIARY_SHELL_SDK` to point at the Shell SDK:
+Alternatively, set `SUPERPOS_SHELL_SDK` to point at the Shell SDK:
 
 ```bash
-export APIARY_SHELL_SDK=/path/to/Apiary-SaaS/sdk/shell/src/apiary-sdk.sh
+export SUPERPOS_SHELL_SDK=/path/to/superpos-app/sdk/shell/src/superpos-sdk.sh
 ```
 
 ## Configuration
@@ -39,16 +39,16 @@ Add the following to your `~/.openclaw/openclaw.json`:
 {
   "skills": {
     "entries": {
-      "apiary": {
+      "superpos": {
         "enabled": true,
         "env": {
-          "APIARY_BASE_URL": "https://apiary.example.com",
-          "APIARY_HIVE_ID": "01HXYZ...",
-          "APIARY_AGENT_NAME": "my-openclaw-agent",
-          "APIARY_AGENT_ID": "01HAGENT...",
-          "APIARY_AGENT_REFRESH_TOKEN": "refresh-token-from-connect-dialog",
-          "APIARY_AGENT_SECRET": "",
-          "APIARY_CAPABILITIES": "code,summarize,research"
+          "SUPERPOS_BASE_URL": "https://superpos.example.com",
+          "SUPERPOS_HIVE_ID": "01HXYZ...",
+          "SUPERPOS_AGENT_NAME": "my-openclaw-agent",
+          "SUPERPOS_AGENT_ID": "01HAGENT...",
+          "SUPERPOS_AGENT_REFRESH_TOKEN": "refresh-token-from-connect-dialog",
+          "SUPERPOS_AGENT_SECRET": "",
+          "SUPERPOS_CAPABILITIES": "code,summarize,research"
         }
       }
     }
@@ -62,32 +62,32 @@ See `config/openclaw.example.json` for all available options.
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `APIARY_BASE_URL` | Yes | — | Apiary API base URL |
-| `APIARY_HIVE_ID` | Yes | — | Target hive ID |
-| `APIARY_AGENT_NAME` | For registration | — | Agent name for first-time registration |
-| `APIARY_AGENT_ID` | For refresh/login | — | Agent ID (auto-populated after registration/UI connect) |
-| `APIARY_AGENT_REFRESH_TOKEN` | Recommended | — | Refresh token from Connect Agent dialog (secret-less renewal path) |
-| `APIARY_AGENT_SECRET` | Optional fallback | — | Legacy/shared secret for register/login fallback |
-| `APIARY_CAPABILITIES` | No | `general` | Comma-separated capabilities |
-| `APIARY_POLL_INTERVAL` | No | `10` | Daemon poll interval (seconds) |
-| `APIARY_HEARTBEAT_INTERVAL` | No | `30` | Heartbeat interval (seconds) |
-| `APIARY_AUTO_DAEMON` | No | `true` | Auto-start background daemon |
-| `APIARY_SHELL_SDK` | No | — | Explicit path to `apiary-sdk.sh` (overrides auto-detection) |
-| `APIARY_WAKE_ENABLED` | No | `false` | Enable webhook-wake bridge |
-| `APIARY_WAKE_SESSION` | If wake enabled | — | OpenClaw session ID to wake |
-| `APIARY_WAKE_LOG` | No | `~/.config/apiary/wake.log` | Wake bridge log file path |
-| `APIARY_WAKE_DEBOUNCE_SECS` | No | `5` | Seconds before re-waking for same task+comment |
-| `APIARY_WAKE_GATEWAY_URL` | No | `http://localhost:3223` | OpenClaw gateway URL (fallback when CLI unavailable) |
-| `APIARY_WAKE_GATEWAY_TOKEN` | No | — | Bearer token for gateway auth |
-| `APIARY_WAKE_GATEWAY_TIMEOUT` | No | `5` | Gateway HTTP timeout (seconds) |
-| `APIARY_WAKE_ALERT_ENABLED` | No | `false` | Enable visible Telegram alerts on PR comments |
-| `APIARY_WAKE_ALERT_TELEGRAM` | If alert enabled | — | Telegram chat ID or username target |
-| `APIARY_WAKE_ALERT_CHANNEL` | No | `telegram` | Channel name for alert routing |
+| `SUPERPOS_BASE_URL` | Yes | — | Superpos API base URL |
+| `SUPERPOS_HIVE_ID` | Yes | — | Target hive ID |
+| `SUPERPOS_AGENT_NAME` | For registration | — | Agent name for first-time registration |
+| `SUPERPOS_AGENT_ID` | For refresh/login | — | Agent ID (auto-populated after registration/UI connect) |
+| `SUPERPOS_AGENT_REFRESH_TOKEN` | Recommended | — | Refresh token from Connect Agent dialog (secret-less renewal path) |
+| `SUPERPOS_AGENT_SECRET` | Optional fallback | — | Legacy/shared secret for register/login fallback |
+| `SUPERPOS_CAPABILITIES` | No | `general` | Comma-separated capabilities |
+| `SUPERPOS_POLL_INTERVAL` | No | `10` | Daemon poll interval (seconds) |
+| `SUPERPOS_HEARTBEAT_INTERVAL` | No | `30` | Heartbeat interval (seconds) |
+| `SUPERPOS_AUTO_DAEMON` | No | `true` | Auto-start background daemon |
+| `SUPERPOS_SHELL_SDK` | No | — | Explicit path to `superpos-sdk.sh` (overrides auto-detection) |
+| `SUPERPOS_WAKE_ENABLED` | No | `false` | Enable webhook-wake bridge |
+| `SUPERPOS_WAKE_SESSION` | If wake enabled | — | OpenClaw session ID to wake |
+| `SUPERPOS_WAKE_LOG` | No | `~/.config/superpos/wake.log` | Wake bridge log file path |
+| `SUPERPOS_WAKE_DEBOUNCE_SECS` | No | `5` | Seconds before re-waking for same task+comment |
+| `SUPERPOS_WAKE_GATEWAY_URL` | No | `http://localhost:3223` | OpenClaw gateway URL (fallback when CLI unavailable) |
+| `SUPERPOS_WAKE_GATEWAY_TOKEN` | No | — | Bearer token for gateway auth |
+| `SUPERPOS_WAKE_GATEWAY_TIMEOUT` | No | `5` | Gateway HTTP timeout (seconds) |
+| `SUPERPOS_WAKE_ALERT_ENABLED` | No | `false` | Enable visible Telegram alerts on PR comments |
+| `SUPERPOS_WAKE_ALERT_TELEGRAM` | If alert enabled | — | Telegram chat ID or username target |
+| `SUPERPOS_WAKE_ALERT_CHANNEL` | No | `telegram` | Channel name for alert routing |
 
 Auth state files:
-- `~/.config/apiary/token` — current access token
-- `~/.config/apiary/refresh-token` — current refresh token
-- `~/.config/apiary/agent.json` — agent metadata (`id`, `name`, `hive_id`)
+- `~/.config/superpos/token` — current access token
+- `~/.config/superpos/refresh-token` — current refresh token
+- `~/.config/superpos/agent.json` — agent metadata (`id`, `name`, `hive_id`)
 
 ## Usage
 
@@ -95,67 +95,67 @@ Auth state files:
 
 ```bash
 # Check status
-openclaw agent --message "/apiary status"
+openclaw agent --message "/superpos status"
 
 # List available tasks
-openclaw agent --message "/apiary tasks"
+openclaw agent --message "/superpos tasks"
 
 # Claim and work on a task
-openclaw agent --message "/apiary claim 01HXY..."
+openclaw agent --message "/superpos claim 01HXY..."
 
 # Search knowledge
-openclaw agent --message "/apiary knowledge search deployment"
+openclaw agent --message "/superpos knowledge search deployment"
 
 # Start background daemon
-openclaw agent --message "/apiary daemon start"
+openclaw agent --message "/superpos daemon start"
 ```
 
 ### Direct CLI (without OpenClaw)
 
 ```bash
 # Set env vars from Connect Agent dialog
-export APIARY_BASE_URL="http://localhost:8080"
-export APIARY_HIVE_ID="01HXYZ..."
-export APIARY_AGENT_ID="01HAGENT..."
-export APIARY_TOKEN="bootstrap-access-token"
-export APIARY_AGENT_REFRESH_TOKEN="bootstrap-refresh-token"
+export SUPERPOS_BASE_URL="http://localhost:8080"
+export SUPERPOS_HIVE_ID="01HXYZ..."
+export SUPERPOS_AGENT_ID="01HAGENT..."
+export SUPERPOS_TOKEN="bootstrap-access-token"
+export SUPERPOS_AGENT_REFRESH_TOKEN="bootstrap-refresh-token"
 
 # Authenticate (validates token, auto-refreshes when needed)
-sdk/openclaw/bin/apiary-cli.sh auth
+sdk/openclaw/bin/superpos-cli.sh auth
 
 # Check status
-sdk/openclaw/bin/apiary-cli.sh status
+sdk/openclaw/bin/superpos-cli.sh status
 
 # Poll for tasks
-sdk/openclaw/bin/apiary-cli.sh poll
+sdk/openclaw/bin/superpos-cli.sh poll
 
 # Send heartbeat
-sdk/openclaw/bin/apiary-cli.sh heartbeat
+sdk/openclaw/bin/superpos-cli.sh heartbeat
 
 # Knowledge operations
-sdk/openclaw/bin/apiary-cli.sh knowledge search "test"
-sdk/openclaw/bin/apiary-cli.sh knowledge set "my-key" '{"data": "value"}'
+sdk/openclaw/bin/superpos-cli.sh knowledge search "test"
+sdk/openclaw/bin/superpos-cli.sh knowledge set "my-key" '{"data": "value"}'
 
 # Event operations
-sdk/openclaw/bin/apiary-cli.sh events subscribe "task.completed"
-sdk/openclaw/bin/apiary-cli.sh events poll
+sdk/openclaw/bin/superpos-cli.sh events subscribe "task.completed"
+sdk/openclaw/bin/superpos-cli.sh events poll
 
 # Daemon control
-sdk/openclaw/bin/apiary-cli.sh daemon start
-sdk/openclaw/bin/apiary-cli.sh daemon status
-sdk/openclaw/bin/apiary-cli.sh daemon stop
+sdk/openclaw/bin/superpos-cli.sh daemon start
+sdk/openclaw/bin/superpos-cli.sh daemon status
+sdk/openclaw/bin/superpos-cli.sh daemon stop
 ```
 
 ## Architecture
 
 ```
 OpenClaw
-  └─ Apiary Skill (SKILL.md)
-       ├─ /apiary slash commands → apiary-cli.sh → Shell SDK
+  └─ Superpos Skill (SKILL.md)
+       ├─ /superpos slash commands → superpos-cli.sh → Shell SDK
        ├─ HEARTBEAT.md           → periodic health checks
-       └─ apiary-daemon.sh       → background polling loop
+       └─ superpos-daemon.sh       → background polling loop
             ├─ Task poll → detects pending tasks
-            │    └─ apiary-task-lifecycle.sh (full lifecycle dispatch)
+            │    └─ superpos-task-lifecycle.sh (full lifecycle dispatch)
             │         ├─ webhook_handler → wake bridge + complete/fail
             │         ├─ reminder       → message delivery + complete/fail
             │         └─ unknown type   → explicit capability_missing fail
@@ -166,7 +166,7 @@ OpenClaw
 
 ### Shell SDK Dependency
 
-All scripts source the existing Apiary Shell SDK (`sdk/shell/src/apiary-sdk.sh`) for HTTP client logic, JSON building, error handling, and API operations. The OpenClaw skill adds:
+All scripts source the existing Superpos Shell SDK (`sdk/shell/src/superpos-sdk.sh`) for HTTP client logic, JSON building, error handling, and API operations. The OpenClaw skill adds:
 
 - **Auto-auth flow**: token validate → refresh-token renewal → login/register fallback → token persistence
 - **LLM-friendly output**: human-readable formatting for task lists, knowledge entries
@@ -178,7 +178,7 @@ All scripts source the existing Apiary Shell SDK (`sdk/shell/src/apiary-sdk.sh`)
 
 ## Routed Task Lifecycle
 
-The daemon manages the full lifecycle for routed tasks so they don't pile up as pending in Apiary. Every polled task is dispatched through lifecycle handling:
+The daemon manages the full lifecycle for routed tasks so they don't pile up as pending in Superpos. Every polled task is dispatched through lifecycle handling:
 
 - `webhook_handler` → webhook-wake bridge flow
 - `reminder` → direct message delivery flow
@@ -188,16 +188,16 @@ The daemon manages the full lifecycle for routed tasks so they don't pile up as 
 
 2. **Processes** via the routed handler (webhook wake, reminder delivery, or default capability-missing response).
 
-3. **Completes or fails** the task in Apiary with a structured payload:
+3. **Completes or fails** the task in Superpos with a structured payload:
    - **Success**: `{"status":"completed","summary":"delivered: wake=1 alert=0",...}`
    - **Filtered**: `{"status":"completed","summary":"filtered: not a PR comment webhook",...}`
    - **Deduplicated**: `{"status":"completed","summary":"deduplicated: already processed",...}`
    - **Failure**: `{"status":"failed","error":"all delivery channels failed",...}`
    - **Capability missing**: `{"code":"capability_missing","task_type":"...","trusted_control_plane":{"invoke":{...}},...}`
 
-4. **Writes a trace** to `~/.config/apiary/traces/{task_id}.json` for local debugging.
+4. **Writes a trace** to `~/.config/superpos/traces/{task_id}.json` for local debugging.
 
-5. **Removes** the pending file from `~/.config/apiary/pending/`.
+5. **Removes** the pending file from `~/.config/superpos/pending/`.
 
 ### Operational Notes
 
@@ -210,7 +210,7 @@ The daemon manages the full lifecycle for routed tasks so they don't pile up as 
 
 ## Webhook-Wake Bridge
 
-When `APIARY_WAKE_ENABLED=true`, the daemon automatically wakes an OpenClaw assistant session whenever a `webhook_handler` task arrives containing a GitHub PR comment. The bridge:
+When `SUPERPOS_WAKE_ENABLED=true`, the daemon automatically wakes an OpenClaw assistant session whenever a `webhook_handler` task arrives containing a GitHub PR comment. The bridge:
 
 1. Parses PR comment metadata from the webhook payload (repo, PR number, comment URL, body)
 2. Extracts severity hints from the comment body (`[urgent]`, `[critical]`, `[high]`, `[low]`)
@@ -222,7 +222,7 @@ The OpenClaw CLI does not expose session-send subcommands (`sessions_send`, `ses
 
 #### Dual-Delivery (Visible Telegram Alert)
 
-When `APIARY_WAKE_ALERT_ENABLED=true`, the bridge sends **both** an internal wake (via gateway `session_send`) and a user-visible Telegram alert (via gateway `message` tool) for each actionable PR comment event. This ensures assistant automation is triggered while also notifying users in their Telegram chat.
+When `SUPERPOS_WAKE_ALERT_ENABLED=true`, the bridge sends **both** an internal wake (via gateway `session_send`) and a user-visible Telegram alert (via gateway `message` tool) for each actionable PR comment event. This ensures assistant automation is triggered while also notifying users in their Telegram chat.
 
 - Dedupe applies to both: a single event produces at most one internal wake **and** one visible alert
 - If the visible alert fails, the daemon logs a warning but does not crash; the internal wake still proceeds
@@ -235,18 +235,18 @@ The bridge POSTs directly to the OpenClaw gateway's `/tools/invoke` endpoint:
 - **Wake**: `POST {gateway}/tools/invoke` with `{"tool":"session_send","args":{"sessionKey":"...","message":"..."}}`
 - **Alert**: `POST {gateway}/tools/invoke` with `{"tool":"message","args":{"action":"send","channel":"...","target":"...","message":"..."}}`
 
-Configure `APIARY_WAKE_GATEWAY_URL` if the gateway runs on a non-default address. Set `APIARY_WAKE_GATEWAY_TOKEN` if gateway auth is required.
+Configure `SUPERPOS_WAKE_GATEWAY_URL` if the gateway runs on a non-default address. Set `SUPERPOS_WAKE_GATEWAY_TOKEN` if gateway auth is required.
 
 ### Setup
 
 ```json
 {
   "env": {
-    "APIARY_WAKE_ENABLED": "true",
-    "APIARY_WAKE_SESSION": "your-session-id",
-    "APIARY_WAKE_ALERT_ENABLED": "true",
-    "APIARY_WAKE_ALERT_TELEGRAM": "@your-username-or-chat-id",
-    "APIARY_WAKE_ALERT_CHANNEL": "telegram"
+    "SUPERPOS_WAKE_ENABLED": "true",
+    "SUPERPOS_WAKE_SESSION": "your-session-id",
+    "SUPERPOS_WAKE_ALERT_ENABLED": "true",
+    "SUPERPOS_WAKE_ALERT_TELEGRAM": "@your-username-or-chat-id",
+    "SUPERPOS_WAKE_ALERT_CHANNEL": "telegram"
   }
 }
 ```
@@ -255,8 +255,8 @@ Configure `APIARY_WAKE_GATEWAY_URL` if the gateway runs on a non-default address
 
 | Path | Purpose |
 |---|---|
-| `~/.config/apiary/wake_seen.json` | Deduplication state (auto-pruned after 1 hour) |
-| `~/.config/apiary/wake.log` | Wake bridge activity log |
+| `~/.config/superpos/wake_seen.json` | Deduplication state (auto-pruned after 1 hour) |
+| `~/.config/superpos/wake.log` | Wake bridge activity log |
 
 ## Task Processing Modes
 
@@ -265,7 +265,7 @@ Tasks can be processed automatically or manually based on type:
 | Mode | Behavior |
 |---|---|
 | `auto` | LLM claims, processes, and completes tasks automatically |
-| `manual` | LLM notifies user, waits for `/apiary` commands |
+| `manual` | LLM notifies user, waits for `/superpos` commands |
 
 Default modes:
 - `code`, `summarize`, `research` → auto
@@ -276,16 +276,16 @@ Default modes:
 
 | Path | Purpose |
 |---|---|
-| `~/.config/apiary/token` | Persisted auth token |
-| `~/.config/apiary/agent.json` | Agent ID and metadata |
-| `~/.config/apiary/daemon.pid` | Daemon PID file |
-| `~/.config/apiary/pending/*.json` | Pending task files |
-| `~/.config/apiary/pending/events/*.json` | Polled event snapshots (for local inspection) |
-| `~/.config/apiary/cursor.json` | Last event poll cursor |
-| `~/.config/apiary/wake_seen.json` | Webhook-wake deduplication state |
-| `~/.config/apiary/wake.log` | Webhook-wake activity log |
-| `~/.config/apiary/traces/*.json` | Task lifecycle trace records |
+| `~/.config/superpos/token` | Persisted auth token |
+| `~/.config/superpos/agent.json` | Agent ID and metadata |
+| `~/.config/superpos/daemon.pid` | Daemon PID file |
+| `~/.config/superpos/pending/*.json` | Pending task files |
+| `~/.config/superpos/pending/events/*.json` | Polled event snapshots (for local inspection) |
+| `~/.config/superpos/cursor.json` | Last event poll cursor |
+| `~/.config/superpos/wake_seen.json` | Webhook-wake deduplication state |
+| `~/.config/superpos/wake.log` | Webhook-wake activity log |
+| `~/.config/superpos/traces/*.json` | Task lifecycle trace records |
 
 ## License
 
-Same license as the Apiary project.
+Same license as the Superpos project.

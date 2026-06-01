@@ -2,7 +2,7 @@
 
 **Phase:** 2 — Service Proxy & Security
 **Status:** done
-**Depends On:** TASK-006 (Apiary & Hive models)
+**Depends On:** TASK-006 (Superpos & Hive models)
 **Branch:** `task/036-service-connections`
 
 ---
@@ -20,7 +20,7 @@ Create `service_connections` table with:
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | `string(26)` PK | ULID |
-| `apiary_id` | `string(26)` FK | References `apiaries(id)`, cascade delete |
+| `superpos_id` | `string(26)` FK | References `apiaries(id)`, cascade delete |
 | `name` | `string(255)` | Human-readable name |
 | `type` | `string(100)` | Service type (e.g., `github`, `slack`, `custom`) |
 | `base_url` | `string(500)` | Base URL for the service |
@@ -33,8 +33,8 @@ Create `service_connections` table with:
 | `updated_at` | `timestamp` | |
 
 **Indexes:**
-- `UNIQUE(apiary_id, name)` — one service name per apiary
-- `index(apiary_id)` — for apiary-scoped queries
+- `UNIQUE(superpos_id, name)` — one service name per apiary
+- `index(superpos_id)` — for apiary-scoped queries
 - `index(type)` — for filtering by service type
 
 ### Model
@@ -61,7 +61,7 @@ Create `service_connections` table with:
 6. BelongsToApiary trait integration (CE mode auto-scoping)
 7. Cloud mode creation fails without context
 8. Cascade delete when apiary is deleted
-9. Unique constraint on `(apiary_id, name)`
+9. Unique constraint on `(superpos_id, name)`
 10. Relationship: `apiary()` returns parent
 11. Query scopes: `active()`, `ofType()`
 12. Helper: `isActive()`
@@ -75,11 +75,11 @@ Create `service_connections` table with:
 - `auth_config` and `webhook_secret` are hidden from JSON serialization (`$hidden`) to prevent accidental credential exposure in API responses
 - Common service types defined as model constants: `github`, `slack`, `jira`, `linear`, `custom`
 - Auth type constants match the proxy's supported methods: `token`, `oauth2`, `basic`, `api_key`, `none`
-- The `BelongsToApiary` trait automatically scopes all queries to the current apiary and sets `apiary_id` on creation
-- In CE mode, `apiary_id` resolves to `'default'` — no multi-tenancy overhead
+- The `BelongsToApiary` trait automatically scopes all queries to the current apiary and sets `superpos_id` on creation
+- In CE mode, `superpos_id` resolves to `'default'` — no multi-tenancy overhead
 
 ## Related
 
-- **Upstream:** TASK-006 (Apiary & Hive models provide the `apiaries` table and `BelongsToApiary` trait)
+- **Upstream:** TASK-006 (Superpos & Hive models provide the `apiaries` table and `BelongsToApiary` trait)
 - **Downstream:** TASK-037 (Credential vault uses service connections), TASK-038 (Connector interface populates `connector_id`), TASK-042 (Service proxy controller reads connection config)
 - **Spec reference:** PRODUCT.md §11 (Service Proxy & Credentials Vault), §9.1 (service_connections schema)

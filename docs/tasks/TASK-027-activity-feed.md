@@ -4,7 +4,7 @@
 Review
 
 ## PR
-https://github.com/Apiary-AI/Apiary-SaaS/pull/32
+https://github.com/Superpos-AI/superpos-app/pull/32
 
 ## Description
 Build a dashboard page that displays the activity log as a paginated, filterable

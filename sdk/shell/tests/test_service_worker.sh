@@ -5,24 +5,24 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/test_harness.sh"
-source "${SCRIPT_DIR}/../src/apiary-sdk.sh"
+source "${SCRIPT_DIR}/../src/superpos-sdk.sh"
 
-export APIARY_BASE_URL="http://localhost:9999"
-export APIARY_TOKEN="test-token"
-export APIARY_DEBUG=0
+export SUPERPOS_BASE_URL="http://localhost:9999"
+export SUPERPOS_TOKEN="test-token"
+export SUPERPOS_DEBUG=0
 
 HIVE="HHHHHHHHHHHHHHHHHHHHHHHHHH"
 TASK="TTTTTTTTTTTTTTTTTTTTTTTTTT"
 
-# ── apiary_data_request ──────────────────────────────────────────
+# ── superpos_data_request ──────────────────────────────────────────
 
-describe "apiary_data_request"
+describe "superpos_data_request"
 
 mock_reset
 mock_response POST "/api/v1/hives/${HIVE}/tasks" 200 \
     '{"data":{"id":"'"$TASK"'","type":"data_request","status":"pending","hive_id":"'"$HIVE"'"},"meta":{},"errors":null}'
 
-result=$(apiary_data_request "$HIVE" -c "data:gmail" -o "fetch_emails")
+result=$(superpos_data_request "$HIVE" -c "data:gmail" -o "fetch_emails")
 assert_eq "$(echo "$result" | jq -r '.id')" "$TASK" "data_request returns task id"
 assert_eq "$(echo "$result" | jq -r '.type')" "data_request" "data_request returns data_request type"
 assert_eq "$(echo "$result" | jq -r '.status')" "pending" "data_request returns pending status"
@@ -41,7 +41,7 @@ mock_reset
 mock_response POST "/api/v1/hives/${HIVE}/tasks" 200 \
     '{"data":{"id":"'"$TASK"'","type":"data_request","status":"pending"},"meta":{},"errors":null}'
 
-apiary_data_request "$HIVE" \
+superpos_data_request "$HIVE" \
     -c "data:crm" \
     -o "search_deals" \
     -p '{"query":"license","limit":20}' \
@@ -63,7 +63,7 @@ mock_reset
 mock_response POST "/api/v1/hives/${HIVE}/tasks" 200 \
     '{"data":{"id":"'"$TASK"'","type":"data_request","status":"pending"},"meta":{},"errors":null}'
 
-apiary_data_request "$HIVE" \
+superpos_data_request "$HIVE" \
     -c "data:http" \
     -o "get" \
     -t 120 \
@@ -74,20 +74,20 @@ assert_eq "$(echo "$body" | jq '.timeout_seconds')" "120" "data_request sends ti
 assert_eq "$(echo "$body" | jq -r '.idempotency_key')" "idem-key-abc" "data_request sends idempotency_key"
 
 # Missing required args
-assert_exit 1 apiary_data_request "$HIVE" -o "fetch_emails" \
+assert_exit 1 superpos_data_request "$HIVE" -o "fetch_emails" \
     "data_request errors without capability"
-assert_exit 1 apiary_data_request "$HIVE" -c "data:gmail" \
+assert_exit 1 superpos_data_request "$HIVE" -c "data:gmail" \
     "data_request errors without operation"
 
-# ── apiary_discover_services ─────────────────────────────────────
+# ── superpos_discover_services ─────────────────────────────────────
 
-describe "apiary_discover_services"
+describe "superpos_discover_services"
 
 mock_reset
 mock_response GET "/api/v1/hives/${HIVE}/agents" 200 \
     '{"data":[{"id":"A1","name":"gmail-worker","capabilities":["data:gmail"],"type":"service_worker"}],"meta":{},"errors":null}'
 
-result=$(apiary_discover_services "$HIVE")
+result=$(superpos_discover_services "$HIVE")
 assert_eq "$(echo "$result" | jq -r '.[0].name')" "gmail-worker" "discover_services returns worker name"
 assert_eq "$(echo "$result" | jq -r '.[0].capabilities[0]')" "data:gmail" "discover_services returns capabilities"
 
@@ -103,7 +103,7 @@ mock_reset
 mock_response GET "/api/v1/hives/${HIVE}/agents" 200 \
     '{"data":[{"id":"B1","name":"custom-worker","capabilities":["custom:foo"],"type":"service_worker"}],"meta":{},"errors":null}'
 
-result=$(apiary_discover_services "$HIVE" -p "custom:")
+result=$(superpos_discover_services "$HIVE" -p "custom:")
 assert_eq "$(echo "$result" | jq -r '.[0].name')" "custom-worker" "discover_services with custom prefix returns worker"
 
 url=$(mock_last_url)
@@ -114,7 +114,7 @@ mock_reset
 mock_response GET "/api/v1/hives/${HIVE}/agents" 200 \
     '{"data":[],"meta":{},"errors":null}'
 
-apiary_discover_services "$HIVE" -p "data:foo%bar" >/dev/null
+superpos_discover_services "$HIVE" -p "data:foo%bar" >/dev/null
 url=$(mock_last_url)
 assert_contains "$url" "data%3Afoo%25bar" "discover_services encodes % in prefix"
 
@@ -123,7 +123,7 @@ mock_reset
 mock_response GET "/api/v1/hives/${HIVE}/agents" 200 \
     '{"data":[],"meta":{},"errors":null}'
 
-apiary_discover_services "$HIVE" -p "data:foo&bar" >/dev/null
+superpos_discover_services "$HIVE" -p "data:foo&bar" >/dev/null
 url=$(mock_last_url)
 assert_contains "$url" "data%3Afoo%26bar" "discover_services encodes & in prefix"
 
@@ -132,14 +132,14 @@ mock_reset
 mock_response GET "/api/v1/hives/${HIVE}/agents" 200 \
     '{"data":[],"meta":{},"errors":null}'
 
-result=$(apiary_discover_services "$HIVE")
+result=$(superpos_discover_services "$HIVE")
 assert_eq "$(echo "$result" | jq 'length')" "0" "discover_services returns empty array when no workers"
 
-# ── poll-loop sleep logic (_APIARY_NEXT_POLL_MS) ─────────────────
+# ── poll-loop sleep logic (_SUPERPOS_NEXT_POLL_MS) ─────────────────
 #
 # The example script uses this logic when the queue is empty:
 #
-#   _wait_ms="${_APIARY_NEXT_POLL_MS:-0}"
+#   _wait_ms="${_SUPERPOS_NEXT_POLL_MS:-0}"
 #   if [[ "$_wait_ms" -gt 0 ]]; then
 #       sleep "$(( (_wait_ms + 999) / 1000 ))"
 #   else
@@ -163,32 +163,32 @@ _poll_sleep_arg() {
     fi
 }
 
-# When _APIARY_NEXT_POLL_MS is non-zero, sleep arg = ceil(ms/1000)
+# When _SUPERPOS_NEXT_POLL_MS is non-zero, sleep arg = ceil(ms/1000)
 result=$(_poll_sleep_arg 5000 5)
-assert_eq "$result" "5" "_APIARY_NEXT_POLL_MS=5000 yields sleep 5"
+assert_eq "$result" "5" "_SUPERPOS_NEXT_POLL_MS=5000 yields sleep 5"
 
 result=$(_poll_sleep_arg 2500 5)
-assert_eq "$result" "3" "_APIARY_NEXT_POLL_MS=2500 yields sleep 3 (ceiling)"
+assert_eq "$result" "3" "_SUPERPOS_NEXT_POLL_MS=2500 yields sleep 3 (ceiling)"
 
 result=$(_poll_sleep_arg 1000 5)
-assert_eq "$result" "1" "_APIARY_NEXT_POLL_MS=1000 yields sleep 1"
+assert_eq "$result" "1" "_SUPERPOS_NEXT_POLL_MS=1000 yields sleep 1"
 
 result=$(_poll_sleep_arg 500 5)
-assert_eq "$result" "1" "_APIARY_NEXT_POLL_MS=500 yields sleep 1 (ceiling, never 0)"
+assert_eq "$result" "1" "_SUPERPOS_NEXT_POLL_MS=500 yields sleep 1 (ceiling, never 0)"
 
-# When _APIARY_NEXT_POLL_MS is 0, fall back to POLL_INTERVAL
+# When _SUPERPOS_NEXT_POLL_MS is 0, fall back to POLL_INTERVAL
 result=$(_poll_sleep_arg 0 5)
-assert_eq "$result" "5" "_APIARY_NEXT_POLL_MS=0 falls back to POLL_INTERVAL"
+assert_eq "$result" "5" "_SUPERPOS_NEXT_POLL_MS=0 falls back to POLL_INTERVAL"
 
 result=$(_poll_sleep_arg 0 10)
-assert_eq "$result" "10" "_APIARY_NEXT_POLL_MS=0 uses custom POLL_INTERVAL"
+assert_eq "$result" "10" "_SUPERPOS_NEXT_POLL_MS=0 uses custom POLL_INTERVAL"
 
-# When _APIARY_NEXT_POLL_MS is unset (empty), fall back to POLL_INTERVAL
+# When _SUPERPOS_NEXT_POLL_MS is unset (empty), fall back to POLL_INTERVAL
 result=$(_poll_sleep_arg "" 5)
-assert_eq "$result" "5" "unset _APIARY_NEXT_POLL_MS falls back to POLL_INTERVAL"
+assert_eq "$result" "5" "unset _SUPERPOS_NEXT_POLL_MS falls back to POLL_INTERVAL"
 
 result=$(_poll_sleep_arg "" 30)
-assert_eq "$result" "30" "unset _APIARY_NEXT_POLL_MS uses custom POLL_INTERVAL"
+assert_eq "$result" "30" "unset _SUPERPOS_NEXT_POLL_MS uses custom POLL_INTERVAL"
 
 # ── post-processing backpressure sleep (tasks returned + next_poll_ms > 0) ──
 #
@@ -196,7 +196,7 @@ assert_eq "$result" "30" "unset _APIARY_NEXT_POLL_MS uses custom POLL_INTERVAL"
 # (rate-limit / high-load).  The worker must sleep AFTER processing the task,
 # not only when the queue was empty.
 #
-# The example script now captures _APIARY_NEXT_POLL_MS before the empty-queue
+# The example script now captures _SUPERPOS_NEXT_POLL_MS before the empty-queue
 # branch and, after task processing, runs:
 #
 #   if [[ "$_next_poll_ms" -gt 0 ]]; then

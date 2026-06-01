@@ -5,7 +5,7 @@
 | **ID**      | 010                                      |
 | **Title**   | Activity log migration + model           |
 | **Status**  | done                                     |
-| **Depends** | 005 (migrations), 006 (Apiary/Hive models) |
+| **Depends** | 005 (migrations), 006 (Superpos/Hive models) |
 | **Branch**  | `task/010-activity-log-model`            |
 
 ---
@@ -13,7 +13,7 @@
 ## Objective
 
 Create the `activity_log` database table and the corresponding Eloquent model.
-Activity logging captures every state change in Apiary for auditability.
+Activity logging captures every state change in Superpos for auditability.
 Every agent action, task state transition, and system event is recorded.
 Entries are hive-scoped by default but support apiary-level actions
 (where hive_id is null). This is a cross-cutting foundation — per coding
@@ -26,7 +26,7 @@ standards, "all state changes → activity_log".
 | Column     | Type         | Constraints                          |
 |------------|--------------|--------------------------------------|
 | id         | BIGSERIAL    | PRIMARY KEY (auto-increment)         |
-| apiary_id  | CHAR(26)     | FK → apiaries, NOT NULL              |
+| superpos_id  | CHAR(26)     | FK → apiaries, NOT NULL              |
 | hive_id    | CHAR(26)     | FK → hives, NULLABLE                 |
 | agent_id   | CHAR(26)     | FK → agents, NULLABLE                |
 | task_id    | CHAR(26)     | FK → tasks, NULLABLE                 |
@@ -36,7 +36,7 @@ standards, "all state changes → activity_log".
 
 Indexes:
 - Hive timeline: `(hive_id, created_at DESC)`
-- Apiary timeline: `(apiary_id, created_at DESC)`
+- Superpos timeline: `(superpos_id, created_at DESC)`
 
 ## Model
 
@@ -47,10 +47,10 @@ Indexes:
 - No BelongsToHive (hive_id is nullable; manual scoping)
 - Table: `activity_log`
 - Timestamps: only `created_at` (no `updated_at` — log entries are immutable)
-- Fillable: apiary_id, hive_id, agent_id, task_id, action, details
+- Fillable: superpos_id, hive_id, agent_id, task_id, action, details
 - Casts: details → array, created_at → datetime
 - Relationships:
-  - `apiary()` — BelongsTo → Apiary
+  - `apiary()` — BelongsTo → Superpos
   - `hive()` — BelongsTo → Hive (nullable)
   - `agent()` — BelongsTo → Agent (nullable)
   - `task()` — BelongsTo → Task (nullable)

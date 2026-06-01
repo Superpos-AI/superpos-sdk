@@ -6,8 +6,8 @@ import json
 
 import pytest
 
-from apiary_sdk import ApiaryClient
-from apiary_sdk.exceptions import ConflictError, NotFoundError
+from superpos_sdk import SuperposClient
+from superpos_sdk.exceptions import ConflictError, NotFoundError
 
 from .conftest import BASE_URL, ENTRY_ID, HIVE_ID, TOKEN, envelope
 
@@ -15,7 +15,7 @@ from .conftest import BASE_URL, ENTRY_ID, HIVE_ID, TOKEN, envelope
 def _entry_data(**overrides):
     base = {
         "id": ENTRY_ID,
-        "apiary_id": "A" * 26,
+        "organization_id": "A" * 26,
         "hive_id": HIVE_ID,
         "key": "config.timeout",
         "value": {"seconds": 30},
@@ -37,7 +37,7 @@ class TestListKnowledge:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge",
             json=envelope([_entry_data()]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             entries = c.list_knowledge(HIVE_ID)
         assert len(entries) == 1
         assert entries[0]["key"] == "config.timeout"
@@ -47,7 +47,7 @@ class TestListKnowledge:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge?key=config.*&scope=hive&limit=10",
             json=envelope([]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             entries = c.list_knowledge(HIVE_ID, key="config.*", scope="hive", limit=10)
         assert entries == []
 
@@ -58,7 +58,7 @@ class TestSearchKnowledge:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/search?q=timeout",
             json=envelope([_entry_data()]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.search_knowledge(HIVE_ID, q="timeout")
         assert len(results) == 1
 
@@ -69,7 +69,7 @@ class TestGetKnowledge:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/{ENTRY_ID}",
             json=envelope(_entry_data()),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             entry = c.get_knowledge(HIVE_ID, ENTRY_ID)
         assert entry["value"] == {"seconds": 30}
 
@@ -79,7 +79,7 @@ class TestGetKnowledge:
             status_code=404,
             json=envelope(errors=[{"message": "Not found.", "code": "not_found"}]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             with pytest.raises(NotFoundError):
                 c.get_knowledge(HIVE_ID, "NOPE")
 
@@ -91,7 +91,7 @@ class TestCreateKnowledge:
             status_code=201,
             json=envelope(_entry_data()),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             entry = c.create_knowledge(
                 HIVE_ID,
                 key="config.timeout",
@@ -107,7 +107,7 @@ class TestCreateKnowledge:
             status_code=201,
             json=envelope(_entry_data(scope="apiary", visibility="private")),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.create_knowledge(
                 HIVE_ID,
                 key="config.timeout",
@@ -134,7 +134,7 @@ class TestCreateKnowledge:
                 ]
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             with pytest.raises(ConflictError):
                 c.create_knowledge(HIVE_ID, key="x", value="v")
 
@@ -145,7 +145,7 @@ class TestUpdateKnowledge:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/{ENTRY_ID}",
             json=envelope(_entry_data(version=2, value={"seconds": 60})),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             entry = c.update_knowledge(HIVE_ID, ENTRY_ID, value={"seconds": 60})
         assert entry["version"] == 2
         body = json.loads(httpx_mock.get_request().content)
@@ -158,6 +158,6 @@ class TestDeleteKnowledge:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/{ENTRY_ID}",
             status_code=204,
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             result = c.delete_knowledge(HIVE_ID, ENTRY_ID)
         assert result is None

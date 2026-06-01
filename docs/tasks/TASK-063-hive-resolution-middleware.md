@@ -39,7 +39,7 @@ The middleware:
 2. Extracts `{hive}` from route parameters
 3. Finds hive: `Hive::withoutGlobalScopes()->find($hiveParam)`
 4. Validates hive exists → 404
-5. Validates `$hive->apiary_id === $agent->apiary_id` → 403
+5. Validates `$hive->superpos_id === $agent->superpos_id` → 403
 6. Sets `$request->attributes->set('hive', $hive)`
 7. Passes to next middleware
 
@@ -49,7 +49,7 @@ Controllers switch from:
 ```php
 $targetHive = Hive::withoutGlobalScopes()->find($hive);
 if (! $targetHive) { return $this->notFound('Hive not found.'); }
-if ($targetHive->apiary_id !== $agent->apiary_id) { ... }
+if ($targetHive->superpos_id !== $agent->superpos_id) { ... }
 ```
 
 To:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from apiary_sdk import ApiaryClient, Event, Subscription
+from superpos_sdk import Event, Subscription, SuperposClient
 
 from .conftest import BASE_URL, HIVE_ID, TOKEN, envelope
 
@@ -16,7 +16,7 @@ HIVE_ID_2 = "01HXYZ00000000000000000099"
 def _event_data(**overrides):
     base = {
         "id": EVENT_ID_1,
-        "apiary_id": "A" * 26,
+        "organization_id": "A" * 26,
         "hive_id": HIVE_ID,
         "type": "task.completed",
         "source_agent_id": "01HXYZ00000000000000000002",
@@ -53,7 +53,7 @@ class TestSubscribe:
             status_code=201,
             json=envelope(_subscription_data()),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             sub = c.subscribe("task.completed")
         assert sub["event_type"] == "task.completed"
         assert sub["scope"] == "hive"
@@ -68,7 +68,7 @@ class TestSubscribe:
             status_code=201,
             json=envelope(_subscription_data(scope="apiary")),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             sub = c.subscribe("apiary.broadcast", scope="apiary")
         assert sub["scope"] == "apiary"
         body = json.loads(httpx_mock.get_request().content)
@@ -87,7 +87,7 @@ class TestUnsubscribe:
             method="DELETE",
             status_code=204,
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.unsubscribe("task.completed")
         req = httpx_mock.get_request()
         assert req.method == "DELETE"
@@ -96,6 +96,20 @@ class TestUnsubscribe:
 # ------------------------------------------------------------------
 # List subscriptions
 # ------------------------------------------------------------------
+
+
+def _capability_pool_data(**overrides):
+    base = {
+        "id": "01HXYZ00000000000000000050",
+        "organization_id": "A" * 26,
+        "hive_id": HIVE_ID,
+        "capability": "github.review",
+        "event_type": "task.completed",
+        "scope": "hive",
+        "created_at": "2026-03-01T12:00:00Z",
+    }
+    base.update(overrides)
+    return base
 
 
 class TestListSubscriptions:
@@ -110,11 +124,88 @@ class TestListSubscriptions:
                 ]
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             subs = c.list_subscriptions()
         assert len(subs) == 2
         assert subs[0]["event_type"] == "task.completed"
         assert subs[1]["event_type"] == "agent.offline"
+
+    def test_list_capability_pool_subscriptions(self, httpx_mock):
+        pools = [
+            _capability_pool_data(),
+            _capability_pool_data(
+                hive_id=None,
+                scope="apiary",
+                capability="ops.deploy",
+                event_type="apiary.broadcast",
+            ),
+        ]
+        httpx_mock.add_response(
+            url=f"{BASE_URL}/api/v1/agents/subscriptions",
+            method="GET",
+            json=envelope(
+                [_subscription_data()],
+                meta={
+                    "count": 1,
+                    "capability_pools": pools,
+                    "capability_pool_count": len(pools),
+                },
+            ),
+        )
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            result = c.list_capability_pool_subscriptions()
+        assert len(result) == 2
+        assert result[0]["capability"] == "github.review"
+        assert result[0]["scope"] == "hive"
+        assert result[1]["scope"] == "apiary"
+        assert result[1]["hive_id"] is None
+
+    def test_list_capability_pool_subscriptions_empty_meta(self, httpx_mock):
+        httpx_mock.add_response(
+            url=f"{BASE_URL}/api/v1/agents/subscriptions",
+            method="GET",
+            json=envelope([_subscription_data()]),
+        )
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            result = c.list_capability_pool_subscriptions()
+        assert result == []
+
+    def test_list_subscriptions_with_pools(self, httpx_mock):
+        pools = [_capability_pool_data()]
+        httpx_mock.add_response(
+            url=f"{BASE_URL}/api/v1/agents/subscriptions",
+            method="GET",
+            json=envelope(
+                [
+                    _subscription_data(),
+                    _subscription_data(event_type="agent.offline"),
+                ],
+                meta={
+                    "count": 2,
+                    "capability_pools": pools,
+                    "capability_pool_count": 1,
+                },
+            ),
+        )
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            result = c.list_subscriptions_with_pools()
+        assert len(result["subscriptions"]) == 2
+        assert result["subscriptions"][0]["event_type"] == "task.completed"
+        assert len(result["capability_pools"]) == 1
+        assert result["capability_pools"][0]["capability"] == "github.review"
+        assert result["capability_pool_count"] == 1
+
+    def test_list_subscriptions_with_pools_empty_meta(self, httpx_mock):
+        httpx_mock.add_response(
+            url=f"{BASE_URL}/api/v1/agents/subscriptions",
+            method="GET",
+            json=envelope([_subscription_data()]),
+        )
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            result = c.list_subscriptions_with_pools()
+        assert len(result["subscriptions"]) == 1
+        assert result["capability_pools"] == []
+        assert result["capability_pool_count"] == 0
 
 
 # ------------------------------------------------------------------
@@ -138,7 +229,7 @@ class TestReplaceSubscriptions:
                 ]
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             subs = c.replace_subscriptions(new_subs)
         assert len(subs) == 2
         body = json.loads(httpx_mock.get_request().content)
@@ -164,7 +255,7 @@ class TestPollEvents:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             events = c.poll_events(HIVE_ID)
         assert len(events) == 2
         assert isinstance(events[0], Event)
@@ -184,7 +275,7 @@ class TestPollEvents:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             events = c.poll_events(HIVE_ID)
         assert events == []
 
@@ -201,7 +292,7 @@ class TestPollEvents:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             events = c.poll_events(HIVE_ID, limit=10)
         assert len(events) == 1
 
@@ -218,7 +309,7 @@ class TestPollEvents:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             events = c.poll_events(HIVE_ID, since="2026-03-01T00:00:00Z")
         assert len(events) == 1
 
@@ -250,7 +341,7 @@ class TestPollEvents:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             first = c.poll_events(HIVE_ID)
             assert len(first) == 1
 
@@ -286,7 +377,7 @@ class TestPollEvents:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             events = c.poll_events(HIVE_ID, limit=1)
         assert len(events) == 2
         assert events[0].id == EVENT_ID_1
@@ -306,7 +397,7 @@ class TestPollEvents:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             events = c.poll_events(HIVE_ID)
         assert events == []
         req = httpx_mock.get_request()
@@ -341,7 +432,7 @@ class TestPollEvents:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.poll_events(HIVE_ID)
             c.reset_event_cursor()
             c.poll_events(HIVE_ID)
@@ -404,7 +495,7 @@ class TestPollEvents:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.poll_events(HIVE_ID)
             c.poll_events(HIVE_ID_2)
             c.reset_event_cursor(HIVE_ID)
@@ -434,7 +525,7 @@ class TestPollEventsReturnsTypedObjects:
                 meta={"count": 1, "has_more": False, "next_cursor": EVENT_ID_1, "limit": 50},
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             events = c.poll_events(HIVE_ID)
         assert len(events) == 1
         event = events[0]
@@ -457,7 +548,7 @@ class TestPollEventsReturnsTypedObjects:
                 meta={"count": 1, "has_more": False, "next_cursor": EVENT_ID_1, "limit": 50},
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             result = c.poll_events_with_meta(HIVE_ID)
         assert isinstance(result["data"][0], dict)
         assert result["data"][0]["id"] == EVENT_ID_1
@@ -497,7 +588,7 @@ class TestPerHiveCursorIsolation:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.poll_events(HIVE_ID)
             c.poll_events(HIVE_ID_2)
 
@@ -547,7 +638,7 @@ class TestPerHiveCursorIsolation:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.poll_events(HIVE_ID)
             c.poll_events(HIVE_ID_2)
             c.poll_events(HIVE_ID)
@@ -611,7 +702,7 @@ class TestPerHiveCursorIsolation:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.poll_events(HIVE_ID)
             c.poll_events(HIVE_ID_2)
             c.reset_event_cursor(HIVE_ID)
@@ -679,7 +770,7 @@ class TestPerHiveCursorIsolation:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.poll_events(HIVE_ID)
             c.poll_events(HIVE_ID_2)
             c.reset_event_cursor()
@@ -712,7 +803,7 @@ class TestPollEventsWithMeta:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             result = c.poll_events_with_meta(HIVE_ID)
         assert "data" in result
         assert "meta" in result
@@ -743,7 +834,7 @@ class TestPollEventsWithMeta:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.poll_events_with_meta(HIVE_ID)
             c.poll_events_with_meta(HIVE_ID)
         requests = httpx_mock.get_requests()
@@ -763,7 +854,7 @@ class TestPublishEvent:
             status_code=201,
             json=envelope(_event_data(type="task.started")),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             event = c.publish_event(HIVE_ID, event_type="task.started")
         assert event["type"] == "task.started"
         body = json.loads(httpx_mock.get_request().content)
@@ -781,7 +872,7 @@ class TestPublishEvent:
                 )
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             event = c.publish_event(
                 HIVE_ID,
                 event_type="deploy.complete",
@@ -799,7 +890,7 @@ class TestPublishEvent:
             status_code=201,
             json=envelope(_event_data(type="ping")),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.publish_event(HIVE_ID, event_type="ping")
         body = json.loads(httpx_mock.get_request().content)
         assert body["type"] == "ping"
@@ -880,7 +971,7 @@ class TestCursorResetOnIdentityChange:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.poll_events(HIVE_ID)
             c.register(
                 name="new-agent",
@@ -929,7 +1020,7 @@ class TestCursorResetOnIdentityChange:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.poll_events(HIVE_ID)
             c.login(agent_id="NEW_AGENT", secret="s3cret")
             c.poll_events(HIVE_ID)
@@ -973,7 +1064,7 @@ class TestCursorResetOnIdentityChange:
                 },
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.poll_events(HIVE_ID)
             c.logout()
             # Re-set token so we can poll again

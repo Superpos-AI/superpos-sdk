@@ -1,6 +1,6 @@
 # Real-Time Updates (WebSocket)
 
-The Apiary dashboard receives real-time updates via WebSocket using
+The Superpos dashboard receives real-time updates via WebSocket using
 [Laravel Reverb](https://reverb.laravel.com). When agents create tasks,
 change status, or generate activity, the dashboard reflects those changes
 immediately without manual page refresh.

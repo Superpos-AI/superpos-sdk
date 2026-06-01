@@ -10,7 +10,7 @@
 
 ## 1. Problem Statement
 
-Apiary has powerful task primitives — dependencies, fan-out, completion policies, on_complete chaining — but no way to compose them into **reusable, multi-step workflows**.
+Superpos has powerful task primitives — dependencies, fan-out, completion policies, on_complete chaining — but no way to compose them into **reusable, multi-step workflows**.
 
 Today, to run "plan → implement → evaluate":
 
@@ -94,7 +94,7 @@ Each workflow run has an accumulated **thread** — an ordered list of step resu
 ```sql
 CREATE TABLE workflows (
     id              VARCHAR(26) PRIMARY KEY,    -- ULID
-    apiary_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id),
+    superpos_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id),
     hive_id         VARCHAR(26) NOT NULL REFERENCES hives(id),
     name            VARCHAR(255) NOT NULL,
     slug            VARCHAR(255) NOT NULL,
@@ -141,7 +141,7 @@ CREATE INDEX idx_workflow_versions ON workflow_versions (workflow_id, version DE
 CREATE TABLE workflow_runs (
     id              VARCHAR(26) PRIMARY KEY,    -- ULID
     workflow_id     VARCHAR(26) NOT NULL REFERENCES workflows(id) ON DELETE CASCADE,
-    apiary_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id),
+    superpos_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id),
     hive_id         VARCHAR(26) NOT NULL REFERENCES hives(id),
     workflow_version INTEGER NOT NULL,
     task_id         VARCHAR(26) NOT NULL REFERENCES tasks(id),  -- parent task
@@ -158,7 +158,7 @@ CREATE TABLE workflow_runs (
 
 CREATE INDEX idx_workflow_runs_workflow ON workflow_runs (workflow_id, status);
 CREATE INDEX idx_workflow_runs_task ON workflow_runs (task_id);
-CREATE INDEX idx_workflow_runs_tenant ON workflow_runs (apiary_id, hive_id);
+CREATE INDEX idx_workflow_runs_tenant ON workflow_runs (superpos_id, hive_id);
 ```
 
 ### 4.4 Tasks Table Additions
@@ -468,7 +468,7 @@ The current `TaskSchedule` model and service compute `next_run_at` in server tim
 }
 ```
 
-Internal Apiary events can trigger workflows.
+Internal Superpos events can trigger workflows.
 
 ### 6.5 API Trigger
 
@@ -964,7 +964,7 @@ GET    /dashboard/workflow-runs/{run}                  View run (live step progr
 |---|------|-------------|
 | 191 | Loop step type (generator-evaluator) | Iterative refinement cycle with exit condition, feedback injection |
 | 192 | Knowledge references on workflow steps | knowledge_reads/knowledge_writes declarations for inter-step data |
-| 193 | Built-in workflow templates (Plan-Build-QA, Code Review, Data Pipeline) | Forkable starter templates shipped with Apiary |
+| 193 | Built-in workflow templates (Plan-Build-QA, Code Review, Data Pipeline) | Forkable starter templates shipped with Superpos |
 | 194 | QA evaluator persona template | Pre-calibrated skeptical evaluator with few-shot grading examples |
 | 195 | Workflow-step-aware LLM cost tracking | Per-step cost/duration breakdown in workflow runs |
 | 196 | Workflow run cost summary in dashboard | Visual cost breakdown per step in run viewer |
@@ -1005,7 +1005,7 @@ GET    /dashboard/workflow-runs/{run}                  View run (live step progr
 
 ## 15. Built-in Workflow Templates
 
-Pre-built workflow templates ship with Apiary (same concept as persona templates).
+Pre-built workflow templates ship with Superpos (same concept as persona templates).
 Users can fork and customize them.
 
 ### 15.1 Plan-Build-QA Template
@@ -1132,9 +1132,9 @@ When a new model ships:
 
 Persona versioning + performance tracking provide the infrastructure for this practice.
 
-### 17.2 Apiary's Natural Advantage
+### 17.2 Superpos's Natural Advantage
 
-Apiary's task-per-step model IS the context reset pattern. Each step runs in a
+Superpos's task-per-step model IS the context reset pattern. Each step runs in a
 fresh agent invocation with a clean context window. The workflow thread provides
 the structured handoff. This means:
 

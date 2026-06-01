@@ -2,7 +2,7 @@
 
 **Status:** ✅ done
 **Branch:** `task/084-agent-pool-health-metrics` (merged)
-**PR:** [#136](https://github.com/Apiary-AI/Apiary-SaaS/pull/136) (with follow-up hardening in [#143](https://github.com/Apiary-AI/Apiary-SaaS/pull/143))
+**PR:** [#136](https://github.com/Superpos-AI/superpos-app/pull/136) (with follow-up hardening in [#143](https://github.com/Superpos-AI/superpos-app/pull/143))
 **Depends on:** TASK-007, TASK-015
 **Blocks:** TASK-085
 

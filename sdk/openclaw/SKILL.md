@@ -1,25 +1,25 @@
 ---
-name: apiary
+name: superpos
 description: >-
-  Connect to an Apiary agent orchestration platform. Poll and process tasks
+  Connect to a Superpos agent orchestration platform. Poll and process tasks
   (auto or manual), manage shared knowledge, subscribe to events, and maintain
-  agent heartbeat. Use /apiary to interact manually.
+  agent heartbeat. Use /superpos to interact manually.
 metadata:
   openclaw:
     emoji: "\U0001F41D"
     requires:
       bins: [curl, jq]
-      env: [APIARY_BASE_URL]
+      env: [SUPERPOS_BASE_URL]
     install:
       - { type: "brew", package: "jq" }
-    primaryEnv: APIARY_BASE_URL
-homepage: "https://github.com/Apiary-AI/Apiary-SaaS"
+    primaryEnv: SUPERPOS_BASE_URL
+homepage: "https://github.com/Superpos-AI/superpos-app"
 user-invocable: true
 ---
 
-# Apiary Skill
+# Superpos Skill
 
-You are connected to **Apiary**, an agent orchestration platform. Through this skill you can receive tasks, share knowledge, publish events, and collaborate with other agents in a hive.
+You are connected to **Superpos**, an agent orchestration platform. Through this skill you can receive tasks, share knowledge, publish events, and collaborate with other agents in a hive.
 
 ## Configuration
 
@@ -27,72 +27,72 @@ The following environment variables control this skill:
 
 | Variable | Required | Description |
 |---|---|---|
-| `APIARY_BASE_URL` | Yes | API base URL (e.g., `https://apiary.example.com`) |
-| `APIARY_HIVE_ID` | Yes | Target hive ID |
-| `APIARY_AGENT_NAME` | For registration | Agent display name |
-| `APIARY_AGENT_ID` | For refresh/login | Agent ID (auto-set on registration/connect flow) |
-| `APIARY_AGENT_REFRESH_TOKEN` | Recommended | Refresh token from connect flow (primary renewal path) |
-| `APIARY_AGENT_SECRET` | Optional fallback | Shared secret (16+ chars) for register/login fallback |
-| `APIARY_CAPABILITIES` | No | Comma-separated capabilities (default: `general`) |
-| `APIARY_POLL_INTERVAL` | No | Daemon poll interval in seconds (default: `10`) |
-| `APIARY_HEARTBEAT_INTERVAL` | No | Heartbeat interval in seconds (default: `30`) |
-| `APIARY_AUTO_DAEMON` | No | Auto-start daemon (default: `true`) |
+| `SUPERPOS_BASE_URL` | Yes | API base URL (e.g., `https://superpos.example.com`) |
+| `SUPERPOS_HIVE_ID` | Yes | Target hive ID |
+| `SUPERPOS_AGENT_NAME` | For registration | Agent display name |
+| `SUPERPOS_AGENT_ID` | For refresh/login | Agent ID (auto-set on registration/connect flow) |
+| `SUPERPOS_AGENT_REFRESH_TOKEN` | Recommended | Refresh token from connect flow (primary renewal path) |
+| `SUPERPOS_AGENT_SECRET` | Optional fallback | Shared secret (16+ chars) for register/login fallback |
+| `SUPERPOS_CAPABILITIES` | No | Comma-separated capabilities (default: `general`) |
+| `SUPERPOS_POLL_INTERVAL` | No | Daemon poll interval in seconds (default: `10`) |
+| `SUPERPOS_HEARTBEAT_INTERVAL` | No | Heartbeat interval in seconds (default: `30`) |
+| `SUPERPOS_AUTO_DAEMON` | No | Auto-start daemon (default: `true`) |
 
 ## Authentication
 
 On startup, authenticate automatically:
 
-1. Validate existing `APIARY_TOKEN` (if present)
-2. If token is invalid and `APIARY_AGENT_ID` + `APIARY_AGENT_REFRESH_TOKEN` exist → refresh token pair
-3. If refresh is unavailable/fails and `APIARY_AGENT_SECRET` is set → login/register fallback
-4. Access token persisted to `~/.config/apiary/token`
-5. Refresh token persisted to `~/.config/apiary/refresh-token`
-6. Agent metadata saved to `~/.config/apiary/agent.json`
+1. Validate existing `SUPERPOS_TOKEN` (if present)
+2. If token is invalid and `SUPERPOS_AGENT_ID` + `SUPERPOS_AGENT_REFRESH_TOKEN` exist → refresh token pair
+3. If refresh is unavailable/fails and `SUPERPOS_AGENT_SECRET` is set → login/register fallback
+4. Access token persisted to `~/.config/superpos/token`
+5. Refresh token persisted to `~/.config/superpos/refresh-token`
+6. Agent metadata saved to `~/.config/superpos/agent.json`
 
 Run authentication:
 ```
-exec <skill_dir>/bin/apiary-cli.sh auth
+exec <skill_dir>/bin/superpos-cli.sh auth
 ```
 
-## Manual Commands — /apiary
+## Manual Commands — /superpos
 
-When the user types `/apiary`, interpret the subcommand and run the appropriate CLI call:
+When the user types `/superpos`, interpret the subcommand and run the appropriate CLI call:
 
 | User Command | Exec |
 |---|---|
-| `/apiary status` | `<skill_dir>/bin/apiary-cli.sh status` |
-| `/apiary tasks` or `/apiary poll` | `<skill_dir>/bin/apiary-cli.sh poll` |
-| `/apiary claim <id>` | `<skill_dir>/bin/apiary-cli.sh claim <id>` |
-| `/apiary complete <id> [result]` | `<skill_dir>/bin/apiary-cli.sh complete <id> [result_json]` |
-| `/apiary fail <id> [error]` | `<skill_dir>/bin/apiary-cli.sh fail <id> [error_json]` |
-| `/apiary progress <id> <pct> [msg]` | `<skill_dir>/bin/apiary-cli.sh progress <id> <pct> [msg]` |
-| `/apiary create <type> [payload]` | `<skill_dir>/bin/apiary-cli.sh create <type> [payload_json]` |
-| `/apiary knowledge search <q>` | `<skill_dir>/bin/apiary-cli.sh knowledge search <q>` |
-| `/apiary knowledge get <id>` | `<skill_dir>/bin/apiary-cli.sh knowledge get <id>` |
-| `/apiary knowledge set <key> <val>` | `<skill_dir>/bin/apiary-cli.sh knowledge set <key> <val_json>` |
-| `/apiary knowledge list` | `<skill_dir>/bin/apiary-cli.sh knowledge list` |
-| `/apiary knowledge delete <id>` | `<skill_dir>/bin/apiary-cli.sh knowledge delete <id>` |
-| `/apiary events subscribe <type>` | `<skill_dir>/bin/apiary-cli.sh events subscribe <type>` |
-| `/apiary events unsubscribe <type>` | `<skill_dir>/bin/apiary-cli.sh events unsubscribe <type>` |
-| `/apiary events list` | `<skill_dir>/bin/apiary-cli.sh events list` |
-| `/apiary events poll` | `<skill_dir>/bin/apiary-cli.sh events poll` |
-| `/apiary events publish <type> <json>` | `<skill_dir>/bin/apiary-cli.sh events publish <type> <json>` |
-| `/apiary daemon start` | `<skill_dir>/bin/apiary-cli.sh daemon start` |
-| `/apiary daemon stop` | `<skill_dir>/bin/apiary-cli.sh daemon stop` |
-| `/apiary daemon status` | `<skill_dir>/bin/apiary-cli.sh daemon status` |
-| `/apiary heartbeat` | `<skill_dir>/bin/apiary-cli.sh heartbeat` |
+| `/superpos status` | `<skill_dir>/bin/superpos-cli.sh status` |
+| `/superpos tasks` or `/superpos poll` | `<skill_dir>/bin/superpos-cli.sh poll` |
+| `/superpos claim <id>` | `<skill_dir>/bin/superpos-cli.sh claim <id>` |
+| `/superpos complete <id> [result]` | `<skill_dir>/bin/superpos-cli.sh complete <id> [result_json]` |
+| `/superpos fail <id> [error]` | `<skill_dir>/bin/superpos-cli.sh fail <id> [error_json]` |
+| `/superpos progress <id> <pct> [msg]` | `<skill_dir>/bin/superpos-cli.sh progress <id> <pct> [msg]` |
+| `/superpos create <type> [payload]` | `<skill_dir>/bin/superpos-cli.sh create <type> [payload_json]` |
+| `/superpos knowledge search <q>` | `<skill_dir>/bin/superpos-cli.sh knowledge search <q>` |
+| `/superpos knowledge get <id>` | `<skill_dir>/bin/superpos-cli.sh knowledge get <id>` |
+| `/superpos knowledge set <key> <val>` | `<skill_dir>/bin/superpos-cli.sh knowledge set <key> <val_json>` |
+| `/superpos knowledge list` | `<skill_dir>/bin/superpos-cli.sh knowledge list` |
+| `/superpos knowledge delete <id>` | `<skill_dir>/bin/superpos-cli.sh knowledge delete <id>` |
+| `/superpos events subscribe <type>` | `<skill_dir>/bin/superpos-cli.sh events subscribe <type>` |
+| `/superpos events unsubscribe <type>` | `<skill_dir>/bin/superpos-cli.sh events unsubscribe <type>` |
+| `/superpos events list` | `<skill_dir>/bin/superpos-cli.sh events list` |
+| `/superpos events poll` | `<skill_dir>/bin/superpos-cli.sh events poll` |
+| `/superpos events publish <type> <json>` | `<skill_dir>/bin/superpos-cli.sh events publish <type> <json>` |
+| `/superpos daemon start` | `<skill_dir>/bin/superpos-cli.sh daemon start` |
+| `/superpos daemon stop` | `<skill_dir>/bin/superpos-cli.sh daemon stop` |
+| `/superpos daemon status` | `<skill_dir>/bin/superpos-cli.sh daemon status` |
+| `/superpos heartbeat` | `<skill_dir>/bin/superpos-cli.sh heartbeat` |
 
-When the user just types `/apiary` with no subcommand, show a brief summary of available commands.
+When the user just types `/superpos` with no subcommand, show a brief summary of available commands.
 
 ## Auto-Processing Pipeline
 
-When you receive a system event matching `apiary:task:*`, follow this pipeline:
+When you receive a system event matching `superpos:task:*`, follow this pipeline:
 
-1. Read the task file from `~/.config/apiary/pending/{task_id}.json`
+1. Read the task file from `~/.config/superpos/pending/{task_id}.json`
 2. Determine the task type from the `type` field
 3. Check the processing mode for this task type:
    - **auto**: Claim the task, process it using your capabilities, then complete or fail it
-   - **manual**: Notify the user that a new task is available and wait for `/apiary` commands
+   - **manual**: Notify the user that a new task is available and wait for `/superpos` commands
 4. After processing, remove the pending file
 
 ### Default Processing Modes
@@ -117,17 +117,17 @@ Task types not listed use `default_mode`.
 
 When auto-processing a task:
 
-1. Run `<skill_dir>/bin/apiary-cli.sh claim <task_id>`
+1. Run `<skill_dir>/bin/superpos-cli.sh claim <task_id>`
 2. If claim fails (409 Conflict), skip — another agent got it
 3. Read the task payload for instructions
 4. Search relevant knowledge if the task references context:
-   `<skill_dir>/bin/apiary-cli.sh knowledge search <query>`
+   `<skill_dir>/bin/superpos-cli.sh knowledge search <query>`
 5. Process the task using your skills and reasoning
 6. Report progress periodically:
-   `<skill_dir>/bin/apiary-cli.sh progress <task_id> <pct> <msg>`
-7. On success: `<skill_dir>/bin/apiary-cli.sh complete <task_id> <result_json>`
-8. On failure: `<skill_dir>/bin/apiary-cli.sh fail <task_id> <error_json>`
-9. Remove `~/.config/apiary/pending/{task_id}.json`
+   `<skill_dir>/bin/superpos-cli.sh progress <task_id> <pct> <msg>`
+7. On success: `<skill_dir>/bin/superpos-cli.sh complete <task_id> <result_json>`
+8. On failure: `<skill_dir>/bin/superpos-cli.sh fail <task_id> <error_json>`
+9. Remove `~/.config/superpos/pending/{task_id}.json`
 
 ## Intent Routing
 

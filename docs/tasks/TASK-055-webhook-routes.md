@@ -4,7 +4,7 @@
 In Progress
 
 ## Depends On
-- TASK-006 (Apiary & Hive models) — done
+- TASK-006 (Superpos & Hive models) — done
 
 ## Downstream
 - TASK-056 (Webhook field filters) — depends on 055
@@ -26,7 +26,7 @@ In Progress
 ```sql
 CREATE TABLE webhook_routes (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL,
+    superpos_id       VARCHAR(26) NOT NULL,
     hive_id         VARCHAR(26) NOT NULL REFERENCES hives(id),
     name            VARCHAR(255) NOT NULL,
     service_id      VARCHAR(26) NOT NULL REFERENCES service_connections(id),

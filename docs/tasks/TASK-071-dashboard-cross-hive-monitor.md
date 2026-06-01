@@ -23,7 +23,7 @@ apiary: cross-hive tasks, cross-hive events, and cross-hive agent permissions.
    - Return empty datasets with proper pagination structure
 
 3. **Tenant-safe scoping**
-   - All queries scoped to current apiary_id
+   - All queries scoped to current superpos_id
    - Cross-apiary data never exposed
 
 4. **Filtering, pagination, input sanitization**

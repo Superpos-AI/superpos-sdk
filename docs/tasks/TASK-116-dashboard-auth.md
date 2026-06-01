@@ -19,7 +19,7 @@ Add human-user authentication to the web dashboard using Laravel Breeze (Inertia
 - [x] FR-3: Keep `/` public; redirect authenticated users to `/dashboard`
 - [x] FR-4: User dropdown in AppLayout with Profile link and Logout
 - [x] FR-5: Profile page (edit name/email, change password, delete account)
-- [x] FR-6: Auth pages (login, register, forgot/reset password) styled to dark Apiary theme
+- [x] FR-6: Auth pages (login, register, forgot/reset password) styled to dark Superpos theme
 - [x] FR-7: All existing dashboard tests updated with `actingAs()`
 
 ### Non-Functional

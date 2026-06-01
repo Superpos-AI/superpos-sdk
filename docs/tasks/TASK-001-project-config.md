@@ -2,13 +2,13 @@
 
 **Status:** done
 **Branch:** `task/001-project-config`
-**PR:** https://github.com/Apiary-AI/Apiary-SaaS/pull/1
+**PR:** https://github.com/Superpos-AI/superpos-app/pull/1
 **Depends on:** —
 **Blocks:** TASK-002, TASK-003
 
 ## Objective
 
-Create the core Apiary configuration file (`config/apiary.php`) with environment-driven
+Create the core Superpos configuration file (`config/apiary.php`) with environment-driven
 settings that serve as the single source of truth for edition detection, hive defaults,
 and platform-wide configuration references. All downstream tasks depend on
 `config('apiary.*')` being available.
@@ -17,11 +17,11 @@ and platform-wide configuration references. All downstream tasks depend on
 
 ### Functional
 
-- [x] FR-1: `config('apiary.edition')` returns `'ce'` or `'cloud'`, defaulting to `'ce'` via `env('APIARY_EDITION', 'ce')`
+- [x] FR-1: `config('apiary.edition')` returns `'ce'` or `'cloud'`, defaulting to `'ce'` via `env('SUPERPOS_EDITION', 'ce')`
 - [x] FR-2: `config('apiary.is_cloud')` returns a boolean derived from the edition value
 - [x] FR-3: Hive defaults provided: `config('apiary.hive.default_name')`, `config('apiary.hive.default_slug')`
-- [x] FR-4: Apiary (org) defaults provided: `config('apiary.apiary.default_name')`, `config('apiary.apiary.default_slug')`
-- [x] FR-5: CE constants for single-tenant scoping: `config('apiary.ce.apiary_id')`, `config('apiary.ce.hive_id')`
+- [x] FR-4: Superpos (org) defaults provided: `config('apiary.apiary.default_name')`, `config('apiary.apiary.default_slug')`
+- [x] FR-5: CE constants for single-tenant scoping: `config('apiary.ce.superpos_id')`, `config('apiary.ce.hive_id')`
 - [x] FR-6: Agent defaults: polling interval, heartbeat timeout, max concurrent tasks
 - [x] FR-7: Task defaults: default timeout, max retries, retry backoff
 - [x] FR-8: Knowledge defaults: default TTL, max entry size
@@ -41,7 +41,7 @@ and platform-wide configuration references. All downstream tasks depend on
 
 | Action | Path | Purpose |
 |--------|------|---------|
-| Create | `config/apiary.php` | Core Apiary configuration file |
+| Create | `config/apiary.php` | Core Superpos configuration file |
 | Create | `tests/Unit/ConfigApiaryTest.php` | Unit tests for config defaults |
 | Create | `tests/Feature/ConfigApiaryTest.php` | Feature tests for env-driven config |
 | Modify | `TASKS.md` | Update task 001 status |
@@ -77,7 +77,7 @@ _None — this is a configuration-only task._
 - [x] `is_cloud` is `false` by default
 - [x] CE constants are valid ULIDs
 - [x] Hive defaults are present and non-empty
-- [x] Apiary defaults are present and non-empty
+- [x] Superpos defaults are present and non-empty
 - [x] Agent defaults are sensible integers
 - [x] Task defaults are sensible integers
 - [x] Knowledge defaults are sensible values
@@ -85,7 +85,7 @@ _None — this is a configuration-only task._
 
 ### Feature Tests
 
-- [x] Setting `APIARY_EDITION=cloud` makes `is_cloud` true
+- [x] Setting `SUPERPOS_EDITION=cloud` makes `is_cloud` true
 - [x] Env overrides work for agent, task, and knowledge settings
 - [x] All config keys are accessible via `config('apiary.*')`
 

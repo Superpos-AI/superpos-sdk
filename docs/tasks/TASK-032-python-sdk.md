@@ -2,31 +2,31 @@
 
 **Status:** Review
 **Branch:** `task/032-python-sdk`
-**PR:** https://github.com/Apiary-AI/Apiary-SaaS/pull/39
+**PR:** https://github.com/Superpos-AI/superpos-app/pull/39
 **Depends On:** 014 (Agent registration), 015 (Heartbeat), 016 (Task creation), 017 (Polling/claiming), 018 (Progress/completion), 020 (Knowledge API)
 
 ## Objective
 
-Ship a minimal but usable Python SDK that wraps the Apiary v1 API, giving agent
+Ship a minimal but usable Python SDK that wraps the Superpos v1 API, giving agent
 developers a clean, typed client for the core agent → task → knowledge workflow.
 
 ## Requirements
 
 ### Package structure
-- Installable Python package (`apiary-sdk`) in `sdk/python/`
+- Installable Python package (`superpos-sdk`) in `sdk/python/`
 - Requires Python 3.10+, single runtime dependency: `httpx`
 - Dev dependencies: `pytest`, `pytest-httpx`, `ruff`
 
-### Client core (`ApiaryClient`)
+### Client core (`SuperposClient`)
 - `base_url` + optional `token` constructor
 - Bearer token auth header management
-- Apiary JSON envelope (`{ data, meta, errors }`) unwrapping
+- Superpos JSON envelope (`{ data, meta, errors }`) unwrapping
 - Context manager support (`with` statement)
 - Configurable timeout
 
 ### Error mapping
 - HTTP status → typed exception hierarchy:
-  - `ApiaryError` (base)
+  - `SuperposError` (base)
   - `ValidationError` (422)
   - `AuthenticationError` (401)
   - `PermissionError` (403)
@@ -60,9 +60,9 @@ developers a clean, typed client for the core agent → task → knowledge workf
 
 - `sdk/python/pyproject.toml` — package configuration
 - `sdk/python/README.md` — SDK documentation
-- `sdk/python/src/apiary_sdk/__init__.py` — public API exports
-- `sdk/python/src/apiary_sdk/client.py` — main client class
-- `sdk/python/src/apiary_sdk/exceptions.py` — error hierarchy
+- `sdk/python/src/superpos_sdk/__init__.py` — public API exports
+- `sdk/python/src/superpos_sdk/client.py` — main client class
+- `sdk/python/src/superpos_sdk/exceptions.py` — error hierarchy
 - `sdk/python/tests/conftest.py` — shared fixtures
 - `sdk/python/tests/test_client.py` — core client tests
 - `sdk/python/tests/test_agents.py` — agent endpoint tests

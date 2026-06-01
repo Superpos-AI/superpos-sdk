@@ -61,7 +61,7 @@ Standard `{ data, meta, errors }` envelope. Approval request data:
 ```json
 {
   "id": "...",
-  "apiary_id": "...",
+  "superpos_id": "...",
   "hive_id": "...",
   "agent_id": "...",
   "service_id": "...",

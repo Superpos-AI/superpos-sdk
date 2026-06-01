@@ -1,4 +1,4 @@
-# Apiary — Data Request Protocol & Conventions
+# Superpos — Data Request Protocol & Conventions
 
 > **Task:** TASK-139
 > **Depends on:** TASK-008 (task model)
@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-The **data request protocol** defines how any Apiary agent sends a structured
+The **data request protocol** defines how any Superpos agent sends a structured
 request to a service worker and how the service worker delivers a response.
 It builds on the existing task system, adding a dedicated
 `POST /tasks/{id}/deliver-response` endpoint that enables push-style response
@@ -145,7 +145,7 @@ POST /api/v1/agents/register
 ### 6.1 Python SDK — Subclass Pattern
 
 ```python
-from apiary_sdk import ServiceWorker
+from superpos_sdk import ServiceWorker
 
 class GitHubWorker(ServiceWorker):
     CAPABILITY = "data:github"
@@ -187,7 +187,7 @@ Run the worker:
 
 ```python
 worker = GitHubWorker(
-    base_url="https://apiary.example.com",
+    base_url="https://superpos.example.com",
     hive_id="01HXYZ...",
     name="github-worker",
     secret="s3cr3t",
@@ -206,10 +206,10 @@ The `ServiceWorker` base class handles:
 ### 6.2 Python SDK — Composition Pattern
 
 ```python
-from apiary_sdk import ServiceWorker
+from superpos_sdk import ServiceWorker
 
 worker = ServiceWorker(
-    base_url="https://apiary.example.com",
+    base_url="https://superpos.example.com",
     hive_id="01HXYZ...",
     name="github-worker",
     secret="s3cr3t",
@@ -278,9 +278,9 @@ class GitHubWorker(ServiceWorker):
 ### 7.1 Python — Requesting Data (Any Agent)
 
 ```python
-from apiary_sdk import ApiaryClient
+from superpos_sdk import SuperposClient
 
-client = ApiaryClient("https://apiary.example.com", token="tok_xxx")
+client = SuperposClient("https://superpos.example.com", token="tok_xxx")
 
 # Fire and forget — returns a task dict immediately
 ref = client.data_request(
@@ -306,10 +306,10 @@ for svc in services:
 ### 7.2 Shell SDK — Requesting Data
 
 ```bash
-source apiary-sdk.sh
+source superpos-sdk.sh
 
 # Send a data_request
-TASK_JSON=$(apiary_data_request "$HIVE_ID" \
+TASK_JSON=$(superpos_data_request "$HIVE_ID" \
     -c data:github \
     -o fetch_issues \
     -p '{"repo":"acme/backend","state":"open"}')
@@ -318,13 +318,13 @@ TASK_ID=$(echo "$TASK_JSON" | jq -r '.id')
 echo "Dispatched: $TASK_ID"
 
 # Discover service workers
-apiary_discover_services "$HIVE_ID"
+superpos_discover_services "$HIVE_ID"
 ```
 
 ### 7.3 Shell SDK — Dispatching from a Worker
 
 ```bash
-source apiary-sdk.sh
+source superpos-sdk.sh
 
 # Inside a service worker handler script:
 handle_orchestrate() {
@@ -333,7 +333,7 @@ handle_orchestrate() {
     repo=$(echo "$params" | jq -r '.repo')
 
     # Fan out to the GitHub worker
-    apiary_data_request_dispatch "$HIVE_ID" \
+    superpos_data_request_dispatch "$HIVE_ID" \
         -c data:github \
         -o fetch_issues \
         -p "{\"repo\":\"$repo\",\"state\":\"open\"}"

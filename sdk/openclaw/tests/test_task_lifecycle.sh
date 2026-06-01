@@ -22,9 +22,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Reuse the Shell SDK test harness
 source "${SCRIPT_DIR}/../../shell/tests/test_harness.sh"
 
-# We need the SDK loaded (provides APIARY_OK, APIARY_ERR_CONFLICT, etc.)
-source "${SCRIPT_DIR}/../../shell/src/apiary-sdk.sh"
-_APIARY_SDK_LOADED=1
+# We need the SDK loaded (provides SUPERPOS_OK, SUPERPOS_ERR_CONFLICT, etc.)
+source "${SCRIPT_DIR}/../../shell/src/superpos-sdk.sh"
+_SUPERPOS_SDK_LOADED=1
 
 # ── helpers ──────────────────────────────────────────────────────
 
@@ -43,14 +43,14 @@ _FAIL_LAST_TASK=""
 _FAIL_LAST_ERROR=""
 
 _setup() {
-    export APIARY_CONFIG_DIR="$_tmp_dir"
-    export APIARY_HIVE_ID="hive-test-001"
-    export APIARY_WAKE_ENABLED="true"
-    export APIARY_WAKE_SESSION="test-session-123"
-    export APIARY_WAKE_LOG="${_tmp_dir}/wake.log"
-    export APIARY_WAKE_DEBOUNCE_SECS="5"
-    export APIARY_WAKE_ALERT_ENABLED="false"
-    export APIARY_WAKE_ALERT_TELEGRAM=""
+    export SUPERPOS_CONFIG_DIR="$_tmp_dir"
+    export SUPERPOS_HIVE_ID="hive-test-001"
+    export SUPERPOS_WAKE_ENABLED="true"
+    export SUPERPOS_WAKE_SESSION="test-session-123"
+    export SUPERPOS_WAKE_LOG="${_tmp_dir}/wake.log"
+    export SUPERPOS_WAKE_DEBOUNCE_SECS="5"
+    export SUPERPOS_WAKE_ALERT_ENABLED="false"
+    export SUPERPOS_WAKE_ALERT_TELEGRAM=""
 
     export PENDING_DIR="${_tmp_dir}/pending"
     mkdir -p "$PENDING_DIR"
@@ -72,11 +72,11 @@ _setup() {
     _FAIL_LAST_ERROR=""
 
     # Source modules to pick up env changes
-    source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
-    source "${SCRIPT_DIR}/../bin/apiary-task-lifecycle.sh"
+    source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
+    source "${SCRIPT_DIR}/../bin/superpos-task-lifecycle.sh"
 
     # Mock SDK API functions
-    apiary_claim_task() {
+    superpos_claim_task() {
         local hive_id="$1"
         local task_id="$2"
         _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
@@ -84,7 +84,7 @@ _setup() {
         return $_CLAIM_RC
     }
 
-    apiary_complete_task() {
+    superpos_complete_task() {
         local hive_id="$1"
         local task_id="$2"
         shift 2
@@ -100,7 +100,7 @@ _setup() {
         return 0
     }
 
-    apiary_fail_task() {
+    superpos_fail_task() {
         local hive_id="$1"
         local task_id="$2"
         shift 2
@@ -229,7 +229,7 @@ assert_eq "$([ -f "${PENDING_DIR}/lc-t1.json" ] && echo exists || echo removed)"
 describe "Lifecycle — claim conflict (409) skips gracefully"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 task_json=$(_make_pr_comment_task "lc-conflict" 101)
 echo "$task_json" > "${PENDING_DIR}/lc-conflict.json"
 
@@ -306,18 +306,18 @@ describe "Lifecycle — delivery failure marks task as failed"
 
 _setup
 _CLAIM_RC=0
-export APIARY_WAKE_ENABLED="true"
-export APIARY_WAKE_SESSION="test-session"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
-source "${SCRIPT_DIR}/../bin/apiary-task-lifecycle.sh"
+export SUPERPOS_WAKE_ENABLED="true"
+export SUPERPOS_WAKE_SESSION="test-session"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
+source "${SCRIPT_DIR}/../bin/superpos-task-lifecycle.sh"
 
 # Re-apply mocks after re-source
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
     _CLAIM_LAST_TASK="$2"
     return 0
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     _COMPLETE_LAST_TASK="$2"
     shift 2
@@ -326,7 +326,7 @@ apiary_complete_task() {
     done
     return 0
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     _FAIL_LAST_TASK="$2"
     shift 2
@@ -354,7 +354,7 @@ assert_eq "$_FAIL_LAST_TASK" "lc-fail" "fail called with correct task ID"
 assert_contains "$_FAIL_LAST_ERROR" "failed" "error payload indicates failure"
 assert_contains "$_FAIL_LAST_ERROR" "delivery" "error mentions delivery"
 
-# Pending file still cleaned up (task has been reported to Apiary)
+# Pending file still cleaned up (task has been reported to Superpos)
 assert_eq "$([ -f "${PENDING_DIR}/lc-fail.json" ] && echo exists || echo removed)" "removed" \
     "pending file cleaned up after fail"
 
@@ -380,7 +380,7 @@ rc=$?
 set -e
 
 assert_eq "$rc" "0" "returns 0 for deduped task"
-assert_eq "$_COMPLETE_CALLS" "1" "deduped task still gets completed in Apiary"
+assert_eq "$_COMPLETE_CALLS" "1" "deduped task still gets completed in Superpos"
 assert_contains "$_COMPLETE_LAST_RESULT" "deduplicated" "result mentions deduplication"
 
 assert_eq "$([ -f "${PENDING_DIR}/lc-dedup.json" ] && echo exists || echo removed)" "removed" \
@@ -416,18 +416,18 @@ describe "Lifecycle — no channels enabled acknowledges task"
 
 _setup
 _CLAIM_RC=0
-export APIARY_WAKE_ENABLED="false"
-export APIARY_WAKE_ALERT_ENABLED="false"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
-source "${SCRIPT_DIR}/../bin/apiary-task-lifecycle.sh"
+export SUPERPOS_WAKE_ENABLED="false"
+export SUPERPOS_WAKE_ALERT_ENABLED="false"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
+source "${SCRIPT_DIR}/../bin/superpos-task-lifecycle.sh"
 
 # Re-apply mocks
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
     _CLAIM_LAST_TASK="$2"
     return 0
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     _COMPLETE_LAST_TASK="$2"
     shift 2
@@ -436,7 +436,7 @@ apiary_complete_task() {
     done
     return 0
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     return 0
 }
@@ -461,16 +461,16 @@ _setup
 
 # Simulate: first caller succeeds, second gets 409
 _race_call_count=0
-apiary_claim_task() {
+superpos_claim_task() {
     _race_call_count=$((_race_call_count + 1))
     _CLAIM_CALLS=$_race_call_count
     if [[ $_race_call_count -eq 1 ]]; then
         return 0  # first caller wins
     else
-        return $APIARY_ERR_CONFLICT  # second caller loses
+        return $SUPERPOS_ERR_CONFLICT  # second caller loses
     fi
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     _COMPLETE_LAST_TASK="$2"
     shift 2
@@ -479,7 +479,7 @@ apiary_complete_task() {
     done
     return 0
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     return 0
 }
@@ -525,11 +525,11 @@ assert_eq "$_CLAIM_CALLS" "0" "claim not called with empty task_id"
 # Missing hive_id — skipped gracefully
 # ═══════════════════════════════════════════════════════════════
 
-describe "Lifecycle — missing APIARY_HIVE_ID skipped"
+describe "Lifecycle — missing SUPERPOS_HIVE_ID skipped"
 
 _setup
-export APIARY_HIVE_ID=""
-source "${SCRIPT_DIR}/../bin/apiary-task-lifecycle.sh"
+export SUPERPOS_HIVE_ID=""
+source "${SCRIPT_DIR}/../bin/superpos-task-lifecycle.sh"
 
 set +e
 _lifecycle_process_webhook_handler '{"id":"t1"}' "t1"
@@ -663,7 +663,7 @@ assert_eq "$(echo "$trace_invoke_top" | jq -r '.trusted_control_plane.invoke.con
 describe "Retry sweep — unknown task 409 with verified .claimed retries terminal fail"
 
 _setup
-_CLAIM_RC=${APIARY_ERR_CONFLICT:-6}
+_CLAIM_RC=${SUPERPOS_ERR_CONFLICT:-6}
 
 owned_task=$(jq -n '{"id":"other-type-conflict-owned","type":"triage","payload":{}}')
 echo "$owned_task" > "${PENDING_DIR}/other-type-conflict-owned.json"
@@ -683,7 +683,7 @@ assert_eq "$([ -f "${PENDING_DIR}/other-type-conflict-owned.json" ] && echo exis
 describe "Retry sweep — unknown task 409 without .claimed quarantines for recovery"
 
 _setup
-_CLAIM_RC=${APIARY_ERR_CONFLICT:-6}
+_CLAIM_RC=${SUPERPOS_ERR_CONFLICT:-6}
 
 conflict_task=$(jq -n '{"id":"other-type-conflict-no-marker","type":"triage","payload":{}}')
 echo "$conflict_task" > "${PENDING_DIR}/other-type-conflict-no-marker.json"
@@ -698,8 +698,8 @@ assert_eq "$([ -f "${PENDING_DIR}/quarantine/other-type-conflict-no-marker.json"
 describe "Retry sweep — unknown task 409 with stale-but-owned marker retries terminal fail"
 
 _setup
-_CLAIM_RC=${APIARY_ERR_CONFLICT:-6}
-APIARY_CLAIM_TTL=1
+_CLAIM_RC=${SUPERPOS_ERR_CONFLICT:-6}
+SUPERPOS_CLAIM_TTL=1
 
 stale_owned_task=$(jq -n '{"id":"other-type-conflict-stale-owned","type":"triage","payload":{}}')
 echo "$stale_owned_task" > "${PENDING_DIR}/other-type-conflict-stale-owned.json"
@@ -722,13 +722,13 @@ describe "Retry sweep — unknown task fail 409 is reconciled and cleaned up"
 _setup
 _CLAIM_RC=0
 
-apiary_fail_task() {
+superpos_fail_task() {
     local hive_id="$1"
     local task_id="$2"
     shift 2
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     _FAIL_LAST_TASK="$task_id"
-    return ${APIARY_ERR_CONFLICT:-6}
+    return ${SUPERPOS_ERR_CONFLICT:-6}
 }
 
 conflict_terminal_task=$(jq -n '{"id":"other-type-fail-409","type":"triage","payload":{}}')
@@ -780,7 +780,7 @@ assert_eq "$([ -f "${PENDING_DIR}/retry-multi.json" ] && echo exists || echo rem
 describe "Retry sweep — already-claimed task quarantines pending"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 task_json=$(_make_pr_comment_task "retry-409" 900 "org/conflict" 90 "Already claimed")
 echo "$task_json" > "${PENDING_DIR}/retry-409.json"
 
@@ -850,17 +850,17 @@ task_json=$(_make_pr_comment_task "lc-comp-fail" 1100 "org/comp-fail" 11 "Comple
 echo "$task_json" > "${PENDING_DIR}/lc-comp-fail.json"
 
 # Mock: claim succeeds, complete FAILS
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
     _CLAIM_LAST_TASK="$2"
     return 0
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     _COMPLETE_LAST_TASK="$2"
     return 1  # simulate API failure
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     return 0
 }
@@ -883,25 +883,25 @@ describe "Lifecycle — fail API failure preserves pending file for retry"
 
 _setup
 _CLAIM_RC=0
-export APIARY_WAKE_ENABLED="true"
-export APIARY_WAKE_SESSION="test-session"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
-source "${SCRIPT_DIR}/../bin/apiary-task-lifecycle.sh"
+export SUPERPOS_WAKE_ENABLED="true"
+export SUPERPOS_WAKE_SESSION="test-session"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
+source "${SCRIPT_DIR}/../bin/superpos-task-lifecycle.sh"
 
 task_json=$(_make_pr_comment_task "lc-fail-fail" 1200 "org/fail-fail" 12 "Fail will fail")
 echo "$task_json" > "${PENDING_DIR}/lc-fail-fail.json"
 
 # Mock: claim succeeds, delivery fails, fail API also fails
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
     _CLAIM_LAST_TASK="$2"
     return 0
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     return 0
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     return 1  # simulate API failure
 }
@@ -950,14 +950,14 @@ _setup
 # Simulate: first call claims and processes but completion API fails (rc=1).
 # Result artifact is saved. Second call finds the artifact and retries
 # the API call directly (no re-claim needed). Task is unstuck.
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
     _CLAIM_LAST_TASK="$2"
     return 0
 }
 
 _comp_call=0
-apiary_complete_task() {
+superpos_complete_task() {
     _comp_call=$((_comp_call + 1))
     _COMPLETE_CALLS=$_comp_call
     _COMPLETE_LAST_TASK="$2"
@@ -970,7 +970,7 @@ apiary_complete_task() {
     fi
     return 0  # subsequent: success
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     return 0
 }
@@ -1005,7 +1005,7 @@ assert_eq "$([ -f "${PENDING_DIR}/lc-strand.result.json" ] && echo exists || ech
 describe "Lifecycle — conflict from different agent quarantines pending"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 # No result artifact, no .claimed marker → uncertain ownership
 task_json=$(_make_pr_comment_task "lc-other-agent" 2100 "org/other" 21 "Other agent owns this")
@@ -1036,16 +1036,16 @@ task_json=$(_make_pr_comment_task "lc-artifact" 3000 "org/artifact" 30 "Artifact
 echo "$task_json" > "${PENDING_DIR}/lc-artifact.json"
 
 # Mock: claim succeeds, complete FAILS
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
     _CLAIM_LAST_TASK="$2"
     return 0
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     return 1  # simulate API failure
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     return 0
 }
@@ -1082,11 +1082,11 @@ echo '{"task_id":"lc-art-retry","status":"completed","summary":"delivered: wake=
     > "${PENDING_DIR}/lc-art-retry.result.json"
 
 # Mock: complete NOW succeeds
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
     return 0
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     _COMPLETE_LAST_TASK="$2"
     shift 2
@@ -1095,7 +1095,7 @@ apiary_complete_task() {
     done
     return 0
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     return 0
 }
@@ -1131,11 +1131,11 @@ echo '{"task_id":"lc-art-still-fail","status":"completed","summary":"delivered"}
     > "${PENDING_DIR}/lc-art-still-fail.result.json"
 
 # Mock: complete still fails
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
     return 0
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     return 1  # still failing
 }
@@ -1166,15 +1166,15 @@ echo '{"task_id":"lc-art-fail","status":"failed","error":"all delivery channels 
     > "${PENDING_DIR}/lc-art-fail.result.json"
 
 # Mock: fail_task now succeeds
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
     return 0
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     return 0
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     _FAIL_LAST_TASK="$2"
     shift 2
@@ -1228,17 +1228,17 @@ _setup
 _CLAIM_RC=0
 
 # Make complete_task fail to simulate terminal API failure
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
     _CLAIM_LAST_TASK="$2"
     return 0
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     _COMPLETE_LAST_TASK="$2"
     return 1  # simulate API failure
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     return 1  # also fails
 }
@@ -1271,7 +1271,7 @@ _setup
 # Pre-create .claimed marker (simulates prior successful claim)
 echo "sm-409own" > "${PENDING_DIR}/sm-409own.claimed"
 
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 task_json=$(_make_pr_comment_task "sm-409own" 4002 "org/sm" 42 "Own 409")
 echo "$task_json" > "${PENDING_DIR}/sm-409own.json"
 
@@ -1298,7 +1298,7 @@ assert_eq "$([ -f "${PENDING_DIR}/sm-409own.json" ] && echo exists || echo remov
 describe "State machine — 409 without .claimed marker quarantines pending"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 task_json=$(_make_pr_comment_task "sm-409for" 4003 "org/sm" 43 "Foreign 409")
 echo "$task_json" > "${PENDING_DIR}/sm-409for.json"
 # No .claimed marker — uncertain ownership
@@ -1327,12 +1327,12 @@ _setup
 
 # Phase 1: claim succeeds, terminal API fails → artifact saved
 _api_fail_count=0
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
     _CLAIM_LAST_TASK="$2"
     return 0
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     _COMPLETE_LAST_TASK="$2"
     shift 2
@@ -1345,7 +1345,7 @@ apiary_complete_task() {
     fi
     return 0  # subsequent attempts succeed
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     return 0
 }
@@ -1392,15 +1392,15 @@ echo "sm-release-err" > "${PENDING_DIR}/sm-release-err.claimed"
 
 # P1 fix: claim returns 409, but re-processing falls through to Step 2.
 # fail_task is no longer called in the 409+.claimed path — complete is called.
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
-    return $APIARY_ERR_CONFLICT
+    return $SUPERPOS_ERR_CONFLICT
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     return 1
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     _COMPLETE_LAST_TASK="$2"
     shift 2
@@ -1437,15 +1437,15 @@ _setup
 
 echo "sm-release-409" > "${PENDING_DIR}/sm-release-409.claimed"
 
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
-    return $APIARY_ERR_CONFLICT
+    return $SUPERPOS_ERR_CONFLICT
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     return 0
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     _COMPLETE_LAST_TASK="$2"
     shift 2
@@ -1485,15 +1485,15 @@ echo "lc-art-409" > "${PENDING_DIR}/lc-art-409.claimed"
 echo '{"task_id":"lc-art-409","status":"completed","summary":"delivered"}' \
     > "${PENDING_DIR}/lc-art-409.result.json"
 
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
     return 0
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
-    return $APIARY_ERR_CONFLICT  # 409 = already completed remotely
+    return $SUPERPOS_ERR_CONFLICT  # 409 = already completed remotely
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     return 0
 }
@@ -1589,18 +1589,18 @@ describe "Wake metric — delivery failure does not set _lifecycle_wake_delivere
 
 _setup
 _CLAIM_RC=0
-export APIARY_WAKE_ENABLED="true"
-export APIARY_WAKE_SESSION="test-session"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
-source "${SCRIPT_DIR}/../bin/apiary-task-lifecycle.sh"
+export SUPERPOS_WAKE_ENABLED="true"
+export SUPERPOS_WAKE_SESSION="test-session"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
+source "${SCRIPT_DIR}/../bin/superpos-task-lifecycle.sh"
 
 # Re-apply mocks
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
     _CLAIM_LAST_TASK="$2"
     return 0
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     shift 2
     while [[ $# -gt 0 ]]; do
@@ -1608,7 +1608,7 @@ apiary_complete_task() {
     done
     return 0
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     shift 2
     while [[ $# -gt 0 ]]; do
@@ -1632,18 +1632,18 @@ describe "Wake metric — no channels enabled does not set _lifecycle_wake_deliv
 
 _setup
 _CLAIM_RC=0
-export APIARY_WAKE_ENABLED="false"
-export APIARY_WAKE_ALERT_ENABLED="false"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
-source "${SCRIPT_DIR}/../bin/apiary-task-lifecycle.sh"
+export SUPERPOS_WAKE_ENABLED="false"
+export SUPERPOS_WAKE_ALERT_ENABLED="false"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
+source "${SCRIPT_DIR}/../bin/superpos-task-lifecycle.sh"
 
 # Re-apply mocks
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
     _CLAIM_LAST_TASK="$2"
     return 0
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     shift 2
     while [[ $# -gt 0 ]]; do
@@ -1651,7 +1651,7 @@ apiary_complete_task() {
     done
     return 0
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     return 0
 }
@@ -1762,7 +1762,7 @@ assert_eq "${_stats_wakes_sent}" "1" "retry-mixed: wakes_sent increments only fo
 describe "P1 — 409+.claimed re-processes and delivers wake (no reminder loss)"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
 
 # Pre-create .claimed marker (simulates crash after claim, before processing)
 echo "p1-recover" > "${PENDING_DIR}/p1-recover.claimed"
@@ -1789,21 +1789,21 @@ assert_eq "$([ -f "${PENDING_DIR}/p1-recover.json" ] && echo exists || echo remo
 describe "P1 — 409+.claimed re-processes; delivery failure still marks task failed"
 
 _setup
-_CLAIM_RC=$APIARY_ERR_CONFLICT
-export APIARY_WAKE_ENABLED="true"
-export APIARY_WAKE_SESSION="test-session"
-source "${SCRIPT_DIR}/../bin/apiary-webhook-wake.sh"
-source "${SCRIPT_DIR}/../bin/apiary-task-lifecycle.sh"
+_CLAIM_RC=$SUPERPOS_ERR_CONFLICT
+export SUPERPOS_WAKE_ENABLED="true"
+export SUPERPOS_WAKE_SESSION="test-session"
+source "${SCRIPT_DIR}/../bin/superpos-webhook-wake.sh"
+source "${SCRIPT_DIR}/../bin/superpos-task-lifecycle.sh"
 
 # Pre-create .claimed marker
 echo "p1-delfail" > "${PENDING_DIR}/p1-delfail.claimed"
 
 # Mock: claim 409, wake delivery fails, fail API succeeds
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
-    return $APIARY_ERR_CONFLICT
+    return $SUPERPOS_ERR_CONFLICT
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     shift 2
     while [[ $# -gt 0 ]]; do
@@ -1811,7 +1811,7 @@ apiary_complete_task() {
     done
     return 0
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     shift 2
     while [[ $# -gt 0 ]]; do
@@ -1843,15 +1843,15 @@ _setup
 
 echo "p1-apifail" > "${PENDING_DIR}/p1-apifail.claimed"
 
-apiary_claim_task() {
+superpos_claim_task() {
     _CLAIM_CALLS=$((_CLAIM_CALLS + 1))
-    return $APIARY_ERR_CONFLICT
+    return $SUPERPOS_ERR_CONFLICT
 }
-apiary_complete_task() {
+superpos_complete_task() {
     _COMPLETE_CALLS=$((_COMPLETE_CALLS + 1))
     return 1  # terminal API fails
 }
-apiary_fail_task() {
+superpos_fail_task() {
     _FAIL_CALLS=$((_FAIL_CALLS + 1))
     return 0
 }

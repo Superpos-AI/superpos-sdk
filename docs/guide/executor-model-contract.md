@@ -1,6 +1,6 @@
 # Executor Model Contract — Event Payload
 
-Events published through the Apiary Event Bus can carry **execution-ready** payloads so the daemon can process them without follow-up API fetches.
+Events published through the Superpos Event Bus can carry **execution-ready** payloads so the daemon can process them without follow-up API fetches.
 
 ## Execution-Ready Event Shape
 
@@ -23,7 +23,7 @@ When an event carries `invoke` fields, the poll response promotes them to the to
   },
   "source_agent_id": "...",
   "hive_id": "...",
-  "apiary_id": "...",
+  "superpos_id": "...",
   "is_cross_hive": false,
   "seq": 1,
   "created_at": "2026-03-12T00:00:00+00:00"

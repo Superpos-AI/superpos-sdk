@@ -2,7 +2,7 @@
 
 **Status:** Review
 **Branch:** `task/028-websocket-reverb`
-**PR:** https://github.com/Apiary-AI/Apiary-SaaS/pull/33
+**PR:** https://github.com/Superpos-AI/superpos-app/pull/33
 **Depends On:** TASK-022 (Inertia + React), TASK-023 (Dashboard home)
 
 ## Summary

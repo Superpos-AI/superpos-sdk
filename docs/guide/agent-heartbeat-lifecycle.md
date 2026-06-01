@@ -14,7 +14,7 @@ For registration and token management, see the
 ## Overview
 
 ```text
-Agent (external)                      Apiary Platform
+Agent (external)                      Superpos Platform
 ────────────────                      ────────────────
   POST /api/v1/agents/heartbeat ──►   AgentLifecycleController::heartbeat()
   {                                     │
@@ -42,7 +42,7 @@ Agent (external)                      Apiary Platform
 - An agent can only update its own heartbeat and status — never another agent's
 - Heartbeats are idempotent — repeated calls without metadata simply bump the timestamp
 - Same-status transitions are no-ops — no activity log entry, no timestamp change
-- Every real state change is recorded in the [activity log](./activity-log.md)
+- Every real state change is recorded in the activity log
 
 ## Heartbeat Endpoint
 
@@ -313,17 +313,17 @@ The stale timeout is configured in `config/apiary.php`:
 
 ```php
 'agent' => [
-    'heartbeat_timeout' => (int) env('APIARY_AGENT_HEARTBEAT_TIMEOUT', 60),
+    'heartbeat_timeout' => (int) env('SUPERPOS_AGENT_HEARTBEAT_TIMEOUT', 60),
 ],
 ```
 
-Set `APIARY_AGENT_HEARTBEAT_TIMEOUT` in your `.env` to adjust the threshold.
+Set `SUPERPOS_AGENT_HEARTBEAT_TIMEOUT` in your `.env` to adjust the threshold.
 A lower value detects stale agents faster but requires more frequent
 heartbeats. A higher value is more tolerant of network hiccups.
 
 | Env Variable | Default | Unit | Description |
 |-------------|---------|------|-------------|
-| `APIARY_AGENT_HEARTBEAT_TIMEOUT` | `60` | seconds | Time after last heartbeat before an active agent is considered stale |
+| `SUPERPOS_AGENT_HEARTBEAT_TIMEOUT` | `60` | seconds | Time after last heartbeat before an active agent is considered stale |
 
 ::: tip
 As a rule of thumb, set the heartbeat interval to roughly one-third of the
@@ -372,7 +372,7 @@ Only structured event metadata (`metadata_updated`, `old_status`,
 ## Activity Logging
 
 Every real state change creates an entry in the
-[activity log](./activity-log.md). No-op operations (same-status updates,
+activity log. No-op operations (same-status updates,
 timestamp-only heartbeats without metadata changes) still log for heartbeats
 but skip logging for status no-ops.
 
@@ -396,12 +396,11 @@ All entries automatically include:
 
 | Field | Source |
 |-------|--------|
-| `apiary_id` | Resolved from agent's hive |
+| `superpos_id` | Resolved from agent's hive |
 | `hive_id` | Agent's home hive |
 | `agent_id` | Authenticated agent |
 
-See the [ActivityLogger Service](./activity-logger.md) guide for the fluent
-builder API used internally.
+The `ActivityLogger` service provides the fluent builder API used internally.
 
 ## CE vs Cloud Notes
 
@@ -409,9 +408,9 @@ builder API used internally.
 |----------|-------------------|---------------|
 | Heartbeat endpoint | `/api/v1/agents/heartbeat` | `/api/v1/agents/heartbeat` (identical) |
 | Status endpoint | `/api/v1/agents/status` | `/api/v1/agents/status` (identical) |
-| Apiary context | Always `default` apiary | Resolved from tenant organization |
+| Superpos context | Always `default` apiary | Resolved from tenant organization |
 | Hive isolation | Application-level scoping | DB-level global scopes via `BelongsToHive` trait |
-| Stale timeout config | `APIARY_AGENT_HEARTBEAT_TIMEOUT` | Same env variable |
+| Stale timeout config | `SUPERPOS_AGENT_HEARTBEAT_TIMEOUT` | Same env variable |
 | Activity log scoping | Single apiary, single or few hives | Multi-tenant, per-org filtering |
 | API contract | Identical | Identical |
 
@@ -444,12 +443,12 @@ If your agent appears stale in the dashboard:
 
 1. **Check heartbeat interval** — ensure your agent sends heartbeats more
    frequently than the configured timeout (default 60 seconds)
-2. **Check network connectivity** — the agent must be able to reach the Apiary
+2. **Check network connectivity** — the agent must be able to reach the Superpos
    API endpoint
 3. **Check agent status** — only active agents (`online`, `busy`, `idle`) can
    be stale. If the agent set itself to `offline` or `error`, it will not be
    flagged as stale regardless of heartbeat age
-4. **Check timeout config** — verify `APIARY_AGENT_HEARTBEAT_TIMEOUT` in your
+4. **Check timeout config** — verify `SUPERPOS_AGENT_HEARTBEAT_TIMEOUT` in your
    `.env` is set appropriately for your network conditions
 
 ### Metadata Not Updating
@@ -503,7 +502,7 @@ php artisan test
 import requests
 import time
 
-BASE = "https://apiary.example.com/api/v1/agents"
+BASE = "https://superpos.example.com/api/v1/agents"
 TOKEN = "1|abc123def456ghi789..."
 HEADERS = {"Authorization": f"Bearer {TOKEN}"}
 
@@ -528,19 +527,19 @@ requests.patch(f"{BASE}/status", json={"status": "offline"}, headers=HEADERS)
 TOKEN="1|abc123..."
 
 # Send heartbeat with metadata
-curl -X POST https://apiary.example.com/api/v1/agents/heartbeat \
+curl -X POST https://superpos.example.com/api/v1/agents/heartbeat \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"metadata": {"cpu": 42, "memory_mb": 1024}}'
 
 # Send heartbeat without metadata (timestamp-only)
-curl -X POST https://apiary.example.com/api/v1/agents/heartbeat \
+curl -X POST https://superpos.example.com/api/v1/agents/heartbeat \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{}'
 
 # Update status
-curl -X PATCH https://apiary.example.com/api/v1/agents/status \
+curl -X PATCH https://superpos.example.com/api/v1/agents/status \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"status": "online"}'

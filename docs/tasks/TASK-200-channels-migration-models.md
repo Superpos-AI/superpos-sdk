@@ -15,7 +15,7 @@ Create the database schema and Eloquent models for the Channels feature (Waggle 
 
 ### Functional
 
-- [ ] FR-1: `channels` table with all columns from feature spec §13: id (ULID), apiary_id, hive_id, title, topic, channel_type, urgency, status, resolution_policy (JSONB), resolution (JSONB), resolved_by, resolved_at, linked_refs (JSONB), on_resolve (JSONB), stale_after, message_count, last_message_at, created_by_type, created_by_id, timestamps
+- [ ] FR-1: `channels` table with all columns from feature spec §13: id (ULID), superpos_id, hive_id, title, topic, channel_type, urgency, status, resolution_policy (JSONB), resolution (JSONB), resolved_by, resolved_at, linked_refs (JSONB), on_resolve (JSONB), stale_after, message_count, last_message_at, created_by_type, created_by_id, timestamps
 - [ ] FR-2: `channel_participants` table: composite PK (channel_id, participant_type, participant_id), role, mention_policy, last_read_at, joined_at
 - [ ] FR-3: `channel_messages` table: id (ULID), channel_id, author_type, author_id, message_type, content, metadata (JSONB), reply_to (self-ref FK), mentions (JSONB), edited_at, created_at
 - [ ] FR-4: `channel_votes` table: composite PK (channel_id, proposal_msg_id, voter_type, voter_id), vote, option_key, timestamps

@@ -2,7 +2,7 @@
 
 **Status:** done
 **Branch:** `task/016-task-creation-api`
-**PR:** [#18](https://github.com/Apiary-AI/Apiary-SaaS/pull/18)
+**PR:** [#18](https://github.com/Superpos-AI/superpos-app/pull/18)
 **Depends On:** TASK-003, TASK-008, TASK-011, TASK-012, TASK-013
 
 ## Objective

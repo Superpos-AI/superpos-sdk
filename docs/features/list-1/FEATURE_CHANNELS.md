@@ -1,4 +1,4 @@
-# Apiary — Feature: Channels (Waggle Dance)
+# Superpos — Feature: Channels (Waggle Dance)
 
 ## Addendum to PRODUCT.md v4.0
 
@@ -6,7 +6,7 @@
 
 ## 1. Problem
 
-All communication in Apiary today is transactional: create task → agent executes → done. But real work often needs **deliberation before execution**:
+All communication in Superpos today is transactional: create task → agent executes → done. But real work often needs **deliberation before execution**:
 
 - Architect agent finds a design problem, wants input from security agent and human lead before deciding the approach
 - Three agents review a PR from different angles (code quality, security, performance), need to synthesize a unified recommendation before posting
@@ -16,7 +16,7 @@ All communication in Apiary today is transactional: create task → agent execut
 Current workarounds are all bad:
 - **Knowledge Store**: append-only log in JSONB — no structure, no notifications, no participants, no resolution
 - **Chain of tasks**: Agent A creates task → Agent B completes → Agent A reads result → creates another task. Works but loses conversational context and has high latency
-- **External tools**: Push to Slack/Linear via proxy. Loses tight coupling with Apiary task system
+- **External tools**: Push to Slack/Linear via proxy. Loses tight coupling with Superpos task system
 
 Missing primitive: **a place to think together before acting.**
 
@@ -873,7 +873,7 @@ POST /api/v1/hives/{hive}/channels
 -- Channels
 CREATE TABLE channels (
     id                VARCHAR(26) PRIMARY KEY,
-    apiary_id         VARCHAR(26) NOT NULL,
+    superpos_id         VARCHAR(26) NOT NULL,
     hive_id           VARCHAR(26) NOT NULL REFERENCES hives(id),
     
     title             VARCHAR(500) NOT NULL,
@@ -975,9 +975,9 @@ ALTER TABLE tasks ADD COLUMN channel_id VARCHAR(26) REFERENCES channels(id);
 ### 14.1 Python SDK Example
 
 ```python
-from apiary_sdk import ApiaryClient
+from superpos_sdk import SuperposClient
 
-client = ApiaryClient(url="https://acme.apiary.ai", token="tok_xxx")
+client = SuperposClient(url="https://acme.apiary.ai", token="tok_xxx")
 hive_id = "01HXYZ..."
 
 # Create a channel

@@ -2,7 +2,7 @@
 
 **Phase:** 2 — Service Proxy & Security
 **Status:** in progress
-**Depends On:** TASK-006 (Apiary & Hive models), TASK-007 (Agent model)
+**Depends On:** TASK-006 (Superpos & Hive models), TASK-007 (Agent model)
 **Branch:** `task/043-action-policies`
 
 ---
@@ -20,7 +20,7 @@ Create `action_policies` table with:
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | `string(26)` PK | ULID |
-| `apiary_id` | `string(26)` FK | References `apiaries(id)`, cascade delete |
+| `superpos_id` | `string(26)` FK | References `apiaries(id)`, cascade delete |
 | `hive_id` | `string(26)` FK | References `hives(id)`, cascade delete |
 | `agent_id` | `string(26)` FK | References `agents(id)`, cascade delete |
 | `service_id` | `string(26)` FK | References `service_connections(id)`, cascade delete |
@@ -31,7 +31,7 @@ Create `action_policies` table with:
 
 **Indexes:**
 - `UNIQUE(agent_id, service_id)` — one policy per agent per service
-- `index(apiary_id)` — for apiary-scoped queries
+- `index(superpos_id)` — for apiary-scoped queries
 - `index(hive_id)` — for hive-scoped queries
 - `index(agent_id)` — for agent lookups
 - `index(service_id)` — for service lookups
@@ -110,6 +110,6 @@ Evaluation order (handled by TASK-044 PolicyEngine): deny → require_approval �
 
 ## Related
 
-- **Upstream:** TASK-006 (Apiary & Hive models), TASK-007 (Agent model + permissions)
+- **Upstream:** TASK-006 (Superpos & Hive models), TASK-007 (Agent model + permissions)
 - **Downstream:** TASK-044 (Policy engine evaluates rules), TASK-045 (Approval requests reference policies), TASK-050 (Dashboard policy editor)
 - **Spec reference:** PRODUCT.md §6.8 (Action Policy), §9.2 (action_policies schema)

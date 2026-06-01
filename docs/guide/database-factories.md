@@ -1,20 +1,20 @@
 # Database Factories
 
-Laravel model factories for all core Apiary models. Use these in tests to
+Laravel model factories for all core Superpos models. Use these in tests to
 create valid model instances with sensible defaults and chainable state
 methods for lifecycle, status, and scope permutations.
 
 ## Quick start
 
 ```php
-use App\Models\{Apiary, Hive, Agent, Task};
+use App\Models\{Superpos, Hive, Agent, Task};
 
 // Full chain — factory auto-creates parent models
 $agent = Agent::factory()->create();
 
 // Explicit parent — share apiary/hive across models
-$apiary = Apiary::factory()->create();
-$hive   = Hive::factory()->create(['apiary_id' => $apiary->id]);
+$apiary = Superpos::factory()->create();
+$hive   = Hive::factory()->create(['superpos_id' => $apiary->id]);
 $agent  = Agent::factory()->forHive($hive)->create();
 $task   = Task::factory()->forHive($hive)->create();
 ```
@@ -24,18 +24,18 @@ $task   = Task::factory()->forHive($hive)->create();
 ### ApiaryFactory
 
 ```php
-Apiary::factory()->create();                           // free plan
-Apiary::factory()->pro()->create();                    // pro plan
-Apiary::factory()->cloud()->create();                  // cloud plan
-Apiary::factory()->withOwner()->create();              // creates User owner
-Apiary::factory()->onTrial()->create();                // 14-day trial
-Apiary::factory()->withSettings(['k' => 'v'])->create();
+Superpos::factory()->create();                           // free plan
+Superpos::factory()->pro()->create();                    // pro plan
+Superpos::factory()->cloud()->create();                  // cloud plan
+Superpos::factory()->withOwner()->create();              // creates User owner
+Superpos::factory()->onTrial()->create();                // 14-day trial
+Superpos::factory()->withSettings(['k' => 'v'])->create();
 ```
 
 ### HiveFactory
 
 ```php
-Hive::factory()->create();                             // active, auto-creates Apiary
+Hive::factory()->create();                             // active, auto-creates Superpos
 Hive::factory()->inactive()->create();                 // is_active = false
 Hive::factory()->withDescription('My hive')->create();
 Hive::factory()->withSettings(['k' => 'v'])->create();
@@ -43,11 +43,11 @@ Hive::factory()->withSettings(['k' => 'v'])->create();
 
 ### AgentFactory
 
-The `forHive()` method binds the agent to a hive and derives `apiary_id`
+The `forHive()` method binds the agent to a hive and derives `superpos_id`
 automatically.
 
 ```php
-Agent::factory()->create();                            // auto-creates Hive + Apiary
+Agent::factory()->create();                            // auto-creates Hive + Superpos
 Agent::factory()->forHive($hive)->create();            // bound to existing hive
 Agent::factory()->forHive($hive)->online()->create();  // status=online + heartbeat
 Agent::factory()->forHive($hive)->offline()->create();
@@ -82,11 +82,11 @@ Task::factory()->withPayload(['k' => 'v'])->create();
 
 ```php
 ActivityLog::factory()->forHive($hive)->create();
-ActivityLog::factory()->forAgent($agent)->create();    // sets apiary_id + agent_id
-ActivityLog::factory()->forTask($task)->create();      // sets apiary_id + task_id
-ActivityLog::factory()->apiaryLevel()->create(['apiary_id' => $apiary->id]);
-ActivityLog::factory()->action('task.completed')->create(['apiary_id' => $apiary->id]);
-ActivityLog::factory()->withDetails(['ms' => 42])->create(['apiary_id' => $apiary->id]);
+ActivityLog::factory()->forAgent($agent)->create();    // sets superpos_id + agent_id
+ActivityLog::factory()->forTask($task)->create();      // sets superpos_id + task_id
+ActivityLog::factory()->apiaryLevel()->create(['superpos_id' => $apiary->id]);
+ActivityLog::factory()->action('task.completed')->create(['superpos_id' => $apiary->id]);
+ActivityLog::factory()->withDetails(['ms' => 42])->create(['superpos_id' => $apiary->id]);
 ```
 
 ### KnowledgeEntryFactory

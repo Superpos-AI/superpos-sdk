@@ -1,11 +1,11 @@
-"""Tests for LargeResultDelivery and ApiaryClient.complete_task_large()."""
+"""Tests for LargeResultDelivery and SuperposClient.complete_task_large()."""
 
 from __future__ import annotations
 
 import json
 
-from apiary_sdk import ApiaryClient, LargeResultDelivery
-from apiary_sdk.large_result import LARGE_RESULT_THRESHOLD_BYTES
+from superpos_sdk import LargeResultDelivery, SuperposClient
+from superpos_sdk.large_result import LARGE_RESULT_THRESHOLD_BYTES
 
 from .conftest import BASE_URL, ENTRY_ID, HIVE_ID, TASK_ID, TOKEN, envelope
 
@@ -18,7 +18,7 @@ LARGE_RESULT = {"data": "x" * (LARGE_RESULT_THRESHOLD_BYTES + 1)}
 
 _ENTRY_DATA = {
     "id": ENTRY_ID,
-    "apiary_id": "A" * 26,
+    "organization_id": "A" * 26,
     "hive_id": HIVE_ID,
     "key": f"task-result:{TASK_ID}",
     "value": LARGE_RESULT,
@@ -58,7 +58,7 @@ class TestLargeResultDeliveryDeliver:
 
     def test_small_result_returns_inline(self, httpx_mock):
         """Results below the threshold are returned inline with no HTTP calls."""
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             delivery = LargeResultDelivery(client)
             result = delivery.deliver(TASK_ID, HIVE_ID, SMALL_RESULT)
 
@@ -73,7 +73,7 @@ class TestLargeResultDeliveryDeliver:
             status_code=201,
         )
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             delivery = LargeResultDelivery(client)
             result = delivery.deliver(TASK_ID, HIVE_ID, LARGE_RESULT)
 
@@ -97,7 +97,7 @@ class TestLargeResultDeliveryDeliver:
             status_code=201,
         )
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             delivery = LargeResultDelivery(client)
             delivery.deliver(TASK_ID, HIVE_ID, LARGE_RESULT)
 
@@ -114,7 +114,7 @@ class TestLargeResultDeliveryDeliver:
             status_code=201,
         )
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             delivery = LargeResultDelivery(client)
             delivery.deliver(TASK_ID, HIVE_ID, LARGE_RESULT, key="my-custom-key")
 
@@ -134,7 +134,7 @@ class TestLargeResultDeliveryDeliver:
         tiny_result = {"x": "y"}  # well below default 1 MB
         encoded = len(json.dumps(tiny_result, separators=(",", ":")).encode("utf-8"))
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             delivery = LargeResultDelivery(client, threshold_bytes=encoded - 1)
             result = delivery.deliver(TASK_ID, HIVE_ID, tiny_result)
 
@@ -151,7 +151,7 @@ class TestLargeResultDeliveryDeliver:
         encoded = json.dumps(tiny_result, separators=(",", ":")).encode("utf-8")
         assert len(encoded) == threshold
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             delivery = LargeResultDelivery(client, threshold_bytes=threshold)
             result = delivery.deliver(TASK_ID, HIVE_ID, tiny_result)
 
@@ -160,7 +160,7 @@ class TestLargeResultDeliveryDeliver:
 
 
 # ---------------------------------------------------------------------------
-# ApiaryClient.complete_task() with knowledge fields
+# SuperposClient.complete_task() with knowledge fields
 # ---------------------------------------------------------------------------
 
 
@@ -175,7 +175,7 @@ class TestCompleteTaskKnowledge:
             json=envelope(_COMPLETED_TASK),
         )
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             result = client.complete_task(
                 HIVE_ID,
                 TASK_ID,
@@ -199,7 +199,7 @@ class TestCompleteTaskKnowledge:
             json=envelope(_COMPLETED_TASK_INLINE),
         )
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             client.complete_task(HIVE_ID, TASK_ID, result=SMALL_RESULT)
 
         requests = httpx_mock.get_requests()
@@ -209,7 +209,7 @@ class TestCompleteTaskKnowledge:
 
 
 # ---------------------------------------------------------------------------
-# ApiaryClient.complete_task_large()
+# SuperposClient.complete_task_large()
 # ---------------------------------------------------------------------------
 
 
@@ -222,7 +222,7 @@ class TestCompleteTaskLarge:
             json=envelope(_COMPLETED_TASK_INLINE),
         )
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             result = client.complete_task_large(HIVE_ID, TASK_ID, SMALL_RESULT)
 
         assert result["status"] == "completed"
@@ -247,7 +247,7 @@ class TestCompleteTaskLarge:
             json=envelope(_COMPLETED_TASK),
         )
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             result = client.complete_task_large(HIVE_ID, TASK_ID, LARGE_RESULT)
 
         assert result["status"] == "completed"
@@ -269,7 +269,7 @@ class TestCompleteTaskLarge:
             json=envelope(_COMPLETED_TASK_INLINE),
         )
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             client.complete_task_large(HIVE_ID, TASK_ID, SMALL_RESULT, status_message="done")
 
         requests = httpx_mock.get_requests()
@@ -292,7 +292,7 @@ class TestCompleteTaskLarge:
 
         tiny = {"x": 1}
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             client.complete_task_large(HIVE_ID, TASK_ID, tiny, threshold_bytes=1)
 
         requests = httpx_mock.get_requests()
@@ -312,7 +312,7 @@ class TestScalarResultWrapping:
 
     def test_string_scalar_small_payload_wrapped_inline(self):
         """A string result below the threshold is wrapped as {"__value": str} inline."""
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             delivery = LargeResultDelivery(client)
             result = delivery.deliver(TASK_ID, HIVE_ID, "ok")
 
@@ -320,7 +320,7 @@ class TestScalarResultWrapping:
 
     def test_int_scalar_small_payload_wrapped_inline(self, httpx_mock):
         """An integer result below the threshold is wrapped as {"__value": int} inline."""
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             delivery = LargeResultDelivery(client)
             result = delivery.deliver(TASK_ID, HIVE_ID, 42)
 
@@ -328,7 +328,7 @@ class TestScalarResultWrapping:
 
     def test_bool_scalar_small_payload_wrapped_inline(self, httpx_mock):
         """A bool result below the threshold is wrapped as {"__value": bool} inline."""
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             delivery = LargeResultDelivery(client)
             result = delivery.deliver(TASK_ID, HIVE_ID, True)
 
@@ -350,7 +350,7 @@ class TestScalarResultWrapping:
         )
 
         # Use a threshold of 1 so the string definitely exceeds it.
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             delivery = LargeResultDelivery(client, threshold_bytes=1)
             result = delivery.deliver(TASK_ID, HIVE_ID, "a large string result")
 
@@ -369,7 +369,7 @@ class TestScalarResultWrapping:
             status_code=201,
         )
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             delivery = LargeResultDelivery(client, threshold_bytes=1)
             result = delivery.deliver(TASK_ID, HIVE_ID, 99)
 
@@ -386,7 +386,7 @@ class TestScalarResultWrapping:
             json=envelope(_COMPLETED_TASK_INLINE),
         )
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             client.complete_task_large(HIVE_ID, TASK_ID, "ok")
 
         requests = httpx_mock.get_requests()
@@ -397,7 +397,7 @@ class TestScalarResultWrapping:
     def test_list_result_is_not_wrapped(self):
         """A list result (already a valid JSON array) is passed through unchanged."""
         list_result = [1, 2, 3]
-        with ApiaryClient(BASE_URL, token=TOKEN) as client:
+        with SuperposClient(BASE_URL, token=TOKEN) as client:
             delivery = LargeResultDelivery(client)
             result = delivery.deliver(TASK_ID, HIVE_ID, list_result)
 

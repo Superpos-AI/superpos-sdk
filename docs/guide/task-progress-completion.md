@@ -96,5 +96,3 @@ All responses follow the standard API envelope `{ data, meta, errors }`.
 ## Related
 
 - [Task Polling & Atomic Claiming](./task-polling-claiming.md)
-- [Activity Log](./activity-log.md)
-- [ActivityLogger Service](./activity-logger.md)

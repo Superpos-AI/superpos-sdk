@@ -83,6 +83,4 @@ This keeps queue visibility and race outcomes auditable.
 
 ## Related
 
-- [Activity Log](./activity-log.md)
-- [ActivityLogger Service](./activity-logger.md)
 - [Product Specification](../PRODUCT.md)

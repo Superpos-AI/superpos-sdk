@@ -1,4 +1,4 @@
-# Apiary — Agent Orchestration Platform
+# Superpos — Agent Orchestration Platform
 
 ## Product Document v4.0
 
@@ -6,7 +6,7 @@
 
 ## 1. Vision
 
-Apiary — open-source платформа оркестрации AI-агентов с event-driven архитектурой.
+Superpos — open-source платформа оркестрации AI-агентов с event-driven архитектурой.
 Предоставляет единую точку управления, коммуникации и наблюдаемости для автономных агентов (Claude Code, OpenClaw, custom agents), работающих на разных серверах и в разных контейнерах.
 
 Доступна как **self-hosted open-source (Community Edition)** и как **managed SaaS (Cloud)**.
@@ -25,7 +25,7 @@ Apiary — open-source платформа оркестрации AI-агенто
 ## 2. Hierarchy Model
 
 ```
-🏢 Apiary (organization)
+🏢 Organization
 │   Billing, team members, service connections, connectors
 │
 ├── 🐝 Hive "Backend" (project)
@@ -55,29 +55,29 @@ Apiary — open-source платформа оркестрации AI-агенто
 
 | Resource             | Level      | Rationale                                          |
 |---------------------|------------|---------------------------------------------------|
-| **Billing & plan**  | Apiary     | One bill per organization                          |
-| **Team members**    | Apiary     | Users belong to org, access specific hives         |
-| **Service connections** | Apiary | GitHub token is org-level, shared across projects  |
-| **Connectors**      | Apiary     | GitHub connector works the same for all hives      |
+| **Billing & plan**  | Organization | One bill per organization                          |
+| **Team members**    | Organization | Users belong to org, access specific hives         |
+| **Service connections** | Organization | GitHub token is org-level, shared across projects  |
+| **Connectors**      | Organization | GitHub connector works the same for all hives      |
 | **Agents**          | Hive       | Code reviewer for backend ≠ code reviewer for mobile |
 | **Tasks**           | Hive       | Task queue is project-scoped                       |
-| **Knowledge Store** | Hive (+ apiary scope) | Project context is isolated; some knowledge is org-wide |
+| **Knowledge Store** | Hive (+ org scope) | Project context is isolated; some knowledge is org-wide |
 | **Webhook Routes**  | Hive       | repo X → backend hive, repo Y → mobile hive       |
 | **Action Policies** | Hive       | Agent permissions are project-specific             |
 | **Events**          | Hive (+ cross-hive bus) | Local by default, cross-hive opt-in      |
 | **Activity Log**    | Hive       | Per-project audit trail                            |
-| **Proxy Log**       | Apiary     | Org-wide view of all service access                |
+| **Proxy Log**       | Organization | Org-wide view of all service access                |
 
 ### CE vs Cloud
 
 | Aspect          | Community Edition        | Cloud                          |
 |----------------|--------------------------|--------------------------------|
-| Apiaries       | 1 (implicit)             | 1 per account (multi-org roadmap) |
+| Organizations  | 1 (implicit)             | 1 per account (multi-org roadmap) |
 | Hives          | 1 (implicit)             | Multiple per plan tier          |
 | Team members   | N/A (single user)        | Multiple with roles             |
 | Billing        | N/A                      | Stripe                          |
 
-CE code never thinks about apiaries or hives — `BelongsToApiary` and `BelongsToHive` traits resolve to constants.
+CE code never thinks about organizations or hives — `BelongsToOrganization` and `BelongsToHive` traits resolve to constants.
 
 ---
 
@@ -110,9 +110,9 @@ Everything in CE, plus:
 | Category               | Feature                                   |
 |------------------------|------------------------------------------|
 | **Hosting**            | Fully managed, auto-scaling, backups, 99.9% SLA |
-| **Multi-project**      | Multiple Hives per Apiary                 |
+| **Multi-project**      | Multiple Hives per Organization            |
 |                        | Cross-hive agent communication            |
-| **Multi-tenancy**      | Apiary isolation, per-apiary encryption keys |
+| **Multi-tenancy**      | Organization isolation, per-org encryption keys |
 | **Team Management**    | Multiple users, role-based (Owner/Admin/Member/Viewer) |
 |                        | Per-hive access control                   |
 |                        | SSO (SAML 2.0, OIDC)                     |
@@ -149,7 +149,7 @@ Everything in CE, plus:
 
 ```
 ┌─────────────────┐    webhooks       ┌──────────────────────────────────────────────┐
-│  External World  │ ───────────────▸ │              Apiary Core                      │
+│  External World  │ ───────────────▸ │             Superpos Core                     │
 │  (GitHub, Slack, │                  │             (Laravel App)                     │
 │   CI/CD, APIs)   │ ◂──── proxy ──  │                                               │
 └─────────────────┘                  │  ┌───────────┐ ┌──────────┐ ┌─────────────┐   │
@@ -172,7 +172,7 @@ Everything in CE, plus:
                                       │         │              │                       │
                                       │  ┌──────▼──────────────▼──────────────┐        │
                                       │  │        Knowledge Store              │        │
-                                      │  │   (hive-scoped + apiary-scoped)     │        │
+                                      │  │   (hive-scoped + org-scoped)        │        │
                                       │  └─────────────────────────────────────┘        │
                                       └──────────────────────────────────────────────────┘
                                            │          │            │
@@ -188,16 +188,16 @@ Everything in CE, plus:
 
 ```
               ┌─────────────────────────────────────────────────────┐
-              │                   Apiary Cloud                      │
+              │                   Superpos Cloud                    │
               │                                                     │
               │  ┌──────────────┐  ┌────────────┐  ┌────────────┐  │
-              │  │  Apiary/Hive  │  │  Auth /     │  │  Billing   │  │
+              │  │  Org/Hive     │  │  Auth /     │  │  Billing   │  │
               │  │  Router       │  │  SSO        │  │  Service   │  │
               │  │  (middleware) │  │             │  │  (Stripe)  │  │
               │  └──────┬───────┘  └──────┬──────┘  └─────┬──────┘  │
               │         │                 │               │          │
               │  ┌──────▼─────────────────▼───────────────▼───────┐  │
-              │  │              Apiary Core                        │  │
+              │  │             Superpos Core                       │  │
               │  │    (same codebase as CE, tenant+hive aware)     │  │
               │  └────────────────────────────────────────────────┘  │
               │                                                     │
@@ -222,7 +222,7 @@ Everything in CE, plus:
 | **Agent Protocol** | REST API over HTTPS            | ✅        | ✅        |
 | **Agent Auth**     | Sanctum (API tokens)           | ✅        | ✅ (hive-scoped) |
 | **User Auth**      | Laravel Breeze                 | ✅        | + SSO (Socialite) |
-| **Credentials**    | Laravel Encryption (AES-256)   | ✅        | ✅ (per-apiary key) |
+| **Credentials**    | Laravel Encryption (AES-256)   | ✅        | ✅ (per-org key) |
 | **Billing**        | —                              | —         | Stripe + Cashier |
 | **Deployment**     | Docker Compose                 | ✅        | Kubernetes |
 
@@ -230,28 +230,28 @@ Everything in CE, plus:
 
 ## 6. Core Concepts
 
-### 6.1 Apiary (Organization)
+### 6.1 Organization
 
-The top-level container. In the beekeeping metaphor — the apiary is the yard where all hives sit.
+The top-level container. An organization is the workspace where all hives operate.
 
 - `id` — ULID
 - `name` — "Acme Corp Engineering"
 - `slug` — "acme-eng"
 - `plan` — free / pro / enterprise
 - `owner_id` — user who created it
-- `encryption_key` — per-apiary key for vault
+- `encryption_key` — per-org key for vault
 - `region` — data residency: `us`, `eu`
 - `settings` — JSONB (quota overrides, feature flags)
 
 **Owns:** team members, service connections, connectors, billing, proxy log.
-**CE:** single implicit apiary, hardcoded ID.
+**CE:** single implicit organization, hardcoded ID.
 
 ### 6.2 Hive (Project)
 
-A self-contained project environment within an Apiary. Each hive has its own agents, tasks, knowledge, and configuration.
+A self-contained project environment within an Organization. Each hive has its own agents, tasks, knowledge, and configuration.
 
 - `id` — ULID
-- `apiary_id` — parent organization
+- `organization_id` — parent organization
 - `name` — "Backend", "Mobile App", "Infrastructure"
 - `slug` — "backend"
 - `description` — optional
@@ -264,10 +264,10 @@ A self-contained project environment within an Apiary. Each hive has its own age
 ### 6.3 Agent
 
 An autonomous process registered to a **specific hive**:
-- Registers with apiary_id + hive_id
+- Registers with organization_id + hive_id
 - Polls its **hive's** task queue
 - Reads/writes its **hive's** knowledge store
-- Can access **apiary-level** service connections through proxy
+- Can access **org-level** service connections through proxy
 - With `cross_hive` permission, can interact with other hives
 
 Three axes of configuration:
@@ -293,8 +293,8 @@ Events exist at **two levels**:
 - Only agents within the same hive see these
 - Default behavior, no special permissions needed
 
-**Cross-hive events** — broadcast across the apiary:
-- Event type prefixed with `apiary.` (e.g., `apiary.deploy.completed`)
+**Cross-hive events** — broadcast across the organization:
+- Event type prefixed with `platform.` (e.g., `platform.deploy.completed`; legacy `apiary.*` prefix also accepted)
 - Only agents with `cross_hive` permission can emit or subscribe
 - Visible in cross-hive monitor on dashboard
 
@@ -305,13 +305,13 @@ Shared context with **three scope levels**:
 | Scope                 | Visible to                     | Example                           |
 |----------------------|--------------------------------|-----------------------------------|
 | `hive` (default)     | Agents in same hive            | `project:backend:architecture`    |
-| `apiary`             | All agents in all hives        | `org:coding-standards`            |
+| `organization`       | All agents in all hives        | `org:coding-standards`            |
 | `agent:{id}`         | Only that specific agent       | `agent:reviewer-1:preferences`    |
 
-Cross-hive agents can read apiary-scoped knowledge from any hive.
-Hive-scoped knowledge is invisible to agents in other hives (even with cross_hive permission — they must use apiary scope to share).
+Cross-hive agents can read organization-scoped knowledge from any hive.
+Hive-scoped knowledge is invisible to agents in other hives (even with cross_hive permission — they must use organization scope to share).
 
-### 6.7 Service Connection (Apiary-level)
+### 6.7 Service Connection (Organization-level)
 
 External service with encrypted credentials, shared across all hives:
 - One GitHub token serves all hives (same org)
@@ -324,11 +324,11 @@ Per-agent firewall for service access. Evaluation: deny → require_approval →
 ### 6.9 Webhook Route (Hive-level)
 
 Routes incoming webhooks to tasks in a **specific hive**:
-- Webhook arrives at apiary-level endpoint
+- Webhook arrives at org-level endpoint
 - Route config says "repo myorg/backend → create task in Hive:Backend"
 - Route config says "repo myorg/mobile → create task in Hive:Mobile"
 
-### 6.10 Connector (Apiary-level)
+### 6.10 Connector (Organization-level)
 
 Webhook parsing adapter. Shared across hives (a GitHub connector works the same everywhere).
 
@@ -370,7 +370,7 @@ Broadcast events that all subscribed agents across all hives can see.
 ```json
 POST /api/v1/events
 {
-  "type": "apiary.deploy.completed",        // ← apiary. prefix = cross-hive
+  "type": "platform.deploy.completed",       // ← platform. prefix = cross-hive
   "payload": {
     "service": "backend-api",
     "version": "2.5.0",
@@ -379,9 +379,9 @@ POST /api/v1/events
 }
 ```
 
-Any agent in any hive can subscribe to `apiary.deploy.*` if they have `cross_hive` permission.
+Any agent in any hive can subscribe to `platform.deploy.*` if they have `cross_hive` permission.
 
-**Apiary-Scoped Knowledge:**
+**Organization-Scoped Knowledge:**
 Write knowledge that's visible across all hives.
 
 ```json
@@ -389,7 +389,7 @@ POST /api/v1/knowledge
 {
   "key": "api:backend:current_version",
   "value": { "version": "2.5.0", "deployed_at": "2025-02-19T10:00:00Z" },
-  "scope": "apiary"                          // ← visible to all hives
+  "scope": "organization"                    // ← visible to all hives
 }
 ```
 
@@ -397,10 +397,10 @@ POST /api/v1/knowledge
 
 ```
 ┌─────────────────────────────────────────────────┐
-│ Apiary                                          │
+│ Organization                                    │
 │                                                 │
-│  Cross-Hive Event Bus (apiary.* events)         │
-│  Apiary-scoped Knowledge Store                  │
+│  Cross-Hive Event Bus (platform.* events)       │
+│  Org-scoped Knowledge Store                     │
 │                                                 │
 │  ┌─────────────┐     ┌─────────────┐           │
 │  │  Hive A      │────▸│  Hive B      │          │
@@ -425,7 +425,7 @@ POST /api/v1/knowledge
 Dedicated view showing:
 - Cross-hive tasks: which hive → which hive, agent, status
 - Cross-hive events: timeline across all hives
-- Apiary-scoped knowledge entries
+- Organization-scoped knowledge entries
 - Visual map of inter-hive dependencies (which hives talk to each other)
 
 ---
@@ -435,16 +435,16 @@ Dedicated view showing:
 ### 8.1 Strategy: Shared Database + Row-Level Isolation
 
 Two levels of scoping:
-- `apiary_id` — on org-level tables (service_connections, connectors, users, proxy_log)
-- `apiary_id` + `hive_id` — on project-level tables (agents, tasks, knowledge, etc.)
+- `organization_id` — on org-level tables (service_connections, connectors, users, proxy_log)
+- `organization_id` + `hive_id` — on project-level tables (agents, tasks, knowledge, etc.)
 
 ### 8.2 Resolution
 
 ```
-Request → ApiaryMiddleware → resolves apiary from:
-  1. Agent token → agent.apiary_id (API requests)
-  2. Session → user.current_apiary_id (Dashboard)
-  3. Subdomain → apiaries.slug (acme-eng.apiary.ai)
+Request → OrgMiddleware → resolves organization from:
+  1. Agent token → agent.organization_id (API requests)
+  2. Session → user.current_org_id (Dashboard)
+  3. Subdomain → organizations.slug (acme-eng.superpos.ai)
 
 → HiveMiddleware → resolves hive from:
   1. Agent token → agent.hive_id (API requests)
@@ -452,26 +452,26 @@ Request → ApiaryMiddleware → resolves apiary from:
   3. URL path → /hives/{slug}/... (explicit)
 
 → Sets context globally for the request
-→ All queries auto-scoped via BelongsToApiary / BelongsToHive traits
+→ All queries auto-scoped via BelongsToOrganization / BelongsToHive traits
 ```
 
 ### 8.3 Traits
 
 ```php
-// Apiary-level resources (service_connections, connectors, etc.)
-trait BelongsToApiary
+// Organization-level resources (service_connections, connectors, etc.)
+trait BelongsToOrganization
 {
     protected static function booted()
     {
-        static::addGlobalScope('apiary', function (Builder $builder) {
-            if (config('apiary.features.multi_tenancy')) {
-                $builder->where('apiary_id', apiary()->id);
+        static::addGlobalScope('organization', function (Builder $builder) {
+            if (config('platform.features.multi_tenancy')) {
+                $builder->where('organization_id', organization()->id);
             }
         });
 
         static::creating(function ($model) {
-            $model->apiary_id = config('apiary.features.multi_tenancy')
-                ? apiary()->id
+            $model->organization_id = config('platform.features.multi_tenancy')
+                ? organization()->id
                 : 'default';
         });
     }
@@ -480,20 +480,20 @@ trait BelongsToApiary
 // Hive-level resources (agents, tasks, knowledge, etc.)
 trait BelongsToHive
 {
-    use BelongsToApiary; // hive resources also scoped to apiary
+    use BelongsToOrganization; // hive resources also scoped to organization
 
     protected static function booted()
     {
         parent::booted();
 
         static::addGlobalScope('hive', function (Builder $builder) {
-            if (config('apiary.features.multi_hive')) {
+            if (config('platform.features.multi_hive')) {
                 $builder->where('hive_id', hive()->id);
             }
         });
 
         static::creating(function ($model) {
-            $model->hive_id = config('apiary.features.multi_hive')
+            $model->hive_id = config('platform.features.multi_hive')
                 ? hive()->id
                 : 'default';
         });
@@ -520,14 +520,14 @@ CREATE TABLE users (
     updated_at      TIMESTAMP DEFAULT NOW()
 );
 
--- Apiary membership (org-level)
-CREATE TABLE apiary_members (
-    apiary_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id),
+-- Organization membership (org-level)
+CREATE TABLE organization_members (
+    organization_id VARCHAR(26) NOT NULL REFERENCES organizations(id),
     user_id         BIGINT NOT NULL REFERENCES users(id),
     role            VARCHAR(20) NOT NULL DEFAULT 'member',
     invited_by      BIGINT REFERENCES users(id),
     created_at      TIMESTAMP DEFAULT NOW(),
-    PRIMARY KEY (apiary_id, user_id)
+    PRIMARY KEY (organization_id, user_id)
 );
 
 -- Hive access (project-level)
@@ -540,7 +540,7 @@ CREATE TABLE hive_access (
 );
 ```
 
-Roles cascade: Apiary Owner/Admin → access to all hives. Member → access only to assigned hives. Viewer → read-only.
+Roles cascade: Org Owner/Admin → access to all hives. Member → access only to assigned hives. Viewer → read-only.
 
 ---
 
@@ -549,8 +549,8 @@ Roles cascade: Apiary Owner/Admin → access to all hives. Member → access onl
 ### 9.1 Organization Layer
 
 ```sql
--- Apiaries (organizations)
-CREATE TABLE apiaries (
+-- Organizations
+CREATE TABLE organizations (
     id                VARCHAR(26) PRIMARY KEY,
     name              VARCHAR(255) NOT NULL,
     slug              VARCHAR(100) NOT NULL UNIQUE,
@@ -569,7 +569,7 @@ CREATE TABLE apiaries (
 -- Hives (projects)
 CREATE TABLE hives (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id) ON DELETE CASCADE,
+    organization_id VARCHAR(26) NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     name            VARCHAR(255) NOT NULL,
     slug            VARCHAR(100) NOT NULL,
     description     TEXT,
@@ -577,43 +577,43 @@ CREATE TABLE hives (
     is_active       BOOLEAN DEFAULT TRUE,
     created_at      TIMESTAMP DEFAULT NOW(),
     updated_at      TIMESTAMP DEFAULT NOW(),
-    UNIQUE(apiary_id, slug)
+    UNIQUE(organization_id, slug)
 );
 
--- Service Connections (apiary-level)
+-- Service Connections (org-level)
 CREATE TABLE service_connections (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id) ON DELETE CASCADE,
+    organization_id VARCHAR(26) NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     name            VARCHAR(255) NOT NULL,
     type            VARCHAR(100) NOT NULL,
     base_url        VARCHAR(500) NOT NULL,
     auth_type       VARCHAR(50) NOT NULL,
-    auth_config     TEXT NOT NULL,                -- encrypted with apiary key
+    auth_config     TEXT NOT NULL,                -- encrypted with org key
     connector_id    VARCHAR(26) REFERENCES connectors(id),
     webhook_secret  TEXT,                          -- encrypted
     is_active       BOOLEAN DEFAULT TRUE,
     created_at      TIMESTAMP DEFAULT NOW(),
     updated_at      TIMESTAMP DEFAULT NOW(),
-    UNIQUE(apiary_id, name)
+    UNIQUE(organization_id, name)
 );
 
--- Connectors (apiary-level)
+-- Connectors (org-level)
 CREATE TABLE connectors (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id) ON DELETE CASCADE,
+    organization_id VARCHAR(26) NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     type            VARCHAR(100) NOT NULL,
     name            VARCHAR(255) NOT NULL,
     class_path      VARCHAR(500) NOT NULL,
     is_builtin      BOOLEAN DEFAULT FALSE,
     created_by      VARCHAR(26),
     created_at      TIMESTAMP DEFAULT NOW(),
-    UNIQUE(apiary_id, type)
+    UNIQUE(organization_id, type)
 );
 
--- Proxy Log (apiary-level — org-wide view of all service access)
+-- Proxy Log (org-level — org-wide view of all service access)
 CREATE TABLE proxy_log (
     id              BIGSERIAL PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL,
+    organization_id VARCHAR(26) NOT NULL,
     hive_id         VARCHAR(26),
     agent_id        VARCHAR(26) NOT NULL,
     service_id      VARCHAR(26) NOT NULL,
@@ -626,7 +626,7 @@ CREATE TABLE proxy_log (
     created_at      TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_proxy_log_apiary ON proxy_log (apiary_id, created_at DESC);
+CREATE INDEX idx_proxy_log_org ON proxy_log (organization_id, created_at DESC);
 CREATE INDEX idx_proxy_log_hive ON proxy_log (hive_id, created_at DESC);
 ```
 
@@ -636,7 +636,7 @@ CREATE INDEX idx_proxy_log_hive ON proxy_log (hive_id, created_at DESC);
 -- Agents (hive-scoped)
 CREATE TABLE agents (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id),
+    organization_id VARCHAR(26) NOT NULL REFERENCES organizations(id),
     hive_id         VARCHAR(26) NOT NULL REFERENCES hives(id) ON DELETE CASCADE,
     name            VARCHAR(255) NOT NULL,
     type            VARCHAR(100) NOT NULL,
@@ -661,7 +661,7 @@ CREATE TABLE agent_permissions (
 -- Tasks (hive-scoped)
 CREATE TABLE tasks (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL,
+    organization_id VARCHAR(26) NOT NULL,
     hive_id         VARCHAR(26) NOT NULL REFERENCES hives(id),
     source_hive_id  VARCHAR(26) REFERENCES hives(id),  -- non-null if cross-hive
     type            VARCHAR(100) NOT NULL,
@@ -693,8 +693,8 @@ CREATE INDEX idx_tasks_cross_hive ON tasks (source_hive_id) WHERE source_hive_id
 -- Events (hive-scoped + cross-hive)
 CREATE TABLE events (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL,
-    hive_id         VARCHAR(26) REFERENCES hives(id),  -- NULL for cross-hive (apiary.*) events
+    organization_id VARCHAR(26) NOT NULL,
+    hive_id         VARCHAR(26) REFERENCES hives(id),  -- NULL for cross-hive (platform.*) events
     type            VARCHAR(100) NOT NULL,
     source_agent_id VARCHAR(26),
     payload         JSONB NOT NULL DEFAULT '{}',
@@ -703,32 +703,32 @@ CREATE TABLE events (
 );
 
 CREATE INDEX idx_events_hive ON events (hive_id, type, created_at);
-CREATE INDEX idx_events_cross_hive ON events (apiary_id, created_at) WHERE is_cross_hive = TRUE;
+CREATE INDEX idx_events_cross_hive ON events (organization_id, created_at) WHERE is_cross_hive = TRUE;
 
 -- Event Subscriptions
 CREATE TABLE event_subscriptions (
     agent_id        VARCHAR(26) REFERENCES agents(id) ON DELETE CASCADE,
     event_type      VARCHAR(100) NOT NULL,
-    scope           VARCHAR(20) DEFAULT 'hive',  -- 'hive' or 'apiary'
+    scope           VARCHAR(20) DEFAULT 'hive',  -- 'hive' or 'organization'
     PRIMARY KEY (agent_id, event_type)
 );
 
 -- Cross-hive event filtering:
--- Cross-hive events (apiary.*) have hive_id = NULL and is_cross_hive = TRUE.
--- Agents receive cross-hive events via subscriptions with scope = 'apiary'.
+-- Cross-hive events (platform.*) have hive_id = NULL and is_cross_hive = TRUE.
+-- Agents receive cross-hive events via subscriptions with scope = 'organization'.
 -- The event poll endpoint filters by subscription scope:
---   scope='hive'   → events WHERE hive_id = agent's hive_id
---   scope='apiary'  → events WHERE is_cross_hive = TRUE AND apiary_id = agent's apiary_id
+--   scope='hive'         → events WHERE hive_id = agent's hive_id
+--   scope='organization' → events WHERE is_cross_hive = TRUE AND organization_id = agent's organization_id
 -- Agents never filter by hive_id directly for cross-hive events.
 
--- Knowledge Store (hive-scoped with apiary scope option)
+-- Knowledge Store (hive-scoped with org scope option)
 CREATE TABLE knowledge_entries (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL,
-    hive_id         VARCHAR(26) REFERENCES hives(id), -- NULL for apiary-scoped
+    organization_id VARCHAR(26) NOT NULL,
+    hive_id         VARCHAR(26) REFERENCES hives(id), -- NULL for org-scoped
     key             VARCHAR(500) NOT NULL,
     value           JSONB NOT NULL,
-    scope           VARCHAR(255) DEFAULT 'hive',       -- 'hive', 'apiary', 'agent:{id}'
+    scope           VARCHAR(255) DEFAULT 'hive',       -- 'hive', 'organization', 'agent:{id}'
     visibility      VARCHAR(20) DEFAULT 'public',
     created_by      VARCHAR(26) REFERENCES agents(id),
     version         INTEGER DEFAULT 1,
@@ -737,20 +737,20 @@ CREATE TABLE knowledge_entries (
     updated_at      TIMESTAMP DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX idx_knowledge_key_scope ON knowledge_entries (apiary_id, hive_id, key, scope);
+CREATE UNIQUE INDEX idx_knowledge_key_scope ON knowledge_entries (organization_id, hive_id, key, scope);
 CREATE INDEX idx_knowledge_search ON knowledge_entries USING gin (value jsonb_path_ops);
-CREATE INDEX idx_knowledge_apiary_scope ON knowledge_entries (apiary_id, scope) WHERE scope = 'apiary';
+CREATE INDEX idx_knowledge_org_scope ON knowledge_entries (organization_id, scope) WHERE scope = 'organization';
 
 -- Knowledge scope permission rules:
---   knowledge:read          → read hive-scoped AND apiary-scoped entries
+--   knowledge:read          → read hive-scoped AND org-scoped entries
 --   knowledge:write         → write hive-scoped entries only
---   knowledge:write_apiary  → write apiary-scoped entries (apiary-level permission)
+--   knowledge:write_apiary  → write org-scoped entries (org-level permission)
 --   agent:{id} scope        → readable/writable only by that specific agent
 
 -- Webhook Routes (hive-scoped)
 CREATE TABLE webhook_routes (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL,
+    organization_id VARCHAR(26) NOT NULL,
     hive_id         VARCHAR(26) NOT NULL REFERENCES hives(id),
     name            VARCHAR(255) NOT NULL,
     service_id      VARCHAR(26) NOT NULL REFERENCES service_connections(id),
@@ -768,7 +768,7 @@ CREATE TABLE webhook_routes (
 -- Action Policies (hive-scoped: per-agent per-service)
 CREATE TABLE action_policies (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL,
+    organization_id VARCHAR(26) NOT NULL,
     hive_id         VARCHAR(26) NOT NULL,
     agent_id        VARCHAR(26) NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
     service_id      VARCHAR(26) NOT NULL REFERENCES service_connections(id),
@@ -782,7 +782,7 @@ CREATE TABLE action_policies (
 -- Approval Requests
 CREATE TABLE approval_requests (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL,
+    organization_id VARCHAR(26) NOT NULL,
     hive_id         VARCHAR(26) NOT NULL,
     agent_id        VARCHAR(26) NOT NULL REFERENCES agents(id),
     service_id      VARCHAR(26) NOT NULL REFERENCES service_connections(id),
@@ -798,13 +798,13 @@ CREATE TABLE approval_requests (
     created_at      TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_approvals_pending ON approval_requests (apiary_id, status, created_at)
+CREATE INDEX idx_approvals_pending ON approval_requests (organization_id, status, created_at)
     WHERE status = 'pending';
 
 -- Activity Log (hive-scoped)
 CREATE TABLE activity_log (
     id              BIGSERIAL PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL,
+    organization_id VARCHAR(26) NOT NULL,
     hive_id         VARCHAR(26),
     agent_id        VARCHAR(26),
     task_id         VARCHAR(26),
@@ -814,25 +814,25 @@ CREATE TABLE activity_log (
 );
 
 CREATE INDEX idx_activity_hive ON activity_log (hive_id, created_at DESC);
-CREATE INDEX idx_activity_apiary ON activity_log (apiary_id, created_at DESC);
+CREATE INDEX idx_activity_org ON activity_log (organization_id, created_at DESC);
 
--- Usage Metering (Cloud, apiary-level)
+-- Usage Metering (Cloud, org-level)
 CREATE TABLE usage_records (
     id              BIGSERIAL PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id),
+    organization_id VARCHAR(26) NOT NULL REFERENCES organizations(id),
     resource        VARCHAR(50) NOT NULL,
     count           INTEGER NOT NULL DEFAULT 0,
     period_start    DATE NOT NULL,
     period_end      DATE NOT NULL,
     created_at      TIMESTAMP DEFAULT NOW(),
     updated_at      TIMESTAMP DEFAULT NOW(),
-    UNIQUE(apiary_id, resource, period_start)
+    UNIQUE(organization_id, resource, period_start)
 );
 
 -- Workflows (Phase 4, hive-scoped)
 CREATE TABLE workflows (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL,
+    organization_id VARCHAR(26) NOT NULL,
     hive_id         VARCHAR(26) NOT NULL REFERENCES hives(id),
     name            VARCHAR(255) NOT NULL,
     trigger_config  JSONB NOT NULL,
@@ -848,7 +848,7 @@ CREATE TABLE workflows (
 
 Base URL:
 - CE: `https://your-server.com/api/v1`
-- Cloud: `https://acme-eng.apiary.ai/api/v1`
+- Cloud: `https://acme-eng.superpos.ai/api/v1`
 
 Agent token is scoped to a specific hive. All queries auto-scoped.
 
@@ -879,7 +879,7 @@ POST /agents/register
 Response:
 {
   "agent_id": "agt_abc123",
-  "apiary_id": "apy_xyz",
+  "organization_id": "org_xyz",
   "hive_id": "hiv_backend",
   "token": "tok_xxxxx",
   "granted_permissions": ["services:github-myorg", "cross_hive:mobile", "knowledge:read", "knowledge:write"],
@@ -925,13 +925,13 @@ POST /cross/tasks
 ### 10.3 Events
 ```
 GET    /events/poll               — Poll hive events + subscribed cross-hive events
-POST   /events                    — Emit hive event or cross-hive event (apiary.* prefix)
+POST   /events                    — Emit hive event or cross-hive event (platform.* prefix)
 PUT    /events/subscriptions
 ```
 
 ### 10.4 Knowledge Store
 ```
-GET    /knowledge?key={pattern}&scope={scope}  — scope: hive (default), apiary
+GET    /knowledge?key={pattern}&scope={scope}  — scope: hive (default), organization
 POST   /knowledge
 PUT    /knowledge/{id}
 DELETE /knowledge/{id}
@@ -946,21 +946,21 @@ POST   /proxy/{service_name}/token
 
 ### 10.6 Webhooks
 ```
-POST   /webhooks/{service_name}   — Apiary-level endpoint, routes to correct hive
+POST   /webhooks/{service_name}   — Org-level endpoint, routes to correct hive
 ```
 
 ### 10.7 Configuration
 ```
 GET|POST|PUT|DELETE  /config/webhook-routes     — Hive-scoped
-GET|POST             /config/connectors         — Apiary-scoped
-GET|POST             /config/services           — Apiary-scoped
+GET|POST             /config/connectors         — Org-scoped
+GET|POST             /config/services           — Org-scoped
 GET|POST             /config/policies           — Hive-scoped
 GET|POST             /approvals/{id}/(approve|deny)
 ```
 
 ### 10.8 Hive Management (Cloud)
 ```
-GET    /hives                     — List hives in current apiary
+GET    /hives                     — List hives in current organization
 POST   /hives                     — Create new hive
 PATCH  /hives/{slug}              — Update hive settings
 DELETE /hives/{slug}              — Deactivate hive
@@ -968,9 +968,9 @@ DELETE /hives/{slug}              — Deactivate hive
 
 ### 10.9 Cloud-only APIs
 ```
-GET    /apiary                    — Current apiary info + usage
-PATCH  /apiary                    — Update settings
-GET|POST|PATCH|DELETE /apiary/members
+GET    /organizations/current      — Current organization info + usage
+PATCH  /organizations/current      — Update settings
+GET|POST|PATCH|DELETE /organizations/current/members
 GET    /billing
 POST   /billing/portal
 GET    /usage
@@ -983,13 +983,13 @@ GET    /usage
 ## 11. Service Proxy & Credentials Vault
 
 Unchanged from v2/v3 — see previous doc sections.
-Key addition: service connections are **apiary-level** but action policies are **hive-level (per-agent)**.
+Key addition: service connections are **org-level** but action policies are **hive-level (per-agent)**.
 
 ---
 
 ## 12. Connectors
 
-A **Connector** is an apiary-level webhook parsing adapter. Each connector knows how to validate incoming webhook signatures and parse raw HTTP payloads into structured events that the platform can route.
+A **Connector** is an org-level webhook parsing adapter. Each connector knows how to validate incoming webhook signatures and parse raw HTTP payloads into structured events that the platform can route.
 
 Connectors implement `ConnectorInterface` (see `app/Contracts/ConnectorInterface.php`):
 - `validateSignature(Request $request, string $secret): bool` — verify the webhook is authentic
@@ -1004,9 +1004,9 @@ Built-in connectors (`app/Connectors/`): `GitHubConnector`, `SlackConnector`. Ag
 
 Same mechanics as v2/v3, with one key addition: each route targets a **specific hive**.
 
-Webhook arrives at apiary-level endpoint `/webhooks/github`, the route evaluator:
+Webhook arrives at org-level endpoint `/webhooks/github`, the route evaluator:
 1. Connector parses webhook → structured event
-2. Evaluates routes across ALL hives in the apiary
+2. Evaluates routes across ALL hives in the organization
 3. Route matches → creates task in the route's designated hive
 4. Multiple routes can match → tasks created in multiple hives simultaneously
 
@@ -1024,18 +1024,18 @@ Example: push to `main` creates deploy task in Backend hive AND notification tas
 ### 14.2 Per-Hive Views
 - Agent Overview (hive-scoped)
 - Task Board (Kanban, hive-scoped)
-- Knowledge Explorer (hive-scoped + apiary-scoped entries highlighted)
+- Knowledge Explorer (hive-scoped + org-scoped entries highlighted)
 - Webhook Monitor (hive-scoped routes)
 - Activity Feed (hive-scoped)
 
-### 14.3 Apiary-Wide Views
+### 14.3 Organization-Wide Views
 - **Cross-Hive Monitor** — inter-hive tasks, cross-hive events, dependency map
 - **Service Proxy Monitor** — all proxy requests across all hives
 - **Approval Queue** — pending approvals from all hives
 - **Team Management** — members, roles, hive access
 
 ### 14.4 Cloud-only
-- Workspace/Apiary Settings
+- Workspace/Organization Settings
 - Hive Management (create, rename, deactivate)
 - Billing & Usage
 - Onboarding Wizard
@@ -1049,26 +1049,26 @@ Example: push to `main` creates deploy task in Backend hive AND notification tas
 |--------------------------|---------|-------------------------------------------|
 | `tasks:create`           | Hive    | Create tasks in own hive                   |
 | `tasks:manage`           | Hive    | Cancel/reassign any task in own hive       |
-| `knowledge:read`         | Hive    | Read hive + apiary knowledge               |
+| `knowledge:read`         | Hive    | Read hive + org knowledge                  |
 | `knowledge:write`        | Hive    | Write hive knowledge                       |
-| `knowledge:write_apiary` | Apiary  | Write apiary-scoped knowledge              |
+| `knowledge:write_apiary` | Org     | Write org-scoped knowledge                 |
 | `knowledge:manage`       | Hive    | Delete/modify any entry in own hive        |
 | `manage:webhook_routes`  | Hive    | CRUD webhook routes for own hive           |
-| `manage:connectors`      | Apiary  | Register new connectors                    |
+| `manage:connectors`      | Org     | Register new connectors                    |
 | `manage:agents`          | Hive    | Register/deregister agents in own hive     |
 | `manage:policies`        | Hive    | Edit action policies in own hive           |
-| `services:{service_id}`  | Apiary  | Access specific service via proxy           |
-| `services:*`             | Apiary  | Access all services                        |
-| `cross_hive:{hive_slug}` | Apiary  | Create tasks + emit events to target hive  |
-| `cross_hive:*`           | Apiary  | Cross-hive access to all hives             |
-| `admin:*`                | Apiary  | Full system access                         |
+| `services:{service_id}`  | Org     | Access specific service via proxy           |
+| `services:*`             | Org     | Access all services                        |
+| `cross_hive:{hive_slug}` | Org     | Create tasks + emit events to target hive  |
+| `cross_hive:*`           | Org     | Cross-hive access to all hives             |
+| `admin:*`                | Org     | Full system access                         |
 
 ---
 
 ## 16. Project Structure (Laravel)
 
 ```
-apiary/
+superpos/
 ├── app/
 │   ├── Http/
 │   │   ├── Controllers/
@@ -1091,7 +1091,7 @@ apiary/
 │   │   │       ├── ApprovalViewController.php
 │   │   │       └── ConfigViewController.php
 │   │   ├── Middleware/
-│   │   │   ├── ResolveApiary.php                ← new
+│   │   │   ├── ResolveOrganization.php           ← new
 │   │   │   ├── ResolveHive.php                  ← new
 │   │   │   ├── AgentAuth.php
 │   │   │   ├── CheckPermission.php
@@ -1100,7 +1100,7 @@ apiary/
 │   │   └── Requests/
 │   │       └── ...
 │   ├── Models/
-│   │   ├── Apiary.php                           ← new
+│   │   ├── Organization.php                      ← new
 │   │   ├── Hive.php                             ← new
 │   │   ├── Agent.php
 │   │   ├── AgentPermission.php
@@ -1137,12 +1137,12 @@ apiary/
 │   ├── Contracts/
 │   │   └── ConnectorInterface.php
 │   ├── Traits/
-│   │   ├── BelongsToApiary.php                  ← new
+│   │   ├── BelongsToOrganization.php             ← new
 │   │   └── BelongsToHive.php                    ← new
 │   ├── Cloud/
 │   │   ├── Http/Controllers/
 │   │   │   ├── BillingController.php
-│   │   │   ├── ApiarySettingsController.php
+│   │   │   ├── OrgSettingsController.php
 │   │   │   ├── HiveManagementController.php
 │   │   │   ├── TeamController.php
 │   │   │   ├── OnboardingController.php
@@ -1170,7 +1170,7 @@ apiary/
 │       ├── CleanupExpiredKnowledge.php
 │       └── ExpireApprovalRequests.php
 ├── database/migrations/
-│   ├── 0001_create_apiaries_table.php
+│   ├── 0001_create_organizations_table.php
 │   ├── 0002_create_hives_table.php
 │   ├── 0003_create_agents_table.php
 │   ├── 0004_create_agent_permissions_table.php
@@ -1188,7 +1188,7 @@ apiary/
 │   ├── 0016_create_workflows_table.php
 │   └── cloud/
 │       ├── 0101_create_users_table.php
-│       ├── 0102_create_apiary_members_table.php
+│       ├── 0102_create_org_members_table.php
 │       ├── 0103_create_hive_access_table.php
 │       └── 0104_create_usage_records_table.php
 ├── routes/
@@ -1215,7 +1215,7 @@ apiary/
 │   │   ├── Activity/
 │   │   └── Cloud/
 │   │       ├── Billing/
-│   │       ├── Apiary/
+│   │       ├── Organization/
 │   │       ├── Onboarding/
 │   │       └── Marketplace/
 │   ├── Components/
@@ -1227,7 +1227,7 @@ apiary/
 │   └── Layouts/
 │       └── AppLayout.jsx
 ├── config/
-│   ├── apiary.php
+│   ├── platform.php
 │   ├── plans.php
 │   ├── horizon.php
 │   └── reverb.php
@@ -1262,7 +1262,7 @@ apiary/
 ### Phase 1: Core MVP — ~2-3 weeks
 **Tasks flow between agents in a single hive, dashboard shows state.**
 
-1. Laravel scaffold + Docker Compose (CE mode — implicit apiary + hive)
+1. Laravel scaffold + Docker Compose (CE mode — implicit organization + hive)
 2. Core migrations: agents, permissions, tasks, knowledge, activity_log
 3. Agent API: register, heartbeat, task CRUD, poll, claim, complete
 4. Task router by agent_id or capability
@@ -1301,19 +1301,19 @@ apiary/
 2. Hive-scoped queries on all core resources
 3. Hive selector in dashboard
 4. Cross-hive task creation + permission check
-5. Cross-hive events (apiary.* prefix)
-6. Apiary-scoped knowledge
+5. Cross-hive events (platform.* prefix)
+6. Organization-scoped knowledge
 7. Cross-hive monitor dashboard
 8. Webhook routes targeting specific hives
 
 ### Phase 5: Cloud Foundation — ~2-3 weeks
 **Multi-tenant SaaS running.**
 
-1. Apiary model + BelongsToApiary trait
+1. Organization model + BelongsToOrganization trait
 2. Tenant resolution middleware
 3. User auth (Breeze + Socialite)
 4. Team management + hive access control
-5. Per-apiary credential encryption
+5. Per-org credential encryption
 
 ### Phase 6: Billing & Onboarding — ~2 weeks
 **Users can sign up, pay, get started.**
@@ -1376,7 +1376,7 @@ apiary/
 3. Agent context threads (§25)
 4. Sandbox / dry-run mode (§25)
 5. Hive Map: topology API + React Flow graph (§26)
-6. Hive Map: node panels, live WebSocket, apiary view
+6. Hive Map: node panels, live WebSocket, organization view
 
 ### Phase 5B: Intelligence
 **LLM awareness, replay, and marketplace.**
@@ -1397,37 +1397,37 @@ See [CLAUDE.md](../CLAUDE.md) for coding standards, project structure, testing, 
 
 ```env
 # === Core ===
-APP_NAME=Apiary
+APP_NAME=Superpos
 APP_URL=http://localhost:8000
 APP_KEY=
 
-APIARY_EDITION=ce                        # 'ce' or 'cloud'
+SUPERPOS_EDITION=ce                        # 'ce' or 'cloud'
 
 DB_CONNECTION=pgsql
 DB_HOST=postgres
 DB_PORT=5432
-DB_DATABASE=apiary
-DB_USERNAME=apiary
+DB_DATABASE=platform
+DB_USERNAME=platform
 DB_PASSWORD=secret
 
 REDIS_HOST=redis
 REDIS_PORT=6379
 
 QUEUE_CONNECTION=redis
-HORIZON_PREFIX=apiary_horizon:
+HORIZON_PREFIX=platform_horizon:
 
-REVERB_APP_ID=apiary
-REVERB_APP_KEY=apiary-key
-REVERB_APP_SECRET=apiary-secret
+REVERB_APP_ID=platform
+REVERB_APP_KEY=platform-key
+REVERB_APP_SECRET=platform-secret
 
-APIARY_HEARTBEAT_TIMEOUT=30
-APIARY_HEARTBEAT_DEAD=60
-APIARY_DEFAULT_TASK_TIMEOUT=300
-APIARY_DEFAULT_POLL_INTERVAL=3000
-APIARY_IDLE_POLL_INTERVAL=5000
-APIARY_DEEP_IDLE_POLL_INTERVAL=10000
-APIARY_APPROVAL_EXPIRY=3600
-APIARY_SHORT_TOKEN_TTL=900
+SUPERPOS_HEARTBEAT_TIMEOUT=30
+SUPERPOS_HEARTBEAT_DEAD=60
+SUPERPOS_DEFAULT_TASK_TIMEOUT=300
+SUPERPOS_DEFAULT_POLL_INTERVAL=3000
+SUPERPOS_IDLE_POLL_INTERVAL=5000
+SUPERPOS_DEEP_IDLE_POLL_INTERVAL=10000
+SUPERPOS_APPROVAL_EXPIRY=3600
+SUPERPOS_SHORT_TOKEN_TTL=900
 
 # === Cloud-only ===
 STRIPE_KEY=
@@ -1436,18 +1436,18 @@ STRIPE_WEBHOOK_SECRET=
 
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
+GOOGLE_SSO_CLIENT_ID=
+GOOGLE_SSO_CLIENT_SECRET=
 
-APIARY_MASTER_ENCRYPTION_KEY=
-APIARY_DEFAULT_REGION=us
+SUPERPOS_MASTER_ENCRYPTION_KEY=
+SUPERPOS_DEFAULT_REGION=us
 ```
 
 ---
 
 ## 20. Security Considerations
 
-1. **Credential isolation** — encrypted at rest; Cloud: per-apiary keys
+1. **Credential isolation** — encrypted at rest; Cloud: per-org keys
 2. **Agent tokens** — hashed (Sanctum), scoped to hive
 3. **Hive isolation** — BelongsToHive global scope prevents cross-hive data leaks
 4. **Cross-hive control** — explicit permission required, all cross-hive activity logged
@@ -1455,10 +1455,10 @@ APIARY_DEFAULT_REGION=us
 6. **Approval flow** — dangerous ops need human confirmation
 7. **Webhook signatures** — validated per connector
 8. **No inbound to agents** — outbound poll only
-9. **Proxy logging** — every request logged at apiary level
+9. **Proxy logging** — every request logged at org level
 10. **Connector sandboxing** — validated before activation
-11. **Rate limiting** — per-agent + per-apiary (Cloud)
-12. **Tenant isolation** — BelongsToApiary global scope (Cloud)
+11. **Rate limiting** — per-agent + per-org (Cloud)
+12. **Tenant isolation** — BelongsToOrganization global scope (Cloud)
 13. **HTTPS only** in production
 14. **Input validation** — Form Requests everywhere
 
@@ -1482,7 +1482,7 @@ APIARY_DEFAULT_REGION=us
 2. Pro Cloud → teams with real usage
 3. Enterprise → SSO, compliance, support
 4. Marketplace fees → premium connectors (future)
-5. Managed agents → hosted agents in Apiary cloud (future)
+5. Managed agents → hosted agents in Superpos cloud (future)
 
 ---
 
@@ -1493,7 +1493,7 @@ APIARY_DEFAULT_REGION=us
 An **Inbox** is a pre-authenticated URL that converts any HTTP POST into a task — no connector, no route config, no signature validation required. Just URL → task.
 
 ```
-POST https://acme.apiary.ai/inbox/inb_k7Xm9pQ2
+POST https://acme.superpos.ai/inbox/inb_k7Xm9pQ2
 { "server": "web-03", "alert": "CPU > 95%" }
 → Task created in target hive, agent picks it up
 ```
@@ -1519,7 +1519,7 @@ Inbox is the **simple path**; Webhook Routes (§13) are the **powerful path**. B
 
 ### Schema
 
-New tables: `inboxes` (config, security, limits, transform) and `inbox_log` (request audit trail). Both scoped via `BelongsToApiary` + `BelongsToHive`.
+New tables: `inboxes` (config, security, limits, transform) and `inbox_log` (request audit trail). Both scoped via `BelongsToOrganization` + `BelongsToHive`.
 
 ### API
 
@@ -1643,7 +1643,7 @@ Agents discover available data services via `GET /api/v1/agents?capability=data:
 
 ### Built-in Workers
 
-Gmail, Google Sheets, Jira, Slack, GitHub, generic HTTP, and SQL workers — each a standalone script (~30 lines) using the Apiary SDK.
+Gmail, Google Sheets, Jira, Slack, GitHub, generic HTTP, and SQL workers — each a standalone script (~30 lines) using the Superpos SDK.
 
 ### Implementation Notes
 
@@ -1699,7 +1699,7 @@ An interactive, real-time graph showing every node (agent, service, inbox, sched
 
 ### Three Zoom Levels
 
-**Apiary View** — All hives as cards with summary stats (agent count, task count, health), service connections shared at top, cross-hive edges with volume indicators. Click hive → zoom in.
+**Organization View** — All hives as cards with summary stats (agent count, task count, health), service connections shared at top, cross-hive edges with volume indicators. Click hive → zoom in.
 
 **Hive View** — Full internal topology: agents as nodes with status/task badges, inboxes on the left (triggers in), services on the right (proxy out), task-flow edges between agents, cross-hive outbound links, schedule and knowledge panels. Click node → detail panel.
 
@@ -1720,7 +1720,7 @@ Edges show live data flowing — pulse dots travel along connections on each web
 
 ### Frontend Implementation
 
-Built with **React Flow** (reactflow.dev). Custom node types (AgentNode, ServiceNode, InboxNode, ScheduleNode, HiveCard) and custom animated edge types. Layout via dagre/elkjs. Live updates via Laravel Reverb WebSocket channels (`hive.{id}.topology`, `apiary.{id}.topology`).
+Built with **React Flow** (reactflow.dev). Custom node types (AgentNode, ServiceNode, InboxNode, ScheduleNode, HiveCard) and custom animated edge types. Layout via dagre/elkjs. Live updates via Laravel Reverb WebSocket channels (`hive.{id}.topology`, `org.{id}.topology`).
 
 ### Data Sources
 
@@ -1739,7 +1739,7 @@ Assembled from existing tables — no new infrastructure:
 ### API
 
 - `GET /api/v1/hives/{slug}/topology?timeframe=24h` — hive-level graph (nodes + edges)
-- `GET /api/v1/topology?timeframe=24h` — apiary-level graph (hive cards + cross-hive edges)
+- `GET /api/v1/topology?timeframe=24h` — org-level graph (hive cards + cross-hive edges)
 
 ---
 

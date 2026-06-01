@@ -4,7 +4,7 @@ Demonstrates the ServiceWorker base class pattern: inherit, declare
 CAPABILITY, implement operation methods, and call .run().
 
 Usage:
-    export APIARY_BASE_URL="http://localhost:8080"
+    export SUPERPOS_BASE_URL="http://localhost:8080"
     export HIVE_ID="01HXYZ..."
     export AGENT_SECRET="your-secret"
     python examples/service_worker_example.py
@@ -21,14 +21,14 @@ To request data from this worker (from any agent):
 import logging
 import os
 
-from apiary_sdk import ApiaryClient, ServiceWorker
+from superpos_sdk import ServiceWorker, SuperposClient
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s — %(message)s",
 )
 
-APIARY_URL = os.environ.get("APIARY_BASE_URL", "http://localhost:8080")
+SUPERPOS_URL = os.environ.get("SUPERPOS_BASE_URL", "http://localhost:8080")
 HIVE_ID = os.environ["HIVE_ID"]
 AGENT_SECRET = os.environ["AGENT_SECRET"]
 
@@ -76,7 +76,7 @@ class CrmWorker(ServiceWorker):
 def run_with_composition():
     """Alternative: register handlers without subclassing."""
     worker = ServiceWorker(
-        base_url=APIARY_URL,
+        base_url=SUPERPOS_URL,
         hive_id=HIVE_ID,
         name="crm-worker-v2",
         secret=AGENT_SECRET,
@@ -94,7 +94,7 @@ def run_with_composition():
 
 def send_request_example():
     """Show how any agent requests data from the CRM worker."""
-    client = ApiaryClient(APIARY_URL, token=os.environ.get("AGENT_TOKEN", ""))
+    client = SuperposClient(SUPERPOS_URL, token=os.environ.get("AGENT_TOKEN", ""))
 
     # Fire and forget — returns immediately with a task ID.
     ref = client.data_request(
@@ -122,7 +122,7 @@ def send_request_example():
 
 if __name__ == "__main__":
     worker = CrmWorker(
-        base_url=APIARY_URL,
+        base_url=SUPERPOS_URL,
         hive_id=HIVE_ID,
         name="crm-worker",
         secret=AGENT_SECRET,

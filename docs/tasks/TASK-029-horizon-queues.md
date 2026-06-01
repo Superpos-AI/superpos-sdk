@@ -6,11 +6,11 @@
 | **Priority**| High                                          |
 | **Depends** | —                                             |
 | **Branch**  | `task/029-horizon-queue-infra`                |
-| **PR**      | https://github.com/Apiary-AI/Apiary-SaaS/pull/35 |
+| **PR**      | https://github.com/Superpos-AI/superpos-app/pull/35 |
 
 ## Objective
 
-Install Laravel Horizon, configure supervisors to process all Apiary queue
+Install Laravel Horizon, configure supervisors to process all Superpos queue
 names, harden queue config defaults (after_commit, batching DB), and isolate
 Redis databases so queues, cache, and default do not share a DB.
 
@@ -18,7 +18,7 @@ Redis databases so queues, cache, and default do not share a DB.
 
 1. **Install `laravel/horizon`** — add to `composer.json` `require`.
 2. **`config/horizon.php`** — custom config with:
-   - Supervisors covering `default`, `apiary-tasks`, `apiary-webhooks`,
+   - Supervisors covering `default`, `superpos-tasks`, `apiary-webhooks`,
      `apiary-notifications`.
    - `local` environment (3 workers) and `production` environment (10 workers,
      auto-balance).
@@ -54,7 +54,7 @@ Redis databases so queues, cache, and default do not share a DB.
 ## Acceptance Criteria
 
 - [x] `laravel/horizon` is in `composer.json` require
-- [x] `config/horizon.php` exists with supervisors covering all Apiary queues
+- [x] `config/horizon.php` exists with supervisors covering all Superpos queues
 - [x] `viewHorizon` gate allows local, denies production
 - [x] Redis queue uses `after_commit: true`
 - [x] Redis queue uses dedicated `queue` Redis connection (DB 2)

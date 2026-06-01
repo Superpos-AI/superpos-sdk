@@ -4,7 +4,7 @@
 Review
 
 ## PR
-https://github.com/Apiary-AI/Apiary-SaaS/pull/37
+https://github.com/Superpos-AI/superpos-app/pull/37
 
 ## Objective
 Consolidate all agent-facing API routes under a single `/api/v1` group, apply

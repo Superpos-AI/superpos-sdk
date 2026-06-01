@@ -4,7 +4,7 @@
 In Review
 
 ## PR
-[#36](https://github.com/Apiary-AI/Apiary-SaaS/pull/36)
+[#36](https://github.com/Superpos-AI/superpos-app/pull/36)
 
 ## Objective
 Replace the default Laravel welcome page at `/` with a product-native app landing/index page that routes users into the dashboard experience and reflects current edition/runtime context.

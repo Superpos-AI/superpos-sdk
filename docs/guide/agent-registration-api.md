@@ -1,7 +1,7 @@
 # Agent Registration API
 
 The agent registration endpoint (`POST /api/v1/agents/register`) is the entry
-point for every agent joining an Apiary hive. It validates the payload, enforces
+point for every agent joining an Superpos hive. It validates the payload, enforces
 hive and apiary scoping, creates the agent record, and returns a one-time bearer
 token. This page covers the full registration contract — request/response
 schemas, scope safety, duplicate handling, migration notes, and security model.
@@ -12,13 +12,13 @@ For the broader auth lifecycle (login, logout, token management), see the
 ## Overview
 
 ```text
-Agent (external)                      Apiary Platform
+Agent (external)                      Superpos Platform
 ────────────────                      ────────────────
   POST /api/v1/agents/register ──►    AgentAuthController::register()
   {                                     │
     name, hive_id, secret,              ├─ Validate payload (AgentRegisterRequest)
-    apiary_id?, type?,                  ├─ Resolve hive
-    capabilities?, metadata?            ├─ Scope safety check (apiary_id ↔ hive)
+    superpos_id?, type?,                  ├─ Resolve hive
+    capabilities?, metadata?            ├─ Scope safety check (superpos_id ↔ hive)
   }                                     ├─ Create agent (bcrypt secret)
                                         ├─ Create Sanctum token
                                         ├─ Log activity (agent.registered)
@@ -30,7 +30,7 @@ Agent (external)                      Apiary Platform
 - Agent names are unique per hive (validated + DB-enforced)
 - The bearer token is returned exactly once — store it immediately
 - The agent secret is bcrypt-hashed — never stored or returned in plaintext
-- Every registration is recorded in the [activity log](./activity-log.md)
+- Every registration is recorded in the activity log
 - Scope mismatches are rejected before any data is written
 
 ## Request Schema
@@ -45,7 +45,7 @@ Content-Type: application/json
   "name": "DeployBot",
   "hive_id": "01JFWXYZ01JFWXYZ01JFWXYZ01",
   "secret": "my-secret-at-least-16-chars",
-  "apiary_id": "01JFQABC01JFQABC01JFQABC01",
+  "superpos_id": "01JFQABC01JFQABC01JFQABC01",
   "type": "deployment",
   "capabilities": ["deploy", "rollback"],
   "metadata": { "version": "2.1" }
@@ -57,7 +57,7 @@ Content-Type: application/json
 | `name` | string | **Yes** | Max 255 characters. Must be unique within the target hive. |
 | `hive_id` | string | **Yes** | 26-character ULID. Must reference an existing hive. |
 | `secret` | string | **Yes** | 16–255 characters. Hashed with bcrypt before storage. |
-| `apiary_id` | string | No | 26-character ULID. If provided, must match the hive's owning apiary. |
+| `superpos_id` | string | No | 26-character ULID. If provided, must match the hive's owning apiary. |
 | `type` | string | No | Max 100 characters. Defaults to `custom`. |
 | `capabilities` | string[] | No | Array of strings, each max 255 characters. |
 | `metadata` | object | No | Arbitrary key-value pairs stored as JSONB. |
@@ -74,7 +74,7 @@ Content-Type: application/json
       "name": "DeployBot",
       "type": "deployment",
       "hive_id": "01JFWXYZ01JFWXYZ01JFWXYZ01",
-      "apiary_id": "01JFQABC01JFQABC01JFQABC01",
+      "superpos_id": "01JFQABC01JFQABC01JFQABC01",
       "status": "offline",
       "capabilities": ["deploy", "rollback"],
       "metadata": { "version": "2.1" }
@@ -88,11 +88,11 @@ Content-Type: application/json
 
 ::: tip
 The `token` value is shown **only once**. Store it immediately in your agent's
-configuration. Apiary stores only a SHA-256 hash internally. If you lose the
+configuration. Superpos stores only a SHA-256 hash internally. If you lose the
 token, call `/login` with the agent's `id` and `secret` to obtain a new one.
 :::
 
-The `apiary_id` in the response is always derived from the hive — you do not
+The `superpos_id` in the response is always derived from the hive — you do not
 need to supply it. It is included so agents know their full organizational
 context.
 
@@ -129,7 +129,7 @@ Each error includes:
 
 ### 422 — Scope Mismatch
 
-If `apiary_id` is provided but does not match the hive's owning apiary:
+If `superpos_id` is provided but does not match the hive's owning apiary:
 
 ```json
 {
@@ -137,7 +137,7 @@ If `apiary_id` is provided but does not match the hive's owning apiary:
   "meta": {},
   "errors": [
     {
-      "message": "The provided apiary_id does not match the hive's apiary.",
+      "message": "The provided superpos_id does not match the hive's apiary.",
       "code": "scope_mismatch"
     }
   ]
@@ -171,7 +171,7 @@ validation or the database unique constraint (see
 
 ## Scope Safety
 
-Apiary enforces a strict two-level hierarchy: **Apiary** (organization) →
+Superpos enforces a strict two-level hierarchy: **Superpos** (organization) →
 **Hive** (project). Every agent belongs to exactly one hive, and every hive
 belongs to exactly one apiary. The registration endpoint enforces this at
 multiple levels.
@@ -179,30 +179,30 @@ multiple levels.
 ### How `hive_id` Works
 
 The `hive_id` field is **required**. The endpoint resolves the hive and
-automatically derives the `apiary_id` from it:
+automatically derives the `superpos_id` from it:
 
 ```text
 Agent sends: { hive_id: "01ABC..." }
 Platform:    hive = Hive::find("01ABC...")
-             agent.apiary_id = hive.apiary_id   ← auto-derived
+             agent.superpos_id = hive.superpos_id   ← auto-derived
 ```
 
-You never need to send `apiary_id` for correct scoping — the hive already
+You never need to send `superpos_id` for correct scoping — the hive already
 implies it.
 
-### Optional `apiary_id` — Explicit Verification
+### Optional `superpos_id` — Explicit Verification
 
-The optional `apiary_id` field exists for **safety verification**. If your agent
+The optional `superpos_id` field exists for **safety verification**. If your agent
 knows which apiary it belongs to, include it to catch configuration errors
 (e.g., a hive ID that points to a different organization):
 
 ```text
-Agent sends: { hive_id: "01ABC...", apiary_id: "01XYZ..." }
+Agent sends: { hive_id: "01ABC...", superpos_id: "01XYZ..." }
 Platform:    hive = Hive::find("01ABC...")
-             if hive.apiary_id ≠ "01XYZ..."  →  422 scope_mismatch
+             if hive.superpos_id ≠ "01XYZ..."  →  422 scope_mismatch
 ```
 
-If `apiary_id` is omitted, no mismatch check is performed — the hive's apiary
+If `superpos_id` is omitted, no mismatch check is performed — the hive's apiary
 is accepted as-is.
 
 ### CE vs Cloud Scoping
@@ -211,7 +211,7 @@ is accepted as-is.
 |--------|-------------------|---------------|
 | Apiaries | Single `default` apiary | Multiple apiaries (one per org) |
 | Hives | User-created hives within `default` apiary | Hives scoped to tenant's apiary |
-| `apiary_id` param | Optional but always matches `default` | Useful for multi-org safety checks |
+| `superpos_id` param | Optional but always matches `default` | Useful for multi-org safety checks |
 | Global scopes | No runtime filtering (single tenant) | `BelongsToHive` trait adds hive-level filtering |
 | Registration API | Identical contract | Identical contract |
 
@@ -343,16 +343,15 @@ in the registration response.
 
 ### Activity Logging
 
-Every registration writes an entry to the [activity log](./activity-log.md):
+Every registration writes an entry to the activity log:
 
 | Action | Details |
 |--------|---------|
 | `agent.registered` | `{ token_name: "agent-api", agent_name: "DeployBot", agent_type: "deployment" }` |
 
-The log entry includes full context: `apiary_id`, `hive_id`, and `agent_id`.
+The log entry includes full context: `superpos_id`, `hive_id`, and `agent_id`.
 This provides a complete audit trail of which agents were registered, when, and
-in which organizational scope. See the
-[ActivityLogger Service](./activity-logger.md) guide for how entries are created.
+in which organizational scope.
 
 ### What Is Never Logged
 
@@ -364,9 +363,9 @@ in which organizational scope. See the
 
 | Behavior | Community Edition | Cloud Edition |
 |----------|-------------------|---------------|
-| Apiary context | Always `default` | Resolved from tenant org |
+| Superpos context | Always `default` | Resolved from tenant org |
 | Hive isolation | Application-level scoping | DB-level global scopes via `BelongsToHive` trait |
-| `apiary_id` verification | Works but trivial (single apiary) | Guards against cross-org misconfiguration |
+| `superpos_id` verification | Works but trivial (single apiary) | Guards against cross-org misconfiguration |
 | Agent name uniqueness | Per hive | Per hive (same constraint) |
 | Registration endpoint | `/api/v1/agents/register` | `/api/v1/agents/register` (identical) |
 | Token issuance | Sanctum bearer token | Sanctum bearer token (identical) |
@@ -385,20 +384,20 @@ apiary from the tenant's organization.
 | 422 | `validation_error` (field: `name`) | Name missing or duplicate in hive | Choose a unique name within the target hive |
 | 422 | `validation_error` (field: `hive_id`) | Invalid ULID or hive does not exist | Verify the hive ID is a valid 26-character ULID and exists |
 | 422 | `validation_error` (field: `secret`) | Secret shorter than 16 characters | Use a strong passphrase or generated key (16+ chars) |
-| 422 | `scope_mismatch` | `apiary_id` does not match hive's apiary | Omit `apiary_id` or correct it to match the hive's owning apiary |
+| 422 | `scope_mismatch` | `superpos_id` does not match hive's apiary | Omit `superpos_id` or correct it to match the hive's owning apiary |
 | 422 | `validation_error` (field: `name`) | Race condition duplicate | Retry with a different name or handle the error gracefully |
 
 ### Debugging Scope Issues
 
 If you receive a `scope_mismatch` error:
 
-1. Fetch the hive details to confirm its `apiary_id`
-2. Compare with the `apiary_id` you are sending
-3. Either correct the `apiary_id` or omit it entirely
+1. Fetch the hive details to confirm its `superpos_id`
+2. Compare with the `superpos_id` you are sending
+3. Either correct the `superpos_id` or omit it entirely
 
 ```bash
 # Check which apiary owns a hive (requires admin access)
-curl https://apiary.example.com/api/v1/hives/01JFWXYZ01JFWXYZ01JFWXYZ01 \
+curl https://superpos.example.com/api/v1/hives/01JFWXYZ01JFWXYZ01JFWXYZ01 \
   -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
@@ -419,8 +418,8 @@ The registration API is covered by comprehensive tests in
 
 - **Happy path** — successful registration returns `201` with agent and token
 - **Optional fields** — `type`, `capabilities`, `metadata` are correctly stored
-- **Apiary derivation** — `apiary_id` is auto-derived from hive
-- **Scope enforcement** — `apiary_id` mismatch returns `422` with `scope_mismatch`
+- **Superpos derivation** — `superpos_id` is auto-derived from hive
+- **Scope enforcement** — `superpos_id` mismatch returns `422` with `scope_mismatch`
 - **Duplicate detection** — same name in same hive returns `422`
 - **Cross-hive isolation** — same name in different hive succeeds
 - **Race conditions** — DB constraint catches concurrent duplicates
@@ -448,7 +447,7 @@ To test registration in your own agent code, use the API directly:
 ```python
 import requests
 
-BASE = "https://apiary.example.com/api/v1/agents"
+BASE = "https://superpos.example.com/api/v1/agents"
 
 resp = requests.post(f"{BASE}/register", json={
     "name": "test-agent",

@@ -1,8 +1,8 @@
 # TASK-254: Admin-configurable hosted agent presets (DB-backed)
 
-**Status:** pending (deferred — ship after MVP)
+**Status:** done (all 5 steps merged)
 **Branch:** `task/254-admin-hosted-agent-presets`
-**PR:** —
+**PR:** merged (5 PRs — steps 1–5)
 **Depends on:** TASK-253, TASK-241
 **Blocks:** —
 **Edition:** cloud
@@ -19,33 +19,33 @@ code deploy. Preserves the MVP API shape — callers of
 
 ### Functional
 
-- [ ] FR-1: Migration creates `hosted_agent_presets` with the same fields
+- [x] FR-1: Migration creates `hosted_agent_presets` with the same fields
   as the MVP value object (key, label, description, image JSONB,
   command, replicas JSONB, restart_policy, models JSONB, model_env_key,
   user_env JSONB, is_enabled, created_at, updated_at).
-- [ ] FR-2: `HostedAgentPresetRegistry` reads from DB, cached for 5 min
+- [x] FR-2: `HostedAgentPresetRegistry` reads from DB, cached for 5 min
   in Redis. Cache bust on write.
-- [ ] FR-3: Config-backed presets continue to work as a fallback for dev
+- [x] FR-3: Config-backed presets continue to work as a fallback for dev
   environments — registry merges DB + config with DB taking precedence
   on key collision. A one-off seeder imports the config presets into DB
   on first cloud deploy.
-- [ ] FR-4: Admin-only routes under `/admin/hosted-agent-presets` (not
+- [x] FR-4: Admin-only routes under `/admin/hosted-agent-presets` (not
   hive-scoped) — protected by the existing `admin` gate.
     - `GET` list, `POST` create, `PATCH /{key}`, `DELETE /{key}`,
       `POST /{key}/enable`, `POST /{key}/disable`.
-- [ ] FR-5: Validation: `image.name` must match the GHCR prefix
+- [x] FR-5: Validation: `image.name` must match the GHCR prefix
   `ghcr.io/apiary-ai/` (configurable allowlist). Protects against an
   admin pointing a preset at an untrusted image.
-- [ ] FR-6: Admin UI pages under `resources/js/Pages/Cloud/Admin/
+- [x] FR-6: Admin UI pages under `resources/js/Pages/Cloud/Admin/
   HostedAgentPresets/` for list + create/edit forms.
-- [ ] FR-7: Disabling a preset is soft — existing hosted agents keep
+- [x] FR-7: Disabling a preset is soft — existing hosted agents keep
   running. Wizard hides disabled presets from the catalogue.
 
 ### Non-Functional
 
-- [ ] NFR-1: Activity log on preset mutations.
-- [ ] NFR-2: No plaintext `user_env.help` longer than 500 chars.
-- [ ] NFR-3: Image pull allowlist stored in
+- [x] NFR-1: Activity log on preset mutations.
+- [x] NFR-2: No plaintext `user_env.help` longer than 500 chars.
+- [x] NFR-3: Image pull allowlist stored in
   `config('apiary.hosted_agents.image_allowlist')` — enforced server
   side regardless of what the admin UI accepts.
 
@@ -77,16 +77,16 @@ code deploy. Preserves the MVP API shape — callers of
 
 ## Test Plan
 
-- [ ] Seeder imports MVP config presets into DB.
-- [ ] DB override of a config key takes precedence.
-- [ ] Image allowlist rejects foreign registry.
-- [ ] Disabling a preset hides it from `sanitizedCatalogue`.
-- [ ] Admin UI requires admin gate.
-- [ ] Activity log on create/update/delete.
+- [x] Seeder imports MVP config presets into DB.
+- [x] DB override of a config key takes precedence.
+- [x] Image allowlist rejects foreign registry.
+- [x] Disabling a preset hides it from `sanitizedCatalogue`.
+- [x] Admin UI requires admin gate.
+- [x] Activity log on create/update/delete.
 
 ## Validation Checklist
 
-- [ ] All tests pass
-- [ ] Registry contract unchanged for existing callers
-- [ ] Image allowlist enforced server-side
-- [ ] Admin-only routes
+- [x] All tests pass
+- [x] Registry contract unchanged for existing callers
+- [x] Image allowlist enforced server-side
+- [x] Admin-only routes

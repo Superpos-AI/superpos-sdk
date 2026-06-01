@@ -6,8 +6,8 @@ import json
 
 import pytest
 
-from apiary_sdk import ApiaryClient
-from apiary_sdk.exceptions import NotFoundError
+from superpos_sdk import SuperposClient
+from superpos_sdk.exceptions import NotFoundError
 
 from .conftest import BASE_URL, ENTRY_ID, HIVE_ID, TOKEN, envelope
 
@@ -36,7 +36,7 @@ def _link_data(**overrides):
 def _entry_data(**overrides):
     base = {
         "id": ENTRY_ID,
-        "apiary_id": "A" * 26,
+        "organization_id": "A" * 26,
         "hive_id": HIVE_ID,
         "key": "config.timeout",
         "value": {"seconds": 30},
@@ -64,7 +64,7 @@ class TestCreateKnowledgeLink:
             status_code=201,
             json=envelope(_link_data()),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             link = c.create_knowledge_link(
                 HIVE_ID,
                 ENTRY_ID,
@@ -90,7 +90,7 @@ class TestCreateKnowledgeLink:
                 )
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             link = c.create_knowledge_link(
                 HIVE_ID,
                 ENTRY_ID,
@@ -114,7 +114,7 @@ class TestCreateKnowledgeLink:
             status_code=404,
             json=envelope(errors=[{"message": "Knowledge entry not found.", "code": "not_found"}]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             with pytest.raises(NotFoundError):
                 c.create_knowledge_link(HIVE_ID, "NOPE", target_id=TARGET_ENTRY_ID)
 
@@ -125,7 +125,7 @@ class TestListKnowledgeLinks:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/links?source={ENTRY_ID}",
             json=envelope([_link_data()]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             links = c.list_knowledge_links(HIVE_ID, source_id=ENTRY_ID)
         assert len(links) == 1
         assert links[0]["source_id"] == ENTRY_ID
@@ -135,7 +135,7 @@ class TestListKnowledgeLinks:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/links?target_ref={TARGET_ENTRY_ID}&target_type=knowledge",
             json=envelope([_link_data()]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             links = c.list_knowledge_links(
                 HIVE_ID,
                 target_id=TARGET_ENTRY_ID,
@@ -148,7 +148,7 @@ class TestListKnowledgeLinks:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/links?source={ENTRY_ID}&limit=5",
             json=envelope([]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             links = c.list_knowledge_links(HIVE_ID, source_id=ENTRY_ID, limit=5)
         assert links == []
 
@@ -159,7 +159,7 @@ class TestDeleteKnowledgeLink:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/links/{LINK_ID}",
             status_code=204,
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             result = c.delete_knowledge_link(HIVE_ID, LINK_ID)
         assert result is None
 
@@ -169,7 +169,7 @@ class TestDeleteKnowledgeLink:
             status_code=404,
             json=envelope(errors=[{"message": "Knowledge link not found.", "code": "not_found"}]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             with pytest.raises(NotFoundError):
                 c.delete_knowledge_link(HIVE_ID, "NOPE")
 
@@ -180,7 +180,7 @@ class TestConfirmKnowledgeLink:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/links/{LINK_ID}/confirm",
             json=envelope(_link_data(status="confirmed")),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             link = c.confirm_knowledge_link(HIVE_ID, LINK_ID)
         assert link["status"] == "confirmed"
 
@@ -191,7 +191,7 @@ class TestDismissKnowledgeLink:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/links/{LINK_ID}/dismiss",
             json=envelope(_link_data(status="dismissed")),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             link = c.dismiss_knowledge_link(HIVE_ID, LINK_ID)
         assert link["status"] == "dismissed"
 
@@ -202,7 +202,7 @@ class TestSuggestedLinks:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/{ENTRY_ID}/suggested-links",
             json=envelope([_link_data(status="suggested", metadata={"confidence": 0.85})]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             suggestions = c.suggested_links(HIVE_ID, ENTRY_ID)
         assert len(suggestions) == 1
         assert suggestions[0]["status"] == "suggested"
@@ -212,7 +212,7 @@ class TestSuggestedLinks:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/{ENTRY_ID}/suggested-links?limit=10",
             json=envelope([]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             suggestions = c.suggested_links(HIVE_ID, ENTRY_ID, limit=10)
         assert suggestions == []
 
@@ -241,7 +241,7 @@ class TestGetKnowledgeGraph:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/{ENTRY_ID}/graph",
             json=envelope(graph_data),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             graph = c.get_knowledge_graph(HIVE_ID, ENTRY_ID)
         assert len(graph["nodes"]) == 2
         assert len(graph["edges"]) == 1
@@ -251,7 +251,7 @@ class TestGetKnowledgeGraph:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/{ENTRY_ID}/graph?depth=3&link_types=relates_to%2Cdepends_on&max_nodes=100",
             json=envelope({"nodes": [], "edges": []}),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             graph = c.get_knowledge_graph(
                 HIVE_ID,
                 ENTRY_ID,
@@ -268,7 +268,7 @@ class TestGetKnowledgeGraph:
             status_code=404,
             json=envelope(errors=[{"message": "Knowledge entry not found.", "code": "not_found"}]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             with pytest.raises(NotFoundError):
                 c.get_knowledge_graph(HIVE_ID, "NOPE")
 
@@ -288,7 +288,7 @@ class TestKnowledgeTopics:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/index/topics",
             json=envelope(topics_data),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             topics = c.knowledge_topics(HIVE_ID)
         assert topics["key"] == "_index:topics"
 
@@ -300,7 +300,7 @@ class TestKnowledgeDecisions:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/index/decisions",
             json=envelope(decisions_data),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             decisions = c.knowledge_decisions(HIVE_ID)
         assert decisions["key"] == "_index:decisions"
 
@@ -315,7 +315,7 @@ class TestKnowledgeByAgent:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/index/agent/{AGENT_ID}",
             json=envelope(agent_data),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             index = c.knowledge_by_agent(HIVE_ID, AGENT_ID)
         assert index["key"] == f"_index:agent:{AGENT_ID}"
 
@@ -338,7 +338,7 @@ class TestKnowledgeHealth:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/knowledge/health",
             json=envelope(health_data),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             health = c.knowledge_health(HIVE_ID)
         assert health["score"] == 78
         assert health["grade"] == "B+"

@@ -11,7 +11,7 @@
 
 ## Objective
 
-Implement a concrete `SentryConnector` class that extends `BaseConnector`, providing Sentry webhook signature validation (HMAC-SHA256 with secret), webhook parsing for Sentry issue/event alerts, and `auth_config` validation rules for Sentry service connections. This enables Apiary hives to receive Sentry alerts as tasks and route error events to agents for automated triage, alerting, or remediation.
+Implement a concrete `SentryConnector` class that extends `BaseConnector`, providing Sentry webhook signature validation (HMAC-SHA256 with secret), webhook parsing for Sentry issue/event alerts, and `auth_config` validation rules for Sentry service connections. This enables Superpos hives to receive Sentry alerts as tasks and route error events to agents for automated triage, alerting, or remediation.
 
 ## Architecture Fit
 
@@ -204,10 +204,10 @@ Existing `ActionPolicy` rules (TASK-043/044) apply:
 
 ### Open Questions
 
-1. **Sentry integration type** — Should this target Sentry's Internal Integration (org-level) or Public Integration (installable app)? Internal is simpler and sufficient for self-hosted Apiary; Public would be needed for a marketplace listing. **Recommendation:** Start with Internal Integration support; Public can be added later.
+1. **Sentry integration type** — Should this target Sentry's Internal Integration (org-level) or Public Integration (installable app)? Internal is simpler and sufficient for self-hosted Superpos; Public would be needed for a marketplace listing. **Recommendation:** Start with Internal Integration support; Public can be added later.
 2. **Metric alert payload structure** — Sentry metric alerts have a different payload shape than issue alerts. Should both be supported from day one, or should metric alerts be a follow-up? **Recommendation:** Support both; the parsing is straightforward with header-based routing.
 3. **Outbound Sentry API scope** — Which Sentry API operations should agents be able to call via proxy? (e.g., resolve issue, assign issue, add comment). **Recommendation:** No restrictions at connector level — let action policies govern what's allowed per agent.
-4. **Installation guide** — Should the task include a docs page for setting up the Sentry integration in Apiary? **Recommendation:** Defer to a separate documentation task.
+4. **Installation guide** — Should the task include a docs page for setting up the Sentry integration in Superpos? **Recommendation:** Defer to a separate documentation task.
 
 ## Validation Checklist
 

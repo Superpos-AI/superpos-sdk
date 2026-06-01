@@ -1,6 +1,6 @@
 # CI/CD Pipeline
 
-Apiary uses GitHub Actions for continuous integration. The pipeline runs on
+Superpos uses GitHub Actions for continuous integration. The pipeline runs on
 every push to `main` and on every pull request targeting `main`.
 
 ## Workflow Overview

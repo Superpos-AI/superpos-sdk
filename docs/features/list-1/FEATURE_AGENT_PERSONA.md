@@ -1,4 +1,4 @@
-# Apiary — Feature: Agent Persona
+# Superpos — Feature: Agent Persona
 
 ## Addendum to PRODUCT.md v4.0
 
@@ -16,7 +16,7 @@ Today an agent's behavior is baked into its code. System prompts, instructions, 
 
 ## 2. Solution: Agent Persona
 
-A **Persona** is a structured, versioned, platform-managed definition of an agent's identity, behavior, and memory. Stored in Apiary, served to agents at runtime, editable from the dashboard.
+A **Persona** is a structured, versioned, platform-managed definition of an agent's identity, behavior, and memory. Stored in Superpos, served to agents at runtime, editable from the dashboard.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -37,7 +37,7 @@ A **Persona** is a structured, versioned, platform-managed definition of an agen
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Agent runtime fetches persona on init, re-fetches on change notification. Generic SDK runtime + persona from Apiary = fully configurable agent behavior without code changes.
+Agent runtime fetches persona on init, re-fetches on change notification. Generic SDK runtime + persona from Superpos = fully configurable agent behavior without code changes.
 
 ---
 
@@ -218,12 +218,12 @@ Two mechanisms:
 **Init fetch:** Agent starts → fetches full persona → caches locally.
 
 ```python
-client = ApiaryClient.from_env()
+client = SuperposClient.from_env()
 # SDK auto-fetches persona on init
 # client.persona is populated with all documents + config
 ```
 
-**Change notification:** Persona updated in dashboard → Apiary notifies agent.
+**Change notification:** Persona updated in dashboard → Superpos notifies agent.
 
 Agent poll response includes persona version check:
 
@@ -392,7 +392,7 @@ POST /api/v1/tasks/{id}/replay
 
 ### 7.1 Built-in Templates
 
-Apiary ships starter templates for common agent roles:
+Superpos ships starter templates for common agent roles:
 
 | Template              | Documents included                       |
 |-----------------------|------------------------------------------|
@@ -502,9 +502,9 @@ Persona is not just for managed agents. BYOA agents can fetch and use personas t
 ### 8.1 SDK Usage (BYOA)
 
 ```python
-from apiary_sdk import ApiaryClient
+from superpos_sdk import SuperposClient
 
-client = ApiaryClient(url="https://acme.apiary.ai", token="tok_xxx")
+client = SuperposClient(url="https://acme.apiary.ai", token="tok_xxx")
 
 # Fetch persona
 persona = client.persona
@@ -527,10 +527,10 @@ Agent code is generic. All behavior comes from persona. Same code, different per
 This enables a **thin agent** — minimal code that's just a loop + LLM call:
 
 ```python
-from apiary_sdk import ApiaryClient
+from superpos_sdk import SuperposClient
 import anthropic
 
-client = ApiaryClient.from_env()
+client = SuperposClient.from_env()
 llm = anthropic.Anthropic()
 
 while True:
@@ -557,9 +557,9 @@ while True:
 
 20 lines of code. All intelligence in the persona. Change persona in dashboard → agent behavior changes instantly.
 
-### 8.3 Apiary Generic Agent
+### 8.3 Superpos Generic Agent
 
-Take this further: Apiary ships a **generic managed agent runtime** that needs zero custom code. Just configure persona + capabilities in dashboard.
+Take this further: Superpos ships a **generic managed agent runtime** that needs zero custom code. Just configure persona + capabilities in dashboard.
 
 ```json
 POST /api/v1/hives/{hive}/managed-agents
@@ -667,7 +667,7 @@ PUT /dashboard/agents/agt_reviewer/persona
       "content": "## Workflow\n\nWhen you receive a `code_review` task:\n1. Fetch the PR diff\n..."
     },
     "MEMORY": {
-      "content": "## Project: Apiary\n- Framework: Laravel 12\n- Database: PostgreSQL 16\n...",
+      "content": "## Project: Superpos\n- Framework: Laravel 12\n- Database: PostgreSQL 16\n...",
       "locked": false
     },
     "RULES": {
@@ -758,7 +758,7 @@ Locked documents: API returns 403 if agent tries to modify a locked document. Hu
 CREATE TABLE agent_personas (
     id              VARCHAR(26) PRIMARY KEY,
     agent_id        VARCHAR(26) NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
-    apiary_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id) ON DELETE CASCADE,
+    superpos_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id) ON DELETE CASCADE,
     hive_id         VARCHAR(26) NOT NULL REFERENCES hives(id) ON DELETE CASCADE,
     
     version         INTEGER NOT NULL,
@@ -805,7 +805,7 @@ CREATE UNIQUE INDEX idx_persona_version_unique ON agent_personas (agent_id, vers
 -- A/B tests (persona experiments)
 CREATE TABLE persona_experiments (
     id                  VARCHAR(26) PRIMARY KEY,   -- ULID
-    apiary_id           VARCHAR(26) NOT NULL REFERENCES apiaries(id) ON DELETE CASCADE,
+    superpos_id           VARCHAR(26) NOT NULL REFERENCES apiaries(id) ON DELETE CASCADE,
     hive_id             VARCHAR(26) NOT NULL REFERENCES hives(id) ON DELETE CASCADE,
     agent_id            VARCHAR(26) REFERENCES agents(id) ON DELETE SET NULL,  -- null = hive-wide
 
@@ -825,7 +825,7 @@ CREATE TABLE persona_experiments (
     updated_at          TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_experiments_scope ON persona_experiments (apiary_id, hive_id, status);
+CREATE INDEX idx_experiments_scope ON persona_experiments (superpos_id, hive_id, status);
 CREATE INDEX idx_experiments_agent ON persona_experiments (agent_id, status);
 ```
 
@@ -1014,8 +1014,8 @@ When agent participates in a channel, persona informs its behavior:
 Prometheus metrics include persona version label:
 
 ```
-apiary_task_duration_seconds{agent="code-reviewer",persona_version="7"} ...
-apiary_task_error_rate{agent="code-reviewer",persona_version="7"} ...
+superpos_task_duration_seconds{agent="code-reviewer",persona_version="7"} ...
+superpos_task_error_rate{agent="code-reviewer",persona_version="7"} ...
 ```
 
 Enables performance correlation: "error rate dropped when we switched to persona v7."

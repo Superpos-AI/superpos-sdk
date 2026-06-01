@@ -14,7 +14,7 @@
 **Problem:** The SDKs have no methods for many features shipped in the last month.
 Agents using these features must make raw HTTP calls, defeating the SDK's purpose.
 
-**Missing from Python SDK (`ApiaryClient`):**
+**Missing from Python SDK (`SuperposClient`):**
 
 | Category | Methods needed |
 |----------|---------------|
@@ -156,6 +156,8 @@ POST   /api/v1/hives/{hive}/agent-templates/{id}/install # install (marketplace.
 
 ### GAP-010: Knowledge references CRUD API + builder UI (TASK-192)
 
+**Status:** **RESOLVED** — shipped in commit `40ec333b` ("feat: add knowledge references to workflow steps [TASK-192]"). `WorkflowStepKnowledgeController` provides `index/store/destroy`, `KnowledgeReferencesSection` is wired into the agent-step panel in `resources/js/Pages/WorkflowBuilder.jsx`, and feature coverage lives in `tests/Feature/WorkflowStepKnowledgeTest.php`. Follow-ups `71a2f90f` (snapshot refs in workflow versions + migrate on step rename) and `df4ad42a` refined edge cases.
+
 **Problem:** `WorkflowStepKnowledge` model exists, no API or builder integration.
 
 **Spec:**
@@ -179,6 +181,8 @@ UI: "Start from template" button on workflow list, template picker modal.
 ---
 
 ### GAP-012: QA evaluator persona template (TASK-194)
+
+**Status:** **RESOLVED** — shipped in PR [#477](https://github.com/Superpos-AI/superpos-app/pull/477) ("feat: QA evaluator persona template [TASK-194]"). PersonaTemplateSeeder includes the QA Evaluator template with SOUL, EXAMPLES, and RULES sections returning `{score, pass, feedback}` JSON.
 
 **Problem:** Loop step enables gen-eval patterns but no skeptical evaluator persona template.
 
@@ -275,9 +279,9 @@ UI: "Start from template" button on workflow list, template picker modal.
 | GAP-007 | Attachment management UI | P2 | 1 day | UI |
 | GAP-008 | Persona performance page | P2 | 0.5 day | UI |
 | GAP-009 | Stream delivery monitoring | P2 | 0.5 day | UI |
-| GAP-010 | Knowledge refs CRUD + builder (192) | P2 | 1-2 days | Feature |
+| GAP-010 | Knowledge refs CRUD + builder (192) ✅ shipped in `40ec333b` | P2 | 1-2 days | Feature |
 | GAP-011 | Workflow templates (193) | P2 | 1 day | Feature |
-| GAP-012 | QA evaluator persona (194) | P2 | 0.5 day | Feature |
+| GAP-012 | QA evaluator persona (194) ✅ shipped in PR [#477](https://github.com/Superpos-AI/superpos-app/pull/477) | P2 | 0.5 day | Feature |
 | GAP-013 | Workflow cost dashboard (196) | P2 | 0.5 day | Verify |
 | GAP-014 | Reaction router dashboard | P3 | 1 day | UI |
 | GAP-015 | Service catalog live health | P3 | 1 day | UI |

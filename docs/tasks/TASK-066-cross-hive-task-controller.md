@@ -31,7 +31,7 @@ under `/api/v1/cross-hive/tasks`.
    - Optional filters: `status`, `type`, `target_hive_id` (outbound), `source_hive_id` (inbound)
    - Paginated (default 20, max 100)
    - Ordered by `created_at desc`
-   - Tenant-isolated by `apiary_id`
+   - Tenant-isolated by `superpos_id`
 
 2. **Show** `GET /api/v1/cross-hive/tasks/{task}` — get a cross-hive task
    - Must be a cross-hive task (`source_hive_id` IS NOT NULL)

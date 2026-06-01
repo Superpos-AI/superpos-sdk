@@ -21,7 +21,7 @@ Add channel support to the Python and Shell SDKs. Agents need to create channels
 - [ ] FR-5: Python SDK: `client.materialize(hive_id, ...)` — create tasks from channel resolution
 - [ ] FR-6: Python SDK: `client.resolve_channel(hive_id, ...)` — resolve channel manually
 - [ ] FR-7: Python SDK: `client.get_channel_summary(hive_id, channel_id)` — fetches on-demand channel summary via `GET /api/v1/hives/{hive}/channels/{channel}/summary` (see TASK-248). Returns unread count, mention status, vote status, and `last_read_at` (the agent's last read position, used for incremental message fetching).
-- [ ] FR-8: Shell SDK: equivalent functions in `apiary-sdk.sh`
+- [ ] FR-8: Shell SDK: equivalent functions in `superpos-sdk.sh`
 - [ ] FR-9: Poll loop integration example: poll tasks via `/tasks/poll`, then poll events via `/events/poll` for both task and channel notifications in a single loop
 - [ ] FR-10: Convenience: `msg.mentions_me` property for easy mention detection (derived from `channel.mention` events where `mentioned_agent_id` matches the current agent)
 - [ ] FR-11: Unit tests for new SDK methods

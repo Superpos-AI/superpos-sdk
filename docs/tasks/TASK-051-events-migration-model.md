@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Branch:** `task/051-events-migration-model`
-**Depends On:** 006 (Apiary & Hive models)
+**Depends On:** 006 (Superpos & Hive models)
 
 ## Requirements
 
@@ -13,7 +13,7 @@ Create the `events` table migration and `Event` Eloquent model for the hive-scop
 ```sql
 CREATE TABLE events (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL,
+    superpos_id       VARCHAR(26) NOT NULL,
     hive_id         VARCHAR(26) REFERENCES hives(id),  -- NULL for cross-hive (apiary.*) events
     type            VARCHAR(100) NOT NULL,
     source_agent_id VARCHAR(26),
@@ -23,7 +23,7 @@ CREATE TABLE events (
 );
 
 CREATE INDEX idx_events_hive ON events (hive_id, type, created_at);
-CREATE INDEX idx_events_cross_hive ON events (apiary_id, created_at) WHERE is_cross_hive = TRUE;
+CREATE INDEX idx_events_cross_hive ON events (superpos_id, created_at) WHERE is_cross_hive = TRUE;
 ```
 
 ### Model Requirements
@@ -52,7 +52,7 @@ CREATE INDEX idx_events_cross_hive ON events (apiary_id, created_at) WHERE is_cr
 - Relationships: apiary, hive, sourceAgent
 - Scope helpers: isCrossHive, isHiveScoped
 - Query scopes: forHive, forType, crossHive, recent
-- BelongsToApiary auto-sets apiary_id in CE mode
+- BelongsToApiary auto-sets superpos_id in CE mode
 - Cloud mode fails without context
 - Immutability: updates blocked
 - Cascade: deleting apiary cascades, deleting hive nullifies hive_id

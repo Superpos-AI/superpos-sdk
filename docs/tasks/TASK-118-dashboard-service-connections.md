@@ -26,14 +26,14 @@ Add a full-featured **Service Connections** dashboard page where users can:
 
 ```
 ServiceConnection:
-  id, apiary_id, name, type, base_url, auth_type, auth_config (encrypted),
+  id, superpos_id, name, type, base_url, auth_type, auth_config (encrypted),
   connector_id (FK), webhook_secret (encrypted), is_active
 
   AUTH_TYPES = ['token', 'oauth2', 'basic', 'api_key', 'none']
   TYPES      = ['github', 'slack', 'jira', 'linear', 'custom']
 
 Connector:
-  id, apiary_id, type, name, class_path, is_builtin, config, created_by
+  id, superpos_id, type, name, class_path, is_builtin, config, created_by
   BUILTIN_TYPES = ['github', 'slack']
 ```
 
@@ -104,12 +104,12 @@ collapsible section: **"Set up with Claude Code"** containing:
 ```
 To connect a service, paste this in Claude Code:
 
-> Add a GitHub service connection to Apiary with my token.
+> Add a GitHub service connection to Superpos with my token.
 > Repository: owner/repo, Token: ghp_xxx
 
 Or for Slack:
 
-> Add a Slack service connection to Apiary.
+> Add a Slack service connection to Superpos.
 > Bot Token: xoxb-xxx, Signing Secret: xxx
 ```
 
@@ -151,7 +151,7 @@ Soft-confirm via request param. Log activity.
 ### Validation Rules
 
 ```php
-'name'           => ['required', 'string', 'max:255', Rule::unique('service_connections', 'name')->where('apiary_id', $apiaryId)],
+'name'           => ['required', 'string', 'max:255', Rule::unique('service_connections', 'name')->where('superpos_id', $apiaryId)],
 'type'           => ['required', 'string', 'max:100', Rule::in(ServiceConnection::TYPES)],
 'base_url'       => ['required_unless:type,slack', 'nullable', 'url', 'max:500'],
 'auth_type'      => ['required', Rule::in(ServiceConnection::AUTH_TYPES)],
