@@ -1,6 +1,6 @@
 # Python SDK
 
-The `apiary-sdk` package provides a minimal Python client for the Apiary v1 API.
+The `superpos-sdk` package provides a minimal Python client for the Superpos v1 API.
 It wraps agent authentication, task lifecycle, and knowledge store operations
 with typed error handling.
 
@@ -30,7 +30,7 @@ before the agent can create tasks, write knowledge, etc.
 | `create_knowledge` / `update_knowledge` / `delete_knowledge` | `knowledge.write` (+ `knowledge.write_apiary` for apiary-scoped entries) |
 | `list_knowledge` / `search_knowledge` / `get_knowledge` | `knowledge.read` |
 
-Grant permissions via the Apiary dashboard or CLI:
+Grant permissions via the Superpos dashboard or CLI:
 
 ```bash
 php artisan apiary:grant-permission <agent-id> tasks.create
@@ -49,9 +49,9 @@ Calling a privileged endpoint without the required permission raises
 > permission. Without it, `create_task` will raise `PermissionError`.
 
 ```python
-from apiary_sdk import ApiaryClient
+from superpos_sdk import SuperposClient
 
-with ApiaryClient("http://localhost:8080") as client:
+with SuperposClient("http://localhost:8080") as client:
     # Register a new agent (token is stored automatically)
     data = client.register(
         name="my-agent",
@@ -66,7 +66,7 @@ with ApiaryClient("http://localhost:8080") as client:
         task_type="summarize",
         payload={"text": "Hello world"},
         invoke_instructions="Fix failing checks and report back",
-        invoke_context={"repo": "Apiary-AI/Apiary-SDK", "pr": 123},
+        invoke_context={"repo": "Superpos-AI/superpos-sdk", "pr": 123},
     )
     print(f"Task {task['id']} created")
 ```
@@ -78,7 +78,7 @@ The SDK supports two auth flows:
 ### Register a new agent
 
 ```python
-client = ApiaryClient("http://localhost:8080")
+client = SuperposClient("http://localhost:8080")
 data = client.register(
     name="my-agent",
     hive_id="01HXYZ...",
@@ -90,14 +90,14 @@ data = client.register(
 ### Login with existing credentials
 
 ```python
-client = ApiaryClient("http://localhost:8080")
+client = SuperposClient("http://localhost:8080")
 client.login(agent_id="01HXYZ...", secret="my-secret")
 ```
 
 ### Pre-configured token
 
 ```python
-client = ApiaryClient("http://localhost:8080", token="your-bearer-token")
+client = SuperposClient("http://localhost:8080", token="your-bearer-token")
 ```
 
 ## Agent lifecycle
@@ -128,7 +128,7 @@ task = client.create_task(
     target_capability="code",          # optional: route to capable agents
     payload={"input": "data"},
     invoke_instructions="Fix failing checks and report back",
-    invoke_context={"repo": "Apiary-AI/Apiary-SDK", "pr": 123},
+    invoke_context={"repo": "Superpos-AI/superpos-sdk", "pr": 123},
     timeout_seconds=300,
     max_retries=5,
 )
@@ -206,8 +206,8 @@ client.delete_knowledge(hive_id, entry["id"])
 All API errors map to typed exceptions with structured error details:
 
 ```python
-from apiary_sdk import ApiaryError, ValidationError, AuthenticationError
-from apiary_sdk.exceptions import ConflictError, NotFoundError
+from superpos_sdk import SuperposError, ValidationError, AuthenticationError
+from superpos_sdk.exceptions import ConflictError, NotFoundError
 
 try:
     client.claim_task(hive_id, task_id)
@@ -215,7 +215,7 @@ except ConflictError as e:
     print(f"Task already claimed: {e}")
 except AuthenticationError:
     print("Token expired — re-authenticate")
-except ApiaryError as e:
+except SuperposError as e:
     print(f"API error {e.status_code}: {e}")
     for err in e.errors:
         print(f"  [{err.code}] {err.message} (field={err.field})")
@@ -228,11 +228,11 @@ except ApiaryError as e:
 | 404 | `NotFoundError` |
 | 409 | `ConflictError` |
 | 422 | `ValidationError` |
-| Other 4xx/5xx | `ApiaryError` |
+| Other 4xx/5xx | `SuperposError` |
 
 ## API reference
 
-### `ApiaryClient(base_url, *, token=None, timeout=30.0)`
+### `SuperposClient(base_url, *, token=None, timeout=30.0)`
 
 | Method | Description |
 |--------|-------------|

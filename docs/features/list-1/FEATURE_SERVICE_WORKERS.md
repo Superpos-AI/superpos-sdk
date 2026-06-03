@@ -1,4 +1,4 @@
-# Apiary — Feature: Service Workers (Async Data Requests)
+# Superpos — Feature: Service Workers (Async Data Requests)
 
 ## Addendum to PRODUCT.md v4.0
 
@@ -53,7 +53,7 @@ loop:
 | **Transformation**  | Raw API response                  | Structured, filtered, cleaned     |
 | **Error handling**  | Single retry                      | Worker manages retries internally |
 | **Auth**            | Proxy injects credentials         | Worker has its own service access |
-| **Implementation**  | Built into Apiary core            | Regular agent with data capability|
+| **Implementation**  | Built into Superpos core            | Regular agent with data capability|
 
 They complement each other. Proxy for simple, workers for complex.
 
@@ -413,7 +413,7 @@ Total agent idle time: **zero**. Agent was doing useful work while Gmail Worker 
 
 ## 11. Pre-built Service Workers
 
-Ship with Apiary or available via Marketplace:
+Ship with Superpos or available via Marketplace:
 
 | Worker            | Capability      | Operations                                        |
 |-------------------|-----------------|---------------------------------------------------|
@@ -436,9 +436,9 @@ Each worker is a standalone script (Python/Node/PHP) that:
 Minimal Python example:
 
 ```python
-from apiary_sdk import ApiaryClient
+from superpos_sdk import SuperposClient
 
-client = ApiaryClient(
+client = SuperposClient(
     url="https://your-apiary.ai",
     token="tok_xxx"
 )
@@ -480,7 +480,7 @@ def handle_crm_request(payload):
     raise ValueError(f"Unknown operation: {op}")
 ```
 
-That's it. ~30 lines of code to bridge any service into the Apiary bus.
+That's it. ~30 lines of code to bridge any service into the Superpos bus.
 
 ## 13. Dashboard: Service Worker View
 

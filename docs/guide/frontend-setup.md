@@ -1,6 +1,6 @@
 # Frontend Setup (Inertia.js + React)
 
-Apiary's dashboard is built with [Inertia.js](https://inertiajs.com/) and
+Superpos's dashboard is built with [Inertia.js](https://inertiajs.com/) and
 [React](https://react.dev/), served through Laravel's Blade template engine.
 This guide covers the frontend architecture and how to add new dashboard pages.
 

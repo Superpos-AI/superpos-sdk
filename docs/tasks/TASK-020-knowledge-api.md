@@ -2,7 +2,7 @@
 
 **Status:** done
 **Branch:** `task/020-knowledge-api`
-**PR:** https://github.com/Apiary-AI/Apiary-SaaS/pull/22
+**PR:** https://github.com/Superpos-AI/superpos-app/pull/22
 **Depends On:** TASK-003 (API Envelope), TASK-009 (Knowledge Model), TASK-011 (ActivityLogger), TASK-012 (Agent Auth), TASK-013 (Permission Middleware)
 **Blocked By:** —
 
@@ -41,7 +41,7 @@ Three scope levels for knowledge entries:
 - **Create**: Agent becomes `created_by`; `version` starts at 1
 - **Update**: Only the creator can update (unless agent has `knowledge.manage`); `version` increments
 - **Delete**: Only the creator can delete (unless agent has `knowledge.manage`)
-- **Apiary scope**: Requires `knowledge.write_apiary` permission for create/update
+- **Superpos scope**: Requires `knowledge.write_apiary` permission for create/update
 
 ### Activity Logging
 

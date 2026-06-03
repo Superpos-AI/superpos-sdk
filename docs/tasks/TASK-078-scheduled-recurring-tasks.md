@@ -74,9 +74,9 @@ tasks into the existing task queue when they come due.
 
 - **Python:** `list_schedules`, `get_schedule`, `create_schedule`,
   `update_schedule`, `delete_schedule`, `pause_schedule`, `resume_schedule`
-- **Shell:** `apiary_list_schedules`, `apiary_get_schedule`,
-  `apiary_create_schedule`, `apiary_delete_schedule`,
-  `apiary_pause_schedule`, `apiary_resume_schedule`
+- **Shell:** `superpos_list_schedules`, `superpos_get_schedule`,
+  `superpos_create_schedule`, `superpos_delete_schedule`,
+  `superpos_pause_schedule`, `superpos_resume_schedule`
 
 ## Tests
 

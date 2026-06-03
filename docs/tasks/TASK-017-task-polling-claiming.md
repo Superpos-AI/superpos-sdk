@@ -2,7 +2,7 @@
 
 **Status:** done
 **Branch:** `task/017-task-polling-claiming`
-**PR:** https://github.com/Apiary-AI/Apiary-SaaS/pull/19
+**PR:** https://github.com/Superpos-AI/superpos-app/pull/19
 **Depends On:** TASK-016 (Task Creation API)
 **Blocked By:** —
 

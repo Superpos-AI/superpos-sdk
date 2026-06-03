@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from apiary_sdk import ApiaryClient
+from superpos_sdk import SuperposClient
 
 from .conftest import AGENT_ID, BASE_URL, TOKEN, envelope
 
@@ -21,7 +21,7 @@ class TestRegister:
                 }
             ),
         )
-        with ApiaryClient(BASE_URL) as c:
+        with SuperposClient(BASE_URL) as c:
             data = c.register(
                 name="bot",
                 hive_id="H" * 26,
@@ -40,7 +40,7 @@ class TestRegister:
             json=envelope({"agent": {"id": "a"}, "token": "t"}),
         )
         hive = "H" * 26
-        with ApiaryClient(BASE_URL) as c:
+        with SuperposClient(BASE_URL) as c:
             c.register(
                 name="my-agent",
                 hive_id=hive,
@@ -60,12 +60,12 @@ class TestRegister:
             status_code=201,
             json=envelope({"agent": {"id": "a"}, "token": "t"}),
         )
-        with ApiaryClient(BASE_URL) as c:
+        with SuperposClient(BASE_URL) as c:
             c.register(name="x", hive_id="H" * 26, secret="s" * 16)
         payload = json.loads(httpx_mock.get_request().content)
         assert "capabilities" not in payload
         assert "metadata" not in payload
-        assert "apiary_id" not in payload
+        assert "organization_id" not in payload
 
 
 class TestLogin:
@@ -79,7 +79,7 @@ class TestLogin:
                 }
             ),
         )
-        with ApiaryClient(BASE_URL) as c:
+        with SuperposClient(BASE_URL) as c:
             data = c.login(agent_id=AGENT_ID, secret="my-secret")
             assert c.token == "login-token"
             assert data["agent"]["status"] == "online"
@@ -91,7 +91,7 @@ class TestLogout:
             url=f"{BASE_URL}/api/v1/agents/logout",
             status_code=204,
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.logout()
             assert c.token is None
 
@@ -102,7 +102,7 @@ class TestMe:
             url=f"{BASE_URL}/api/v1/agents/me",
             json=envelope({"id": AGENT_ID, "name": "bot", "status": "online"}),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             agent = c.me()
         assert agent["name"] == "bot"
 
@@ -115,7 +115,7 @@ class TestHeartbeat:
                 {"id": AGENT_ID, "status": "online", "last_heartbeat": "2026-02-26T12:00:00Z"}
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             data = c.heartbeat()
         assert data["last_heartbeat"] == "2026-02-26T12:00:00Z"
 
@@ -124,7 +124,7 @@ class TestHeartbeat:
             url=f"{BASE_URL}/api/v1/agents/heartbeat",
             json=envelope({"id": AGENT_ID, "status": "online", "metadata": {"cpu": 42}}),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.heartbeat(metadata={"cpu": 42})
         payload = json.loads(httpx_mock.get_request().content)
         assert payload["metadata"]["cpu"] == 42
@@ -136,8 +136,32 @@ class TestUpdateStatus:
             url=f"{BASE_URL}/api/v1/agents/status",
             json=envelope({"id": AGENT_ID, "status": "busy"}),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             data = c.update_status("busy")
         assert data["status"] == "busy"
         payload = json.loads(httpx_mock.get_request().content)
         assert payload["status"] == "busy"
+
+
+class TestUpdateCapabilities:
+    def test_update_capabilities(self, httpx_mock):
+        httpx_mock.add_response(
+            url=f"{BASE_URL}/api/v1/agents/capabilities",
+            json=envelope({"capabilities": ["code", "deploy"]}),
+        )
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            data = c.update_capabilities(["code", "deploy"])
+        assert data["capabilities"] == ["code", "deploy"]
+        payload = json.loads(httpx_mock.get_request().content)
+        assert payload["capabilities"] == ["code", "deploy"]
+
+    def test_update_capabilities_empty_list(self, httpx_mock):
+        httpx_mock.add_response(
+            url=f"{BASE_URL}/api/v1/agents/capabilities",
+            json=envelope({"capabilities": []}),
+        )
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            data = c.update_capabilities([])
+        assert data["capabilities"] == []
+        payload = json.loads(httpx_mock.get_request().content)
+        assert payload["capabilities"] == []

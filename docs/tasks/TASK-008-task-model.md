@@ -5,7 +5,7 @@
 | **ID**      | 008                                      |
 | **Title**   | Task migration + model                   |
 | **Status**  | done                                     |
-| **Depends** | 005 (migrations), 006 (Apiary/Hive models) |
+| **Depends** | 005 (migrations), 006 (Superpos/Hive models) |
 | **Branch**  | `task/008-task-model`                    |
 
 ---
@@ -13,7 +13,7 @@
 ## Objective
 
 Create the `tasks` database table and the corresponding Eloquent model.
-Tasks are the core unit of work in Apiary — agents poll for pending tasks,
+Tasks are the core unit of work in Superpos — agents poll for pending tasks,
 claim them atomically, report progress, and complete or fail them. Tasks
 are hive-scoped and support cross-hive creation (tracked via `source_hive_id`).
 
@@ -24,7 +24,7 @@ are hive-scoped and support cross-hive creation (tracked via `source_hive_id`).
 | Column              | Type         | Constraints                          |
 |---------------------|--------------|--------------------------------------|
 | id                  | CHAR(26)     | PRIMARY KEY (ULID)                   |
-| apiary_id           | CHAR(26)     | FK → apiaries, NOT NULL              |
+| superpos_id           | CHAR(26)     | FK → apiaries, NOT NULL              |
 | hive_id             | CHAR(26)     | FK → hives, NOT NULL                 |
 | source_hive_id      | CHAR(26)     | FK → hives, NULLABLE (cross-hive)    |
 | type                | VARCHAR(100) | NOT NULL                             |
@@ -57,7 +57,7 @@ Indexes:
 ### `App\Models\Task`
 
 - Traits: `HasFactory`, `HasUlid`, `BelongsToHive`
-- Fillable: apiary_id, hive_id, source_hive_id, type, source_agent_id,
+- Fillable: superpos_id, hive_id, source_hive_id, type, source_agent_id,
   target_agent_id, target_capability, claimed_by, priority, status,
   payload, result, progress, status_message, timeout_seconds, retry_count,
   max_retries, parent_task_id, context_refs

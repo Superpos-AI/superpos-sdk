@@ -6,7 +6,7 @@
 | Priority    | High                                        |
 | Depends On  | TASK-012 (Agent auth via Sanctum)            |
 | Branch      | `task/082-per-agent-rate-limiting` (merged)  |
-| PR          | [#132](https://github.com/Apiary-AI/Apiary-SaaS/pull/132) |
+| PR          | [#132](https://github.com/Superpos-AI/superpos-app/pull/132) |
 | Edition     | `shared`                                    |
 
 ## Objective
@@ -29,7 +29,7 @@ One new column on the `agents` table:
 
 ```php
 'rate_limit' => [
-    'max_per_minute' => env('APIARY_RATE_LIMIT_MAX', 60),
+    'max_per_minute' => env('SUPERPOS_RATE_LIMIT_MAX', 60),
 ],
 ```
 
@@ -90,9 +90,9 @@ authenticated agent API routes. It:
 - `config/apiary.php` — default rate limit config
 - `routes/api.php` — new routes + middleware attachment
 - `bootstrap/app.php` — register middleware alias
-- `sdk/python/src/apiary_sdk/client.py` — `rate_limit_status()`, `update_rate_limit()`
-- `sdk/shell/src/apiary-sdk.sh` — `apiary_rate_limit_status`, `apiary_update_rate_limit`
-- `sdk/shell/bin/apiary-cli` — `rate-limit-status`, `rate-limit-update` commands
+- `sdk/python/src/superpos_sdk/client.py` — `rate_limit_status()`, `update_rate_limit()`
+- `sdk/shell/src/superpos-sdk.sh` — `superpos_rate_limit_status`, `superpos_update_rate_limit`
+- `sdk/shell/bin/superpos-cli` — `rate-limit-status`, `rate-limit-update` commands
 - `tests/Feature/AgentRateLimitTest.php`
 
 ## Test Plan

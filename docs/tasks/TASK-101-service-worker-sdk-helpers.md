@@ -17,7 +17,7 @@ handler, and returns structured results via `complete_task` / `fail_task`.
 
 ### Python SDK additions
 
-#### `ServiceWorker` base class (`sdk/python/src/apiary_sdk/service_worker.py`)
+#### `ServiceWorker` base class (`sdk/python/src/superpos_sdk/service_worker.py`)
 
 - Inherit from `ServiceWorker`, declare `CAPABILITY`, implement operation methods
 - Operation routing: method name or `register_operation()` (composition pattern)
@@ -31,24 +31,24 @@ handler, and returns structured results via `complete_task` / `fail_task`.
 - Publishes `supported_operations` metadata on registration
 - Graceful shutdown: status → offline, logout, close
 
-#### `ApiaryClient.data_request()` convenience method
+#### `SuperposClient.data_request()` convenience method
 
 - Creates a `data_request` task targeting a `data:<service>` capability
 - Supports `operation`, `params`, `delivery`, `result_format`, `continuation_of`
 - Fire-and-forget (returns task ID immediately, agent does not block)
 
-#### `ApiaryClient.discover_services()`
+#### `SuperposClient.discover_services()`
 
 - Lists service workers in a hive by capability prefix (default `"data:"`)
 - Returns agent records including `metadata.supported_operations`
 
 #### Exports
 
-- `ServiceWorker` and `OperationNotFoundError` added to `apiary_sdk.__init__`
+- `ServiceWorker` and `OperationNotFoundError` added to `superpos_sdk.__init__`
 
-### Shell SDK additions (`sdk/shell/src/apiary-sdk.sh`)
+### Shell SDK additions (`sdk/shell/src/superpos-sdk.sh`)
 
-#### `apiary_data_request HIVE_ID [options]`
+#### `superpos_data_request HIVE_ID [options]`
 
 - `-c CAPABILITY` (required) — target capability
 - `-o OPERATION` (required) — operation name
@@ -59,7 +59,7 @@ handler, and returns structured results via `complete_task` / `fail_task`.
 - `-t TIMEOUT` — timeout in seconds
 - `-k KEY` — idempotency key
 
-#### `apiary_discover_services HIVE_ID [options]`
+#### `superpos_discover_services HIVE_ID [options]`
 
 - `-p PREFIX` — capability prefix to filter on (default: `data:`)
 
@@ -79,7 +79,7 @@ handler, and returns structured results via `complete_task` / `fail_task`.
   - `data_request()` (creates task, correct payload fields, defaults)
   - `discover_services()` (filters by prefix, empty list, custom prefix, non-list response)
 
-- `sdk/shell/tests/test_service_worker.sh` — 20 tests covering `apiary_data_request` and `apiary_discover_services`
+- `sdk/shell/tests/test_service_worker.sh` — 20 tests covering `superpos_data_request` and `superpos_discover_services`
 
 ## Conventions Established
 
@@ -91,12 +91,12 @@ handler, and returns structured results via `complete_task` / `fail_task`.
 
 ## Files Changed
 
-- `sdk/python/src/apiary_sdk/__init__.py` — export ServiceWorker, OperationNotFoundError
-- `sdk/python/src/apiary_sdk/client.py` — add data_request(), discover_services()
-- `sdk/python/src/apiary_sdk/service_worker.py` — new ServiceWorker base class
+- `sdk/python/src/superpos_sdk/__init__.py` — export ServiceWorker, OperationNotFoundError
+- `sdk/python/src/superpos_sdk/client.py` — add data_request(), discover_services()
+- `sdk/python/src/superpos_sdk/service_worker.py` — new ServiceWorker base class
 - `sdk/python/tests/test_service_worker.py` — 26 tests
 - `sdk/python/examples/service_worker_example.py` — example
-- `sdk/shell/src/apiary-sdk.sh` — add apiary_data_request(), apiary_discover_services()
+- `sdk/shell/src/superpos-sdk.sh` — add superpos_data_request(), superpos_discover_services()
 - `sdk/shell/tests/test_service_worker.sh` — 20 tests
 - `sdk/shell/tests/run_tests.sh` — add service_worker suite
 - `sdk/shell/examples/service_worker_example.sh` — example
@@ -104,8 +104,8 @@ handler, and returns structured results via `complete_task` / `fail_task`.
 ## Definition of Done
 
 - [x] ServiceWorker base class with operation routing, poll loop, graceful shutdown
-- [x] data_request() and discover_services() on ApiaryClient
-- [x] Shell apiary_data_request() and apiary_discover_services() helpers
+- [x] data_request() and discover_services() on SuperposClient
+- [x] Shell superpos_data_request() and superpos_discover_services() helpers
 - [x] 26 Python tests pass
 - [x] Shell tests structurally correct (jq unavailable in CI environment)
 - [x] Examples demonstrate both subclass and composition patterns

@@ -1,13 +1,13 @@
 # Horizon & Queue Configuration
 
 This guide covers Laravel Horizon setup, queue configuration, and Redis
-database isolation in Apiary.
+database isolation in Superpos.
 
 ---
 
 ## Overview
 
-Apiary uses [Laravel Horizon](https://laravel.com/docs/horizon) to supervise
+Superpos uses [Laravel Horizon](https://laravel.com/docs/horizon) to supervise
 Redis-backed queue workers. Horizon provides a dashboard for monitoring queues,
 failed jobs, and throughput metrics.
 
@@ -16,7 +16,7 @@ The queue infrastructure is designed around four named queues:
 | Queue | Purpose |
 |-------|---------|
 | `default` | General-purpose jobs |
-| `apiary-tasks` | Agent task orchestration |
+| `superpos-tasks` | Agent task orchestration |
 | `apiary-webhooks` | Inbound webhook processing |
 | `apiary-notifications` | Notification delivery |
 
@@ -37,7 +37,7 @@ A single `supervisor-default` processes all four queues with auto-balancing:
 'defaults' => [
     'supervisor-default' => [
         'connection' => 'redis',
-        'queue' => ['default', 'apiary-tasks', 'apiary-webhooks', 'apiary-notifications'],
+        'queue' => ['default', 'superpos-tasks', 'apiary-webhooks', 'apiary-notifications'],
         'balance' => 'auto',
         'autoScalingStrategy' => 'time',
         'tries' => 3,
@@ -61,7 +61,7 @@ threshold:
 ```php
 'waits' => [
     'redis:default' => 60,
-    'redis:apiary-tasks' => 30,
+    'redis:superpos-tasks' => 30,
     'redis:apiary-webhooks' => 30,
     'redis:apiary-notifications' => 60,
 ],

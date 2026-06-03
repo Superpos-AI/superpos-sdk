@@ -2,7 +2,7 @@
 
 **Status:** review
 **Branch:** `task/026-knowledge-explorer`
-**PR:** https://github.com/Apiary-AI/Apiary-SaaS/pull/31
+**PR:** https://github.com/Superpos-AI/superpos-app/pull/31
 **Depends on:** TASK-020, TASK-022
 **Blocks:** —
 
@@ -18,7 +18,7 @@ paginated table showing all knowledge entries, scope-aware visibility
 
 - [x] FR-1: Page renders at `/dashboard/knowledge` via Inertia
 - [x] FR-2: Knowledge entries displayed in a paginated table (20 per page)
-- [x] FR-3: Scope filter dropdown (All / Hive / Apiary / Agent)
+- [x] FR-3: Scope filter dropdown (All / Hive / Superpos / Agent)
 - [x] FR-4: Search filters entries by key and value content
 - [x] FR-5: Sort options: newest (default), key, scope
 - [x] FR-6: Each row shows key, scope badge, visibility, creator name, version, TTL status, and relative time

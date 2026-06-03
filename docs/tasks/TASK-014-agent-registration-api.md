@@ -42,7 +42,7 @@ Implement agent registration API endpoints and flow so agents can self-register 
 - Keep controller thin; push business logic to service layer where complex
 - Enforce tenant safety via model scoping + explicit consistency checks
 - Composite uniqueness: name + hive_id enforced via Form Request validation
-- Optional apiary_id in payload for explicit scope verification (mismatch → 422)
+- Optional superpos_id in payload for explicit scope verification (mismatch → 422)
 - Enriched activity log details: agent_name, agent_type alongside token_name
 
 ## Implementation Plan

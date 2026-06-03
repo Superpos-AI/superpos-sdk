@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from apiary_sdk import ApiaryClient, OperationNotFoundError, ServiceWorker
+from superpos_sdk import OperationNotFoundError, ServiceWorker, SuperposClient
 
 from .conftest import BASE_URL, HIVE_ID, TASK_ID, TOKEN, envelope
 
@@ -14,7 +14,7 @@ from .conftest import BASE_URL, HIVE_ID, TASK_ID, TOKEN, envelope
 
 TASK_DATA = {
     "id": TASK_ID,
-    "apiary_id": "A" * 26,
+    "organization_id": "A" * 26,
     "hive_id": HIVE_ID,
     "type": "data_request",
     "status": "in_progress",
@@ -465,7 +465,7 @@ class TestStop:
 
 
 # ---------------------------------------------------------------------------
-# ApiaryClient.data_request()
+# SuperposClient.data_request()
 # ---------------------------------------------------------------------------
 
 
@@ -482,7 +482,7 @@ class TestDataRequest:
             status_code=201,
             json=envelope(task_resp),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             ref = c.data_request(
                 HIVE_ID,
                 capability="data:gmail",
@@ -501,7 +501,7 @@ class TestDataRequest:
             status_code=201,
             json=envelope(task_resp),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.data_request(
                 HIVE_ID,
                 capability="data:crm",
@@ -531,7 +531,7 @@ class TestDataRequest:
             status_code=201,
             json=envelope({"id": TASK_ID, "type": "data_request", "status": "pending"}),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.data_request(HIVE_ID, capability="data:http", operation="get")
         req = httpx_mock.get_request()
         body = _json.loads(req.content)
@@ -540,7 +540,7 @@ class TestDataRequest:
 
 
 # ---------------------------------------------------------------------------
-# ApiaryClient.discover_services()
+# SuperposClient.discover_services()
 # ---------------------------------------------------------------------------
 
 
@@ -567,7 +567,7 @@ class TestDiscoverServices:
             status_code=200,
             json=envelope(agents),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             services = c.discover_services(HIVE_ID)
         assert len(services) == 1
         assert services[0]["name"] == "gmail-worker"
@@ -578,7 +578,7 @@ class TestDiscoverServices:
             status_code=200,
             json=envelope([]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             services = c.discover_services(HIVE_ID)
         assert services == []
 
@@ -597,7 +597,7 @@ class TestDiscoverServices:
             status_code=200,
             json=envelope(agents),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             services = c.discover_services(HIVE_ID, capability_prefix="custom:")
         assert len(services) == 1
         assert services[0]["name"] == "my-worker"
@@ -608,13 +608,13 @@ class TestDiscoverServices:
             status_code=200,
             json=envelope(None),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             services = c.discover_services(HIVE_ID)
         assert services == []
 
 
 # ---------------------------------------------------------------------------
-# ApiaryClient.discover_service_catalog()
+# SuperposClient.discover_service_catalog()
 # ---------------------------------------------------------------------------
 
 SERVICE_A = {
@@ -660,7 +660,7 @@ class TestDiscoverServiceCatalog:
             status_code=200,
             json=envelope([SERVICE_A, SERVICE_B]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID)
         assert len(results) == 2
         assert results[0]["name"] == "github-connector"
@@ -673,7 +673,7 @@ class TestDiscoverServiceCatalog:
             status_code=200,
             json=envelope([]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID)
         assert results == []
 
@@ -695,7 +695,7 @@ class TestDiscoverServiceCatalog:
             status_code=200,
             json=envelope([SERVICE_C]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID, per_page=2)
         assert len(results) == 3
         names = [r["name"] for r in results]
@@ -721,7 +721,7 @@ class TestDiscoverServiceCatalog:
             status_code=200,
             json=envelope([]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID, per_page=2)
         assert len(results) == 4
 
@@ -738,7 +738,7 @@ class TestDiscoverServiceCatalog:
             status_code=200,
             json=envelope([SERVICE_A, SERVICE_B, SERVICE_C]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID)
         assert len(results) == 3
 
@@ -751,7 +751,7 @@ class TestDiscoverServiceCatalog:
             status_code=200,
             json=envelope([SERVICE_A, SERVICE_B, SERVICE_C]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID, per_page=500)
         assert len(results) == 3
 
@@ -770,7 +770,7 @@ class TestDiscoverServiceCatalog:
             status_code=200,
             json=envelope([]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID, per_page=0)
         assert len(results) == 1
         assert results[0]["name"] == "github-connector"
@@ -787,7 +787,7 @@ class TestDiscoverServiceCatalog:
             status_code=200,
             json=envelope([]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID, per_page=-10)
         assert len(results) == 1
         assert results[0]["name"] == "slack-connector"
@@ -803,7 +803,7 @@ class TestDiscoverServiceCatalog:
             status_code=200,
             json=envelope([SERVICE_A]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID, service_type="github")
         assert len(results) == 1
         assert results[0]["service_type"] == "github"
@@ -815,7 +815,7 @@ class TestDiscoverServiceCatalog:
             status_code=200,
             json=envelope([SERVICE_A]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID, capability="read")
         assert len(results) == 1
         assert results[0]["capabilities"] == ["read", "write"]
@@ -827,7 +827,7 @@ class TestDiscoverServiceCatalog:
             status_code=200,
             json=envelope([SERVICE_C]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID, status="inactive")
         assert len(results) == 1
         assert results[0]["status"] == "inactive"
@@ -839,7 +839,7 @@ class TestDiscoverServiceCatalog:
             status_code=200,
             json=envelope([SERVICE_B]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(
                 HIVE_ID,
                 service_type="slack",
@@ -857,7 +857,7 @@ class TestDiscoverServiceCatalog:
             status_code=200,
             json=envelope([SERVICE_A]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             # service_type defaults to None — must not appear in query string
             results = c.discover_service_catalog(HIVE_ID)
         assert len(results) == 1
@@ -869,7 +869,7 @@ class TestDiscoverServiceCatalog:
             status_code=200,
             json=envelope([SERVICE_B]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID)
         assert len(results) == 1
 
@@ -879,7 +879,7 @@ class TestDiscoverServiceCatalog:
 
     def test_http_401_raises(self, httpx_mock):
         """A 401 Unauthorized response raises an appropriate SDK exception."""
-        from apiary_sdk import AuthenticationError
+        from superpos_sdk import AuthenticationError
 
         httpx_mock.add_response(
             url=_catalog_url_with("status=active&per_page=50&page=1"),
@@ -890,13 +890,13 @@ class TestDiscoverServiceCatalog:
                 "errors": [{"message": "Unauthenticated", "code": "unauthenticated"}],
             },
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             with pytest.raises(AuthenticationError):
                 c.discover_service_catalog(HIVE_ID)
 
     def test_http_403_raises(self, httpx_mock):
         """A 403 Forbidden response raises an appropriate SDK exception."""
-        from apiary_sdk import ApiaryPermissionError
+        from superpos_sdk import SuperposPermissionError
 
         httpx_mock.add_response(
             url=_catalog_url_with("status=active&per_page=50&page=1"),
@@ -907,13 +907,13 @@ class TestDiscoverServiceCatalog:
                 "errors": [{"message": "Forbidden", "code": "forbidden"}],
             },
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
-            with pytest.raises(ApiaryPermissionError):
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            with pytest.raises(SuperposPermissionError):
                 c.discover_service_catalog(HIVE_ID)
 
     def test_http_500_raises(self, httpx_mock):
         """A 500 server error raises an appropriate SDK exception."""
-        from apiary_sdk import ApiaryError
+        from superpos_sdk import SuperposError
 
         httpx_mock.add_response(
             url=_catalog_url_with("status=active&per_page=50&page=1"),
@@ -924,8 +924,8 @@ class TestDiscoverServiceCatalog:
                 "errors": [{"message": "Server error", "code": "server_error"}],
             },
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
-            with pytest.raises(ApiaryError):
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            with pytest.raises(SuperposError):
                 c.discover_service_catalog(HIVE_ID)
 
     # ------------------------------------------------------------------
@@ -939,7 +939,7 @@ class TestDiscoverServiceCatalog:
             status_code=200,
             json=envelope({"error": "unexpected"}),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID)
         assert results == []
 
@@ -954,7 +954,7 @@ RESPONSE_TASK_ID = "01HXYZ00000000000000000099"
 def _response_task_data(**overrides):
     base = {
         "id": RESPONSE_TASK_ID,
-        "apiary_id": "A" * 26,
+        "organization_id": "A" * 26,
         "hive_id": HIVE_ID,
         "type": "data_response",
         "status": "completed",
@@ -986,7 +986,7 @@ class TestDeliverResponse:
         w = self._worker()
         # Manually set the internal state as if we are inside _process().
         w._response_task_id = RESPONSE_TASK_ID  # noqa: SLF001
-        w.client = ApiaryClient(BASE_URL, token=TOKEN)
+        w.client = SuperposClient(BASE_URL, token=TOKEN)
 
         resp = w.deliver_response(result)
         assert resp["id"] == RESPONSE_TASK_ID
@@ -1000,7 +1000,7 @@ class TestDeliverResponse:
             json=envelope(_response_task_data(result=result)),
         )
         w = self._worker()
-        w.client = ApiaryClient(BASE_URL, token=TOKEN)
+        w.client = SuperposClient(BASE_URL, token=TOKEN)
 
         # Pass the ID explicitly — no ambient _response_task_id needed.
         resp = w.deliver_response(result, response_task_id=RESPONSE_TASK_ID)
@@ -1008,7 +1008,7 @@ class TestDeliverResponse:
 
     def test_deliver_response_raises_when_no_response_task_id(self):
         w = self._worker()
-        w.client = ApiaryClient(BASE_URL, token=TOKEN)
+        w.client = SuperposClient(BASE_URL, token=TOKEN)
         # No _response_task_id set, none passed explicitly.
         with pytest.raises(ValueError, match="response_task_id"):
             w.deliver_response({"status": "success"})
@@ -1022,7 +1022,7 @@ class TestDeliverResponse:
         )
         w = self._worker()
         w._response_task_id = RESPONSE_TASK_ID  # noqa: SLF001
-        w.client = ApiaryClient(BASE_URL, token=TOKEN)
+        w.client = SuperposClient(BASE_URL, token=TOKEN)
 
         resp = w.deliver_response(result, status_message="Done")
         assert resp["status_message"] == "Done"

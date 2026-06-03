@@ -10,8 +10,8 @@
 
 ## Objective
 
-Surface `novps.io` worker logs to the Apiary dashboard via a thin proxy
-endpoint. No retention — Apiary fetches on demand and forwards. The
+Surface `novps.io` worker logs to the Superpos dashboard via a thin proxy
+endpoint. No retention — Superpos fetches on demand and forwards. The
 dashboard component renders a live-follow viewer on top.
 
 ## Requirements
@@ -96,6 +96,6 @@ dashboard component renders a live-follow viewer on top.
 
 - [ ] All tests pass
 - [ ] PSR-12 compliant
-- [ ] No log-body content written to Apiary logs
+- [ ] No log-body content written to Superpos logs
 - [ ] API envelope + error `reason` codes
 - [ ] Form Request validation

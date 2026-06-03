@@ -20,7 +20,7 @@ Create `approval_requests` table per PRODUCT.md §9.2:
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | `string(26)` PK | ULID |
-| `apiary_id` | `string(26)` FK | References `apiaries(id)`, cascade delete |
+| `superpos_id` | `string(26)` FK | References `apiaries(id)`, cascade delete |
 | `hive_id` | `string(26)` FK | References `hives(id)`, cascade delete |
 | `agent_id` | `string(26)` FK | References `agents(id)`, cascade delete |
 | `service_id` | `string(26)` FK | References `service_connections(id)`, cascade delete |
@@ -38,15 +38,15 @@ Create `approval_requests` table per PRODUCT.md §9.2:
 | `updated_at` | `timestamp` | |
 
 **Indexes:**
-- Partial index on `(apiary_id, status, created_at)` WHERE `status = 'pending'`
+- Partial index on `(superpos_id, status, created_at)` WHERE `status = 'pending'`
 - `index(hive_id)`
 - `index(agent_id)`
 - `index(service_id)`
 
 **Composite FKs** (matching action_policies pattern):
-- `(apiary_id, agent_id)` → agents
-- `(apiary_id, hive_id)` → hives
-- `(apiary_id, service_id)` → service_connections
+- `(superpos_id, agent_id)` → agents
+- `(superpos_id, hive_id)` → hives
+- `(superpos_id, service_id)` → service_connections
 
 ### Model
 

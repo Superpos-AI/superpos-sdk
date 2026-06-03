@@ -23,7 +23,7 @@ Create the `EventBus` service that provides the core publish/subscribe/dispatch 
 
 3. **Dispatch (subscription matching)** — Given an event, find all matching subscriptions:
    - Hive events → subscriptions with `scope='hive'` where agent's `hive_id` matches event's `hive_id`
-   - Cross-hive events → subscriptions with `scope='apiary'` where agent's `apiary_id` matches event's `apiary_id`
+   - Cross-hive events → subscriptions with `scope='apiary'` where agent's `superpos_id` matches event's `superpos_id`
    - Return the matched agent IDs (for polling/notification)
 
 4. **Poll** — Retrieve events for a given agent based on their subscriptions:

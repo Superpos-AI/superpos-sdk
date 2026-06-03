@@ -43,7 +43,7 @@ exists.
 |--------|------|---------|
 | Create | `database/migrations/0001_01_01_000018_add_encryption_key_to_apiaries_table.php` | Add encryption_key column |
 | Create | `app/Services/CredentialVault.php` | Encrypt/decrypt service |
-| Modify | `app/Models/Apiary.php` | Add encryption_key to fillable, hidden, casts |
+| Modify | `app/Models/Superpos.php` | Add encryption_key to fillable, hidden, casts |
 | Create | `tests/Feature/CredentialVaultTest.php` | Feature tests |
 
 ### Key Design Decisions
@@ -74,7 +74,7 @@ ALTER TABLE apiaries ADD COLUMN encryption_key TEXT;
 - [ ] Cloud mode without per-apiary key falls back to default encrypter
 - [ ] Cloud mode with per-apiary key uses that key
 - [ ] Cloud data encrypted with per-apiary key cannot be decrypted with default
-- [ ] encryption_key is hidden from Apiary JSON serialisation
+- [ ] encryption_key is hidden from Superpos JSON serialisation
 - [ ] encryption_key is encrypted at rest (stored value differs from plaintext)
 
 ## Validation Checklist

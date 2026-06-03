@@ -5,7 +5,7 @@
 | **ID**      | 007                                      |
 | **Title**   | Agent migration + model + permissions    |
 | **Status**  | done                                     |
-| **Depends** | 005 (migrations), 006 (Apiary/Hive models) |
+| **Depends** | 005 (migrations), 006 (Superpos/Hive models) |
 | **Branch**  | `task/007-agent-model`                   |
 
 ---
@@ -24,7 +24,7 @@ calls are performed by agents.
 | Column              | Type         | Constraints                          |
 |---------------------|--------------|--------------------------------------|
 | id                  | CHAR(26)     | PRIMARY KEY (ULID)                   |
-| apiary_id           | CHAR(26)     | FK → apiaries, CASCADE DELETE        |
+| superpos_id           | CHAR(26)     | FK → apiaries, CASCADE DELETE        |
 | hive_id             | CHAR(26)     | FK → hives, CASCADE DELETE           |
 | name                | VARCHAR(255) | NOT NULL                             |
 | type                | VARCHAR(100) | NOT NULL, DEFAULT 'custom'           |
@@ -36,7 +36,7 @@ calls are performed by agents.
 | created_at          | TIMESTAMP    |                                      |
 | updated_at          | TIMESTAMP    |                                      |
 
-Indexes: `(hive_id, status)`, `(apiary_id)`.
+Indexes: `(hive_id, status)`, `(superpos_id)`.
 
 ### `agent_permissions` table
 
@@ -55,7 +55,7 @@ Composite primary key: `(agent_id, permission)`.
 
 - Traits: `HasFactory`, `HasUlid`, `BelongsToHive`
 - Fillable: name, type, capabilities, status, api_token_hash, metadata,
-  last_heartbeat, apiary_id, hive_id
+  last_heartbeat, superpos_id, hive_id
 - Casts: capabilities → array, metadata → array, last_heartbeat → datetime
 - Relationships:
   - `hive()` — via BelongsToHive trait

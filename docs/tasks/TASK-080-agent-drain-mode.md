@@ -2,7 +2,7 @@
 
 **Status:** ✅ done
 **Branch:** `task/080-agent-drain-mode` (merged)
-**PR:** [#130](https://github.com/Apiary-AI/Apiary-SaaS/pull/130)
+**PR:** [#130](https://github.com/Superpos-AI/superpos-app/pull/130)
 **Depends On:** 007 (Agent model), 015 (Agent heartbeat/lifecycle API)
 **Edition Scope:** `shared`
 
@@ -65,7 +65,7 @@ Artisan command `apiary:process-drain-deadlines` runs every minute:
 ### SDK Parity
 
 - **Python SDK**: `enter_drain()`, `exit_drain()`, `drain_status()`
-- **Shell SDK**: `apiary_enter_drain`, `apiary_exit_drain`, `apiary_drain_status`
+- **Shell SDK**: `superpos_enter_drain`, `superpos_exit_drain`, `superpos_drain_status`
 - **CLI**: `drain`, `undrain`, `drain-status` commands
 
 ## Test Plan
@@ -99,7 +99,7 @@ Artisan command `apiary:process-drain-deadlines` runs every minute:
 - `resources/js/Components/StatusBadge.jsx`
 - `resources/js/Pages/Agents.jsx`
 - `resources/js/Pages/Agents/Show.jsx`
-- `sdk/python/src/apiary_sdk/client.py`
-- `sdk/shell/src/apiary-sdk.sh`
-- `sdk/shell/bin/apiary-cli`
+- `sdk/python/src/superpos_sdk/client.py`
+- `sdk/shell/src/superpos-sdk.sh`
+- `sdk/shell/bin/superpos-cli`
 - `tests/Feature/AgentDrainModeTest.php`

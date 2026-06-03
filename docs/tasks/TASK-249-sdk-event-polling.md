@@ -50,7 +50,7 @@ while True:
 - [ ] FR-4: Internal cursor management — SDK tracks `last_event_id` (from response meta `next_cursor`) and passes it on subsequent polls to avoid re-fetching events. Also tracks `has_more` to immediately re-poll when there are remaining events.
 - [ ] FR-5: `client.list_subscriptions()` — lists current subscriptions via `GET /api/v1/agents/subscriptions`
 - [ ] FR-6: `client.replace_subscriptions(subscriptions)` — atomically replaces all subscriptions via `PUT /api/v1/agents/subscriptions`
-- [ ] FR-7: Events returned as typed objects with `id`, `type`, `payload`, `source_agent_id`, `hive_id`, `apiary_id`, `is_cross_hive`, `seq`, `created_at` attributes (matching the server response format)
+- [ ] FR-7: Events returned as typed objects with `id`, `type`, `payload`, `source_agent_id`, `hive_id`, `superpos_id`, `is_cross_hive`, `seq`, `created_at` attributes (matching the server response format)
 
 ### Non-Functional
 
@@ -64,8 +64,8 @@ while True:
 
 | Action | Path | Purpose |
 |--------|------|---------|
-| Modify | `sdk/python/src/apiary_sdk/client.py` | Add `poll_events()`, `subscribe()`, `unsubscribe()` methods |
-| Create | `sdk/python/src/apiary_sdk/models.py` | Add `Event` and `Subscription` data classes |
+| Modify | `sdk/python/src/superpos_sdk/client.py` | Add `poll_events()`, `subscribe()`, `unsubscribe()` methods |
+| Create | `sdk/python/src/superpos_sdk/models.py` | Add `Event` and `Subscription` data classes |
 | Create | `sdk/python/tests/test_event_polling.py` | Unit tests for event polling client |
 
 ### Key Design Decisions
@@ -77,7 +77,7 @@ while True:
 
 ## Implementation Plan
 
-1. Create `models.py` with `Event` and `Subscription` data classes — `Event` fields: `id`, `type`, `payload`, `source_agent_id`, `hive_id`, `apiary_id`, `is_cross_hive`, `seq`, `created_at`; `Subscription` fields: `agent_id`, `event_type`, `scope`, `created_at`
+1. Create `models.py` with `Event` and `Subscription` data classes — `Event` fields: `id`, `type`, `payload`, `source_agent_id`, `hive_id`, `superpos_id`, `is_cross_hive`, `seq`, `created_at`; `Subscription` fields: `agent_id`, `event_type`, `scope`, `created_at`
 2. Add `poll_events(hive_id, limit=50)` method to `client.py` — calls `GET /api/v1/hives/{hive}/events/poll` with `last_event_id` cursor and `limit`, manages internal cursor from response meta `next_cursor`
 3. Add `subscribe(event_type, scope="hive")` method — calls `POST /api/v1/agents/subscriptions`
 4. Add `unsubscribe(event_type)` method — calls `DELETE /api/v1/agents/subscriptions/{eventType}`
@@ -96,7 +96,7 @@ while True:
 - [ ] `unsubscribe()` calls `DELETE /api/v1/agents/subscriptions/{eventType}`
 - [ ] `list_subscriptions()` calls `GET /api/v1/agents/subscriptions`
 - [ ] `replace_subscriptions()` calls `PUT /api/v1/agents/subscriptions`
-- [ ] Events parsed into typed Event objects with correct attributes (`id`, `type`, `payload`, `source_agent_id`, `apiary_id`, `seq`, etc.)
+- [ ] Events parsed into typed Event objects with correct attributes (`id`, `type`, `payload`, `source_agent_id`, `superpos_id`, `seq`, etc.)
 - [ ] First poll (no cursor) works correctly — omits `last_event_id` param
 
 ## Validation Checklist

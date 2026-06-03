@@ -1,5 +1,10 @@
 # TASK-230: Hosted agent deploy job (apply + poll)
 
+> **Post-merge correction (2026-04-19):** references to `SUPERPOS_TOKEN`
+> in this doc should be read as `SUPERPOS_API_TOKEN`; the env var was
+> unified post-merge to match the Python SDK's `from_env()` contract
+> (see TASK-256).
+
 **Status:** pending
 **Branch:** `task/230-hosted-agent-deploy-job`
 **PR:** —
@@ -83,7 +88,7 @@ reconciles `hosted_agents` status back to the database
 - [ ] NFR-1: Polling loop must respect Horizon timeout settings — use
   `Bus::chain` or a self-redispatching job (`release()` + re-queue) rather
   than `sleep()` inside `handle()` so worker threads stay free.
-- [ ] NFR-2: Logs scrub `APIARY_TOKEN` and any `user_env` values.
+- [ ] NFR-2: Logs scrub `SUPERPOS_API_TOKEN` and any `user_env` values.
 - [ ] NFR-3: `deploy_timeout` is enforced as a **wall-clock** deadline
   stored on the deployment row (`started_at + timeout`), not a counter —
   job crashes mid-poll must still honour the original deadline.
@@ -117,7 +122,7 @@ reconciles `hosted_agents` status back to the database
 ### Unit Tests
 
 - [ ] Payload builder produces the exact novps shape for the Claude preset.
-- [ ] Payload includes auto-injected `APIARY_*` env vars.
+- [ ] Payload includes auto-injected `SUPERPOS_*` env vars.
 - [ ] App-name allocator retries with a suffix on a `409`-like response.
 - [ ] Poll loop transitions to `running` on `success`.
 - [ ] Poll loop transitions to `error` on `failed` with last logs attached.

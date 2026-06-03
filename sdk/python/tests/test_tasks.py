@@ -6,8 +6,8 @@ import json
 
 import pytest
 
-from apiary_sdk import ApiaryClient
-from apiary_sdk.exceptions import ConflictError
+from superpos_sdk import SuperposClient
+from superpos_sdk.exceptions import ConflictError, NotFoundError
 
 from .conftest import BASE_URL, HIVE_ID, TASK_ID, TOKEN, envelope
 
@@ -15,7 +15,7 @@ from .conftest import BASE_URL, HIVE_ID, TASK_ID, TOKEN, envelope
 def _task_data(**overrides):
     base = {
         "id": TASK_ID,
-        "apiary_id": "A" * 26,
+        "organization_id": "A" * 26,
         "hive_id": HIVE_ID,
         "type": "process",
         "status": "pending",
@@ -36,7 +36,7 @@ class TestCreateTask:
             status_code=201,
             json=envelope(_task_data()),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             task = c.create_task(HIVE_ID, task_type="process")
         assert task["id"] == TASK_ID
         assert task["status"] == "pending"
@@ -47,7 +47,7 @@ class TestCreateTask:
             status_code=201,
             json=envelope(_task_data(priority=4)),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.create_task(
                 HIVE_ID,
                 task_type="process",
@@ -92,7 +92,7 @@ class TestPollTasks:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/tasks/poll",
             json=envelope([_task_data(), _task_data(id="T" * 26)]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             tasks = c.poll_tasks(HIVE_ID)
         assert len(tasks) == 2
 
@@ -101,7 +101,7 @@ class TestPollTasks:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/tasks/poll?capability=code&limit=3",
             json=envelope([]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             tasks = c.poll_tasks(HIVE_ID, capability="code", limit=3)
         assert tasks == []
 
@@ -110,9 +110,33 @@ class TestPollTasks:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/tasks/poll",
             json=envelope([]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             tasks = c.poll_tasks(HIVE_ID)
         assert tasks == []
+
+
+class TestGetTask:
+    def test_get_task_success(self, httpx_mock):
+        httpx_mock.add_response(
+            url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/tasks/{TASK_ID}",
+            json=envelope(_task_data(status="in_progress", progress=42)),
+        )
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            task = c.get_task(HIVE_ID, TASK_ID)
+        assert task["id"] == TASK_ID
+        assert task["status"] == "in_progress"
+        assert task["progress"] == 42
+        assert httpx_mock.get_request().method == "GET"
+
+    def test_get_task_not_found(self, httpx_mock):
+        httpx_mock.add_response(
+            url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/tasks/{TASK_ID}",
+            status_code=404,
+            json=envelope(errors=[{"message": "Task not found.", "code": "not_found"}]),
+        )
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            with pytest.raises(NotFoundError):
+                c.get_task(HIVE_ID, TASK_ID)
 
 
 class TestClaimTask:
@@ -121,7 +145,7 @@ class TestClaimTask:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/tasks/{TASK_ID}/claim",
             json=envelope(_task_data(status="in_progress", claimed_by="agent-1")),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             task = c.claim_task(HIVE_ID, TASK_ID)
         assert task["status"] == "in_progress"
 
@@ -131,7 +155,7 @@ class TestClaimTask:
             status_code=409,
             json=envelope(errors=[{"message": "Task is no longer available.", "code": "conflict"}]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             with pytest.raises(ConflictError):
                 c.claim_task(HIVE_ID, TASK_ID)
 
@@ -142,7 +166,7 @@ class TestUpdateProgress:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/tasks/{TASK_ID}/progress",
             json=envelope(_task_data(status="in_progress", progress=50)),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             task = c.update_progress(HIVE_ID, TASK_ID, progress=50, status_message="halfway")
         assert task["progress"] == 50
         body = json.loads(httpx_mock.get_request().content)
@@ -163,7 +187,7 @@ class TestCompleteTask:
                 )
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             task = c.complete_task(HIVE_ID, TASK_ID, result={"output": "done"})
         assert task["status"] == "completed"
         assert task["progress"] == 100
@@ -187,7 +211,7 @@ class TestDeliverResponseTask:
                 )
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             task = c.deliver_response_task(HIVE_ID, self.RESPONSE_TASK_ID, result)
         assert task["status"] == "completed"
         assert task["result"] == result
@@ -206,7 +230,7 @@ class TestDeliverResponseTask:
                 )
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             task = c.deliver_response_task(
                 HIVE_ID,
                 self.RESPONSE_TASK_ID,
@@ -224,12 +248,12 @@ class TestDeliverResponseTask:
             method="POST",
             json=envelope(_task_data(id=self.RESPONSE_TASK_ID, status="completed")),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             task = c.deliver_response_task(HIVE_ID, self.RESPONSE_TASK_ID, result)
         assert task["id"] == self.RESPONSE_TASK_ID
 
     def test_deliver_response_raises_on_403(self, httpx_mock):
-        from apiary_sdk.exceptions import PermissionError as ApiaryPermissionError
+        from superpos_sdk.exceptions import PermissionError as SuperposPermissionError
 
         httpx_mock.add_response(
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/tasks/{self.RESPONSE_TASK_ID}/deliver-response",
@@ -241,8 +265,8 @@ class TestDeliverResponseTask:
                 "errors": [{"message": "Forbidden", "code": "forbidden"}],
             },
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
-            with pytest.raises(ApiaryPermissionError):
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            with pytest.raises(SuperposPermissionError):
                 c.deliver_response_task(HIVE_ID, self.RESPONSE_TASK_ID, {"status": "success"})
 
 
@@ -257,6 +281,6 @@ class TestFailTask:
                 )
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             task = c.fail_task(HIVE_ID, TASK_ID, error={"reason": "crash"})
         assert task["status"] == "failed"

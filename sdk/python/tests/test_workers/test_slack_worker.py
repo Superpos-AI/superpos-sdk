@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from apiary_sdk.workers.slack import SlackWorker
+from superpos_sdk.workers.slack import SlackWorker
 
-BASE_URL = "https://apiary.test"
+BASE_URL = "https://superpos.test"
 HIVE_ID = "01HXYZ00000000000000000001"
 TOKEN = "xoxb-test-token"
 CHANNEL = "C01234567"

@@ -3,9 +3,9 @@
 # and health diagnostics file output.
 #
 # Validates:
-#   - APIARY_POLL_MAX_TASKS defaults to 20
-#   - APIARY_POLL_MAX_TASKS is capped at 20 even if env is higher
-#   - Custom APIARY_POLL_MAX_TASKS values are respected (within cap)
+#   - SUPERPOS_POLL_MAX_TASKS defaults to 20
+#   - SUPERPOS_POLL_MAX_TASKS is capped at 20 even if env is higher
+#   - Custom SUPERPOS_POLL_MAX_TASKS values are respected (within cap)
 #   - Daemon stats file is written with expected fields
 
 set -euo pipefail
@@ -20,7 +20,7 @@ source "${SCRIPT_DIR}/../../shell/tests/test_harness.sh"
 _tmp_dir=$(mktemp -d)
 trap 'rm -rf "$_tmp_dir"' EXIT
 
-export APIARY_CONFIG_DIR="$_tmp_dir"
+export SUPERPOS_CONFIG_DIR="$_tmp_dir"
 
 # Source only the config section of the daemon by extracting the
 # config block into a testable snippet.
@@ -28,11 +28,11 @@ _eval_poll_max() {
     local env_val="${1:-}"
     (
         if [[ -n "$env_val" ]]; then
-            export APIARY_POLL_MAX_TASKS="$env_val"
+            export SUPERPOS_POLL_MAX_TASKS="$env_val"
         else
-            unset APIARY_POLL_MAX_TASKS 2>/dev/null || true
+            unset SUPERPOS_POLL_MAX_TASKS 2>/dev/null || true
         fi
-        _poll_max_env="${APIARY_POLL_MAX_TASKS:-20}"
+        _poll_max_env="${SUPERPOS_POLL_MAX_TASKS:-20}"
         # Sanitize: non-numeric values fall back to default
         if ! [[ "$_poll_max_env" =~ ^-?[0-9]+$ ]]; then
             _poll_max_env=20

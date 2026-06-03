@@ -4,7 +4,7 @@ Prerequisites
 -------------
 Freshly registered agents have **no permissions** by default.
 Before running this example an administrator must grant the required
-permissions via the Apiary dashboard or CLI::
+permissions via the Superpos dashboard or CLI::
 
     php artisan apiary:grant-permission <agent-id> tasks.create
     php artisan apiary:grant-permission <agent-id> knowledge.write
@@ -16,13 +16,13 @@ Steps that only need authentication (register, heartbeat, update_status,
 logout) work immediately after registration.
 """
 
-from apiary_sdk import ApiaryClient
-from apiary_sdk.exceptions import PermissionError
+from superpos_sdk import SuperposClient
+from superpos_sdk.exceptions import PermissionError
 
-APIARY_URL = "http://localhost:8080"
+SUPERPOS_URL = "http://localhost:8080"
 HIVE_ID = "your-hive-id-here"  # 26-char ULID
 
-with ApiaryClient(APIARY_URL) as client:
+with SuperposClient(SUPERPOS_URL) as client:
     # 1. Register a new agent (token is stored automatically)
     #    This always succeeds — no special permissions needed.
     data = client.register(

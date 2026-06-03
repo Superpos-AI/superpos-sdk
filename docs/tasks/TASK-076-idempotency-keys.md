@@ -13,7 +13,7 @@ multiple times.
 ### Functional Requirements
 
 1. **Idempotency key storage**: Persist `idempotency_key → task_id` mapping in
-   a dedicated `task_idempotency` table, scoped to `(apiary_id, hive_id)`.
+   a dedicated `task_idempotency` table, scoped to `(superpos_id, hive_id)`.
 2. **Dedup on task creation**: When `idempotency_key` is provided:
    - If existing task is `completed` → return existing task (HTTP 200, not 201)
    - If existing task is `pending`/`in_progress` → return existing task (HTTP 200)
@@ -21,7 +21,7 @@ multiple times.
    - If no existing key → create new task normally
 3. **Key expiry**: Keys expire after configurable TTL (default 24h). Scheduler
    job cleans up expired entries.
-4. **Tenant isolation**: Keys are scoped to `(apiary_id, hive_id)` — no
+4. **Tenant isolation**: Keys are scoped to `(superpos_id, hive_id)` — no
    cross-tenant or cross-hive collisions.
 5. **Fail-closed**: If dedup lookup fails, reject the request rather than
    silently creating a duplicate.
@@ -37,12 +37,12 @@ Response includes `meta.idempotent: true` when returning an existing task.
 ```sql
 CREATE TABLE task_idempotency (
     idempotency_key VARCHAR(255) NOT NULL,
-    apiary_id       VARCHAR(26) NOT NULL,
+    superpos_id       VARCHAR(26) NOT NULL,
     hive_id         VARCHAR(26) NOT NULL,
     task_id         VARCHAR(26) NOT NULL REFERENCES tasks(id),
     expires_at      TIMESTAMP NOT NULL,
     created_at      TIMESTAMP DEFAULT NOW(),
-    PRIMARY KEY (apiary_id, hive_id, idempotency_key)
+    PRIMARY KEY (superpos_id, hive_id, idempotency_key)
 );
 
 CREATE INDEX idx_idempotency_expires ON task_idempotency (expires_at);

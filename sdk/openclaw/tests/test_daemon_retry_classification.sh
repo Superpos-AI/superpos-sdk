@@ -8,41 +8,41 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 source "${SCRIPT_DIR}/../../shell/tests/test_harness.sh"
-source "${SCRIPT_DIR}/../../shell/src/apiary-sdk.sh"
-_APIARY_SDK_LOADED=1
-source "${SCRIPT_DIR}/../bin/apiary-auth.sh"
+source "${SCRIPT_DIR}/../../shell/src/superpos-sdk.sh"
+_SUPERPOS_SDK_LOADED=1
+source "${SCRIPT_DIR}/../bin/superpos-auth.sh"
 
 _tmp_config_dir=$(mktemp -d)
 _tmp_out="${_tmp_config_dir}/output.txt"
 trap 'rm -rf "$_tmp_config_dir"' EXIT
 
 _setup() {
-    unset APIARY_AGENT_ID APIARY_HIVE_ID APIARY_AGENT_NAME APIARY_TOKEN APIARY_AGENT_SECRET APIARY_AGENT_REFRESH_TOKEN 2>/dev/null || true
-    export APIARY_BASE_URL="http://localhost:9999"
-    export APIARY_CONFIG_DIR="$_tmp_config_dir"
+    unset SUPERPOS_AGENT_ID SUPERPOS_HIVE_ID SUPERPOS_AGENT_NAME SUPERPOS_TOKEN SUPERPOS_AGENT_SECRET SUPERPOS_AGENT_REFRESH_TOKEN 2>/dev/null || true
+    export SUPERPOS_BASE_URL="http://localhost:9999"
+    export SUPERPOS_CONFIG_DIR="$_tmp_config_dir"
     rm -f "${_tmp_config_dir}/agent.json" "${_tmp_config_dir}/token" "${_tmp_config_dir}/refresh-token" "$_tmp_out"
-    _APIARY_RETRY_AFTER=""
+    _SUPERPOS_RETRY_AFTER=""
     mock_reset
 }
 
 # ══════════════════════════════════════════════════════════════════
-# SDK: 429 returns APIARY_ERR_RATE_LIMIT
+# SDK: 429 returns SUPERPOS_ERR_RATE_LIMIT
 # ══════════════════════════════════════════════════════════════════
 
-describe "SDK exit code: 429 maps to APIARY_ERR_RATE_LIMIT (8)"
+describe "SDK exit code: 429 maps to SUPERPOS_ERR_RATE_LIMIT (8)"
 
 _setup
-export APIARY_TOKEN="valid-token"
+export SUPERPOS_TOKEN="valid-token"
 
 mock_response POST "/api/v1/agents/heartbeat" 429 \
   '{"data":null,"meta":{},"errors":[{"message":"Too Many Requests","code":"rate_limited"}]}'
 
 set +e
-apiary_heartbeat >"$_tmp_out" 2>&1
+superpos_heartbeat >"$_tmp_out" 2>&1
 rc=$?
 set -e
 
-assert_eq "$rc" "$APIARY_ERR_RATE_LIMIT" "heartbeat 429 returns APIARY_ERR_RATE_LIMIT (8)"
+assert_eq "$rc" "$SUPERPOS_ERR_RATE_LIMIT" "heartbeat 429 returns SUPERPOS_ERR_RATE_LIMIT (8)"
 
 # ══════════════════════════════════════════════════════════════════
 # SDK: Retry-After header is captured on 429
@@ -51,19 +51,19 @@ assert_eq "$rc" "$APIARY_ERR_RATE_LIMIT" "heartbeat 429 returns APIARY_ERR_RATE_
 describe "SDK Retry-After header capture on 429"
 
 _setup
-export APIARY_TOKEN="valid-token"
+export SUPERPOS_TOKEN="valid-token"
 
 mock_response POST "/api/v1/agents/heartbeat" 429 \
   '{"data":null,"meta":{},"errors":[{"message":"Too Many Requests","code":"rate_limited"}]}'
 mock_response_headers POST "/api/v1/agents/heartbeat" "Retry-After: 30"
 
 set +e
-apiary_heartbeat >"$_tmp_out" 2>&1
+superpos_heartbeat >"$_tmp_out" 2>&1
 rc=$?
 set -e
 
-assert_eq "$rc" "$APIARY_ERR_RATE_LIMIT" "heartbeat returns rate-limit code"
-assert_eq "$_APIARY_RETRY_AFTER" "30" "Retry-After header value captured as 30"
+assert_eq "$rc" "$SUPERPOS_ERR_RATE_LIMIT" "heartbeat returns rate-limit code"
+assert_eq "$_SUPERPOS_RETRY_AFTER" "30" "Retry-After header value captured as 30"
 
 # ══════════════════════════════════════════════════════════════════
 # SDK: Retry-After is empty when header absent
@@ -72,81 +72,81 @@ assert_eq "$_APIARY_RETRY_AFTER" "30" "Retry-After header value captured as 30"
 describe "SDK Retry-After is empty when header absent"
 
 _setup
-export APIARY_TOKEN="valid-token"
+export SUPERPOS_TOKEN="valid-token"
 
 mock_response POST "/api/v1/agents/heartbeat" 429 \
   '{"data":null,"meta":{},"errors":[{"message":"Too Many Requests","code":"rate_limited"}]}'
 
 set +e
-apiary_heartbeat >"$_tmp_out" 2>&1
+superpos_heartbeat >"$_tmp_out" 2>&1
 rc=$?
 set -e
 
-assert_eq "$_APIARY_RETRY_AFTER" "" "Retry-After is empty when no header"
+assert_eq "$_SUPERPOS_RETRY_AFTER" "" "Retry-After is empty when no header"
 
 # ══════════════════════════════════════════════════════════════════
-# SDK: 401 still returns APIARY_ERR_AUTH
+# SDK: 401 still returns SUPERPOS_ERR_AUTH
 # ══════════════════════════════════════════════════════════════════
 
-describe "SDK exit code: 401 still maps to APIARY_ERR_AUTH (3)"
+describe "SDK exit code: 401 still maps to SUPERPOS_ERR_AUTH (3)"
 
 _setup
-export APIARY_TOKEN="expired-token"
+export SUPERPOS_TOKEN="expired-token"
 
 mock_response POST "/api/v1/agents/heartbeat" 401 \
   '{"data":null,"meta":{},"errors":[{"message":"Unauthenticated","code":"auth_failed"}]}'
 
 set +e
-apiary_heartbeat >"$_tmp_out" 2>&1
+superpos_heartbeat >"$_tmp_out" 2>&1
 rc=$?
 set -e
 
-assert_eq "$rc" "$APIARY_ERR_AUTH" "heartbeat 401 returns APIARY_ERR_AUTH (3)"
+assert_eq "$rc" "$SUPERPOS_ERR_AUTH" "heartbeat 401 returns SUPERPOS_ERR_AUTH (3)"
 
 # ══════════════════════════════════════════════════════════════════
-# SDK: 500 returns APIARY_ERR (generic)
+# SDK: 500 returns SUPERPOS_ERR (generic)
 # ══════════════════════════════════════════════════════════════════
 
-describe "SDK exit code: 500 maps to APIARY_ERR (1)"
+describe "SDK exit code: 500 maps to SUPERPOS_ERR (1)"
 
 _setup
-export APIARY_TOKEN="valid-token"
+export SUPERPOS_TOKEN="valid-token"
 
 mock_response POST "/api/v1/agents/heartbeat" 500 \
   '{"data":null,"meta":{},"errors":[{"message":"Server error","code":"server_error"}]}'
 
 set +e
-apiary_heartbeat >"$_tmp_out" 2>&1
+superpos_heartbeat >"$_tmp_out" 2>&1
 rc=$?
 set -e
 
-assert_eq "$rc" "$APIARY_ERR" "heartbeat 500 returns APIARY_ERR (1)"
+assert_eq "$rc" "$SUPERPOS_ERR" "heartbeat 500 returns SUPERPOS_ERR (1)"
 
 # ══════════════════════════════════════════════════════════════════
-# ensure_auth does NOT re-authenticate on rate-limited apiary_me
+# ensure_auth does NOT re-authenticate on rate-limited superpos_me
 # ══════════════════════════════════════════════════════════════════
 
-describe "ensure_auth preserves token when apiary_me returns 429"
+describe "ensure_auth preserves token when superpos_me returns 429"
 
 _setup
-export APIARY_AGENT_ID="agent-rl-01"
-export APIARY_AGENT_NAME="daemon-bot"
-export APIARY_HIVE_ID="hive-rl-1"
-export APIARY_TOKEN="still-valid-token"
-export APIARY_AGENT_REFRESH_TOKEN="refresh-valid"
+export SUPERPOS_AGENT_ID="agent-rl-01"
+export SUPERPOS_AGENT_NAME="daemon-bot"
+export SUPERPOS_HIVE_ID="hive-rl-1"
+export SUPERPOS_TOKEN="still-valid-token"
+export SUPERPOS_AGENT_REFRESH_TOKEN="refresh-valid"
 printf 'still-valid-token\n' > "${_tmp_config_dir}/token"
 
 mock_response GET "/api/v1/agents/me" 429 \
   '{"data":null,"meta":{},"errors":[{"message":"Too Many Requests","code":"rate_limited"}]}'
 
 set +e
-apiary_oc_ensure_auth >"$_tmp_out" 2>&1
+superpos_oc_ensure_auth >"$_tmp_out" 2>&1
 rc=$?
 set -e
 
 # 429 is a non-auth error; ensure_auth should preserve the token and return non-zero
-assert_eq "$rc" "$APIARY_ERR_RATE_LIMIT" "ensure_auth returns rate-limit error code"
-assert_eq "${APIARY_TOKEN:-}" "still-valid-token" "in-memory token is preserved on 429"
+assert_eq "$rc" "$SUPERPOS_ERR_RATE_LIMIT" "ensure_auth returns rate-limit error code"
+assert_eq "${SUPERPOS_TOKEN:-}" "still-valid-token" "in-memory token is preserved on 429"
 assert_eq "$(cat "${_tmp_config_dir}/token")" "still-valid-token" "persisted token file is preserved on 429"
 
 log="$(mock_url_log)"
@@ -170,7 +170,7 @@ _backoff_max=300
 
 # shellcheck disable=SC1091
 _rate_limit_sleep() {
-    local retry_after="${_APIARY_RETRY_AFTER:-}"
+    local retry_after="${_SUPERPOS_RETRY_AFTER:-}"
     if [[ -n "$retry_after" ]] && [[ "$retry_after" =~ ^[0-9]+$ ]]; then
         sleep "$retry_after"
     else
@@ -183,13 +183,13 @@ _rate_limit_sleep() {
 }
 
 # Test with Retry-After
-_APIARY_RETRY_AFTER="45"
+_SUPERPOS_RETRY_AFTER="45"
 _captured_sleep=""
 _rate_limit_sleep 2>/dev/null
 assert_eq "$_captured_sleep" "45" "_rate_limit_sleep uses Retry-After value (45)"
 
 # Test without Retry-After — falls back to backoff
-_APIARY_RETRY_AFTER=""
+_SUPERPOS_RETRY_AFTER=""
 _backoff_delay=4
 _captured_sleep=""
 _rate_limit_sleep 2>/dev/null
@@ -203,22 +203,22 @@ unset -f sleep
 # Poll: 429 returns rate-limit code (not generic error)
 # ══════════════════════════════════════════════════════════════════
 
-describe "Task poll: 429 returns APIARY_ERR_RATE_LIMIT"
+describe "Task poll: 429 returns SUPERPOS_ERR_RATE_LIMIT"
 
 _setup
-export APIARY_TOKEN="valid-token"
+export SUPERPOS_TOKEN="valid-token"
 
 mock_response GET "/api/v1/hives/hive-1/tasks/poll" 429 \
   '{"data":null,"meta":{},"errors":[{"message":"Too Many Requests","code":"rate_limited"}]}'
 mock_response_headers GET "/api/v1/hives/hive-1/tasks/poll" "Retry-After: 10"
 
 set +e
-apiary_poll_tasks "hive-1" -l 20 >"$_tmp_out" 2>&1
+superpos_poll_tasks "hive-1" -l 20 >"$_tmp_out" 2>&1
 rc=$?
 set -e
 
-assert_eq "$rc" "$APIARY_ERR_RATE_LIMIT" "poll 429 returns APIARY_ERR_RATE_LIMIT"
-assert_eq "$_APIARY_RETRY_AFTER" "10" "poll Retry-After captured as 10"
+assert_eq "$rc" "$SUPERPOS_ERR_RATE_LIMIT" "poll 429 returns SUPERPOS_ERR_RATE_LIMIT"
+assert_eq "$_SUPERPOS_RETRY_AFTER" "10" "poll Retry-After captured as 10"
 
 # ══════════════════════════════════════════════════════════════════
 # Heartbeat: last_heartbeat advances only on actual heartbeat success
@@ -227,14 +227,14 @@ assert_eq "$_APIARY_RETRY_AFTER" "10" "poll Retry-After captured as 10"
 describe "Heartbeat timer does NOT advance after re-auth alone"
 
 # We inline the daemon heartbeat decision logic to test in isolation.
-# This mirrors apiary-daemon.sh lines 299-326.
+# This mirrors superpos-daemon.sh lines 299-326.
 
 _setup
-export APIARY_TOKEN="expired-token"
-export APIARY_AGENT_ID="agent-hb-01"
-export APIARY_AGENT_NAME="daemon-bot"
-export APIARY_HIVE_ID="hive-hb-1"
-export APIARY_AGENT_SECRET="secret-hb"
+export SUPERPOS_TOKEN="expired-token"
+export SUPERPOS_AGENT_ID="agent-hb-01"
+export SUPERPOS_AGENT_NAME="daemon-bot"
+export SUPERPOS_HIVE_ID="hive-hb-1"
+export SUPERPOS_AGENT_SECRET="secret-hb"
 printf 'expired-token\n' > "${_tmp_config_dir}/token"
 
 # Heartbeat returns 401 (auth expired)
@@ -249,14 +249,14 @@ now=100
 
 # Simulate heartbeat attempt
 hb_rc=0
-apiary_heartbeat >"$_tmp_out" 2>&1 || hb_rc=$?
+superpos_heartbeat >"$_tmp_out" 2>&1 || hb_rc=$?
 
 # Should be 401 → auth path
-assert_eq "$hb_rc" "$APIARY_ERR_AUTH" "heartbeat returned auth error (401)"
+assert_eq "$hb_rc" "$SUPERPOS_ERR_AUTH" "heartbeat returned auth error (401)"
 
 # Simulate re-auth (succeeds)
 auth_ok=1
-apiary_oc_ensure_auth >"$_tmp_out" 2>&1 || auth_ok=0
+superpos_oc_ensure_auth >"$_tmp_out" 2>&1 || auth_ok=0
 assert_eq "$auth_ok" "1" "re-auth succeeded"
 
 # Key assertion: the daemon must NOT update last_heartbeat here.
@@ -268,7 +268,7 @@ assert_eq "$last_heartbeat" "0" "last_heartbeat NOT advanced after re-auth alone
 describe "Heartbeat timer advances on actual heartbeat success"
 
 _setup
-export APIARY_TOKEN="valid-token"
+export SUPERPOS_TOKEN="valid-token"
 
 mock_response POST "/api/v1/agents/heartbeat" 200 \
   '{"data":{"status":"ok"}}'
@@ -277,7 +277,7 @@ last_heartbeat=0
 now=100
 
 hb_rc=0
-apiary_heartbeat >"$_tmp_out" 2>&1 || hb_rc=$?
+superpos_heartbeat >"$_tmp_out" 2>&1 || hb_rc=$?
 
 assert_eq "$hb_rc" "0" "heartbeat returned success (0)"
 
@@ -293,7 +293,7 @@ assert_eq "$last_heartbeat" "100" "last_heartbeat advanced to \$now on success"
 describe "After auth recovery, next iteration retries heartbeat immediately"
 
 _setup
-export APIARY_TOKEN="refreshed-token"
+export SUPERPOS_TOKEN="refreshed-token"
 
 # On the retry, heartbeat succeeds
 mock_response POST "/api/v1/agents/heartbeat" 200 \
@@ -308,7 +308,7 @@ now=100
 # 100 - 0 = 100 >= 30 → true: heartbeat fires immediately
 if (( now - last_heartbeat >= HEARTBEAT_INTERVAL )); then
     hb_rc=0
-    apiary_heartbeat >"$_tmp_out" 2>&1 || hb_rc=$?
+    superpos_heartbeat >"$_tmp_out" 2>&1 || hb_rc=$?
     if [[ "$hb_rc" -eq 0 ]]; then
         last_heartbeat=$now
     fi
@@ -335,17 +335,17 @@ _backoff_delay=1
 _backoff_max=300
 
 # Simulate rate-limited poll with Retry-After
-_APIARY_RETRY_AFTER="5"
+_SUPERPOS_RETRY_AFTER="5"
 _skip_poll_sleep=0
-poll_rc=$APIARY_ERR_RATE_LIMIT
+poll_rc=$SUPERPOS_ERR_RATE_LIMIT
 
-# Daemon rate-limit branch (mirrors apiary-daemon.sh lines 374-378)
-if [[ "$poll_rc" -eq "$APIARY_ERR_RATE_LIMIT" ]]; then
+# Daemon rate-limit branch (mirrors superpos-daemon.sh lines 374-378)
+if [[ "$poll_rc" -eq "$SUPERPOS_ERR_RATE_LIMIT" ]]; then
     _rate_limit_sleep 2>/dev/null
     _skip_poll_sleep=1
 fi
 
-# Daemon loop-tail (mirrors apiary-daemon.sh lines 400-403)
+# Daemon loop-tail (mirrors superpos-daemon.sh lines 400-403)
 if [[ "$_skip_poll_sleep" -eq 0 ]]; then
     sleep "$POLL_INTERVAL"
 fi
@@ -358,12 +358,12 @@ assert_eq "${_sleep_calls[0]}" "5" "sleep used Retry-After value (5), not POLL_I
 describe "Poll 429 without Retry-After: backoff sleep only, no double sleep"
 
 _sleep_calls=()
-_APIARY_RETRY_AFTER=""
+_SUPERPOS_RETRY_AFTER=""
 _backoff_delay=4
 _skip_poll_sleep=0
-poll_rc=$APIARY_ERR_RATE_LIMIT
+poll_rc=$SUPERPOS_ERR_RATE_LIMIT
 
-if [[ "$poll_rc" -eq "$APIARY_ERR_RATE_LIMIT" ]]; then
+if [[ "$poll_rc" -eq "$SUPERPOS_ERR_RATE_LIMIT" ]]; then
     _rate_limit_sleep 2>/dev/null
     _skip_poll_sleep=1
 fi
@@ -384,7 +384,7 @@ _skip_poll_sleep=0
 poll_rc=0
 
 # On success, no rate-limit branch fires → _skip_poll_sleep stays 0
-if [[ "$poll_rc" -eq "$APIARY_ERR_RATE_LIMIT" ]]; then
+if [[ "$poll_rc" -eq "$SUPERPOS_ERR_RATE_LIMIT" ]]; then
     _rate_limit_sleep 2>/dev/null
     _skip_poll_sleep=1
 fi
@@ -404,7 +404,7 @@ _sleep_calls=()
 _skip_poll_sleep=0
 poll_rc=1  # generic error
 
-if [[ "$poll_rc" -eq "$APIARY_ERR_RATE_LIMIT" ]]; then
+if [[ "$poll_rc" -eq "$SUPERPOS_ERR_RATE_LIMIT" ]]; then
     _rate_limit_sleep 2>/dev/null
     _skip_poll_sleep=1
 fi

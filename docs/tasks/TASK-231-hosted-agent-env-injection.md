@@ -1,5 +1,15 @@
 # TASK-231: Hosted agent env injection
 
+> **Post-merge correction (2026-04-19):** the token env var was
+> originally named `SUPERPOS_TOKEN` in this spec and in the initial
+> implementation. After TASK-256 landed the agent-centric Python SDK
+> reading `SUPERPOS_API_TOKEN` from the environment, the two names were
+> unified on the SDK-side canonical `SUPERPOS_API_TOKEN` (parallels
+> `SUPERPOS_BASE_URL` / `SUPERPOS_HIVE_ID` / `SUPERPOS_AGENT_ID`). Every
+> reference to `SUPERPOS_TOKEN` below should be read as
+> `SUPERPOS_API_TOKEN`. See PR "Unify SUPERPOS_TOKEN → SUPERPOS_API_TOKEN
+> across hosted agents + SDK".
+
 **Status:** pending
 **Branch:** `task/231-hosted-agent-env-injection`
 **PR:** —
@@ -23,14 +33,14 @@ schema and never persisted to novps outside of this single deploy call.
   returns an ordered list of `[['key'=>..,'value'=>..]]` matching novps's
   `ResourceEnvsType`.
 - [ ] FR-2: Auto-injected envs (always present, cannot be overridden):
-    - `APIARY_BASE_URL` → internal cluster URL
-      (`config('apiary.hosted_agents.apiary_base_url')` with fallback to
+    - `SUPERPOS_BASE_URL` → internal cluster URL
+      (`config('apiary.hosted_agents.superpos_base_url')` with fallback to
       `config('app.url')`)
-    - `APIARY_TOKEN` → freshly-issued token via
+    - `SUPERPOS_API_TOKEN` → freshly-issued token via
       `AgentTokenService::issueFor($agent->agent)`
-    - `APIARY_HIVE_ID` → `$agent->hive_id`
-    - `APIARY_AGENT_ID` → `$agent->agent_id`
-    - `APIARY_AGENT_NAME` → `$agent->agent->name`
+    - `SUPERPOS_HIVE_ID` → `$agent->hive_id`
+    - `SUPERPOS_AGENT_ID` → `$agent->agent_id`
+    - `SUPERPOS_AGENT_NAME` → `$agent->agent->name`
 - [ ] FR-3: Preset-derived env: writes `preset.model_env_key` with the
   user-selected model (e.g. `CLAUDE_MODEL=claude-sonnet-4-5`).
 - [ ] FR-4: User envs: decrypt `hosted_agents.user_env`, validate each key
@@ -44,13 +54,13 @@ schema and never persisted to novps outside of this single deploy call.
        defaults, alphabetical).
     2. Preset model env (e.g. `CLAUDE_MODEL=...`).
     3. **User-supplied `user_env`** (alphabetical).
-    4. **Auto-injected `APIARY_*` envs last** (alphabetical) — they win
+    4. **Auto-injected `SUPERPOS_*` envs last** (alphabetical) — they win
        unconditionally over anything earlier and cannot be overridden.
   The reserved-prefix validation at create time (FEATURE §4.3) means
-  layers 1-3 cannot legally contain `APIARY_*` keys; the final-write
+  layers 1-3 cannot legally contain `SUPERPOS_*` keys; the final-write
   ordering here is a defence-in-depth backstop.
 - [ ] FR-7: Token rotation contract — every call to `resolve()` issues a
-  **new** `APIARY_TOKEN` and revokes the previous one once the deploy
+  **new** `SUPERPOS_API_TOKEN` and revokes the previous one once the deploy
   succeeds. Revocation happens in the deploy job on `success`, not here.
 - [ ] FR-8: Returns an immutable value object; resolver never mutates the
   `HostedAgent` model.
@@ -88,7 +98,7 @@ schema and never persisted to novps outside of this single deploy call.
 
 ### Unit Tests
 
-- [ ] Always emits the five `APIARY_*` envs.
+- [ ] Always emits the five `SUPERPOS_*` envs.
 - [ ] Model env is written with the preset's `model_env_key`.
 - [ ] Unknown user env key triggers `InvalidHostedAgentEnvException`.
 - [ ] Missing required preset user env raises

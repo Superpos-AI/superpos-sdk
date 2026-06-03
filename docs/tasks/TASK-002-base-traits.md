@@ -2,13 +2,13 @@
 
 **Status:** done
 **Branch:** `task/002-base-traits`
-**PR:** https://github.com/Apiary-AI/Apiary-SaaS/pull/2
+**PR:** https://github.com/Superpos-AI/superpos-app/pull/2
 **Depends on:** TASK-001
 **Blocks:** TASK-005, TASK-006, TASK-007, TASK-008, TASK-009, TASK-010
 
 ## Objective
 
-Implement the foundational Eloquent traits that provide Apiary/Hive ownership,
+Implement the foundational Eloquent traits that provide Superpos/Hive ownership,
 query scoping hooks, and CE auto-assignment behavior so all future core models
 can consistently apply platform scoping.
 
@@ -35,7 +35,7 @@ can consistently apply platform scoping.
 
 | Action | Path | Purpose |
 |--------|------|---------|
-| Create | `app/Traits/BelongsToApiary.php` | Apiary ownership trait: relation, scopes, context resolution, creating hook |
+| Create | `app/Traits/BelongsToApiary.php` | Superpos ownership trait: relation, scopes, context resolution, creating hook |
 | Create | `app/Traits/BelongsToHive.php` | Hive ownership trait: relation, scopes, context resolution, creating hook |
 | Create | `tests/Fixtures/Models/TestApiaryScopedModel.php` | Test fixture model for apiary trait behavior |
 | Create | `tests/Fixtures/Models/TestHiveScopedModel.php` | Test fixture model for hive trait behavior |
@@ -88,7 +88,7 @@ _None._
 
 ## Assumptions
 
-1. Apiary/Hive concrete model classes are introduced later (TASK-006). Traits still expose relationship methods with future class defaults.
+1. Superpos/Hive concrete model classes are introduced later (TASK-006). Traits still expose relationship methods with future class defaults.
 2. Context middleware/services are introduced in later tasks; for now, container bindings are the stable seam for current context.
 3. CE should not incur query scope overhead; only create hooks auto-fill CE constants.
 

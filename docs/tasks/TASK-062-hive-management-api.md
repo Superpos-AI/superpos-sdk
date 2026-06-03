@@ -23,7 +23,7 @@ Add a CRUD API for managing hives (projects) within an apiary. This is an org-le
 1. All endpoints require `auth:sanctum-agent` authentication
 2. Read endpoints require `hives.read` permission
 3. Write endpoints require `hives.manage` permission
-4. Apiary isolation: agents can only see/modify hives in their own apiary
+4. Superpos isolation: agents can only see/modify hives in their own apiary
 5. CE mode: block creating additional hives and deleting the singleton
 6. Delete safety: refuse deletion if hive has active agents or pending tasks
 7. Slug uniqueness enforced per apiary (409 on duplicate)

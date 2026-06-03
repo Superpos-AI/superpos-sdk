@@ -1,4 +1,4 @@
-# Apiary — Feature: Advanced Task Semantics
+# Superpos — Feature: Advanced Task Semantics
 
 ## Addendum to PRODUCT.md v4.0
 
@@ -275,8 +275,8 @@ If task doesn't specify `failure_policy`, system defaults apply:
 ```php
 // config/apiary.php
 'task_defaults' => [
-    'task_timeout' => env('APIARY_DEFAULT_TASK_TIMEOUT', 300),
-    'progress_timeout' => env('APIARY_DEFAULT_PROGRESS_TIMEOUT', 60),
+    'task_timeout' => env('SUPERPOS_DEFAULT_TASK_TIMEOUT', 300),
+    'progress_timeout' => env('SUPERPOS_DEFAULT_PROGRESS_TIMEOUT', 60),
     'on_timeout' => 'retry',
     'max_retries' => 3,
     'retry_delay' => 'exponential',
@@ -787,12 +787,12 @@ CREATE INDEX idx_task_deps_waiting ON task_dependencies (depends_on_id, status)
 ```sql
 CREATE TABLE task_idempotency (
     idempotency_key VARCHAR(255) NOT NULL,
-    apiary_id       VARCHAR(26) NOT NULL,
+    superpos_id       VARCHAR(26) NOT NULL,
     hive_id         VARCHAR(26) NOT NULL,
     task_id         VARCHAR(26) NOT NULL REFERENCES tasks(id),
     expires_at      TIMESTAMP NOT NULL,
     created_at      TIMESTAMP DEFAULT NOW(),
-    PRIMARY KEY (apiary_id, hive_id, idempotency_key)
+    PRIMARY KEY (superpos_id, hive_id, idempotency_key)
 );
 
 CREATE INDEX idx_idempotency_expires ON task_idempotency (expires_at);

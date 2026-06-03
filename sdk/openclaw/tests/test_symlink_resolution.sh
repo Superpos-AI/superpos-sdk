@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_symlink_resolution.sh — Tests that SCRIPT_DIR resolves through symlinks.
 #
-# Validates that apiary-cli.sh (and modules) correctly resolve their
+# Validates that superpos-cli.sh (and modules) correctly resolve their
 # real location when invoked via a symlink, as happens with OpenClaw
 # symlinked installs.
 
@@ -17,7 +17,7 @@ source "${SCRIPT_DIR}/../../shell/tests/test_harness.sh"
 _tmp_dir=$(mktemp -d)
 trap 'rm -rf "$_tmp_dir"' EXIT
 
-REAL_CLI="${SCRIPT_DIR}/../bin/apiary-cli.sh"
+REAL_CLI="${SCRIPT_DIR}/../bin/superpos-cli.sh"
 
 # ── Test: direct invocation passes bash -n ────────────────────────
 
@@ -28,13 +28,13 @@ output=$(bash -n "$REAL_CLI" 2>&1)
 rc=$?
 set -e
 
-assert_eq "$rc" "0" "apiary-cli.sh passes bash -n syntax check"
+assert_eq "$rc" "0" "superpos-cli.sh passes bash -n syntax check"
 
 # ── Test: symlinked invocation resolves SCRIPT_DIR ────────────────
 
 describe "Symlinked invocation — SCRIPT_DIR resolution"
 
-ln -sf "$REAL_CLI" "${_tmp_dir}/apiary-cli-link.sh"
+ln -sf "$REAL_CLI" "${_tmp_dir}/superpos-cli-link.sh"
 
 # Create a wrapper that sources the symlinked CLI just far enough to
 # resolve SCRIPT_DIR and print it, without executing the full CLI.
@@ -54,7 +54,7 @@ PROBE
 chmod +x "${_tmp_dir}/probe.sh"
 
 set +e
-resolved=$(bash "${_tmp_dir}/probe.sh" "${_tmp_dir}/apiary-cli-link.sh" 2>&1)
+resolved=$(bash "${_tmp_dir}/probe.sh" "${_tmp_dir}/superpos-cli-link.sh" 2>&1)
 rc=$?
 set -e
 
@@ -83,7 +83,7 @@ assert_eq "$resolved" "$real_bin_dir" "chained resolution matches real bin dir"
 
 describe "All module files — syntax check"
 
-for module in apiary-auth.sh apiary-tasks.sh apiary-knowledge.sh apiary-events.sh apiary-daemon.sh; do
+for module in superpos-auth.sh superpos-tasks.sh superpos-knowledge.sh superpos-events.sh superpos-daemon.sh; do
     set +e
     bash -n "${SCRIPT_DIR}/../bin/${module}" 2>&1
     rc=$?

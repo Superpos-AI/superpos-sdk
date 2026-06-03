@@ -20,7 +20,7 @@ entries across the three scope types:
 | Scope | Color | Meaning |
 |-------|-------|---------|
 | Hive | Sky | Scoped to the current hive |
-| Apiary | Amber | Shared across all hives in the apiary |
+| Superpos | Amber | Shared across all hives in the apiary |
 | Agent | Purple | Private to a specific agent (`agent:{id}`) |
 
 ### Filter Bar
@@ -29,7 +29,7 @@ Three controls for narrowing and sorting the entry list:
 
 | Control | Type | Options |
 |---------|------|---------|
-| Scope filter | Dropdown | All / Hive / Apiary / Agent |
+| Scope filter | Dropdown | All / Hive / Superpos / Agent |
 | Search | Text input | Partial match on key and value content |
 | Sort | Dropdown | Newest (default) / Key / Scope |
 

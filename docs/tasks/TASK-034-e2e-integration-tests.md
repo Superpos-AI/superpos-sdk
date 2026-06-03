@@ -2,7 +2,7 @@
 
 **Status:** Review
 **Branch:** `task/034-e2e-integration-tests`
-**PR:** https://github.com/Apiary-AI/Apiary-SaaS/pull/41
+**PR:** https://github.com/Superpos-AI/superpos-app/pull/41
 **Depends On:** 014 (Agent registration), 015 (Heartbeat), 016 (Task creation), 017 (Polling/claiming), 018 (Progress/completion), 019 (Timeout/retry), 020 (Knowledge API)
 **Blocks:** 035 (CI/CD pipeline)
 

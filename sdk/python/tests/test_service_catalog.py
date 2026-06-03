@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from apiary_sdk import ApiaryClient
+from superpos_sdk import SuperposClient
 
 from .conftest import BASE_URL, HIVE_ID, TOKEN
 
@@ -48,7 +48,7 @@ class TestDiscoverServiceCatalogPerPageClamping:
             json=_envelope(page2),
         )
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID, per_page=500)
 
         # Both pages fetched correctly because clamped per_page=100 means
@@ -70,7 +70,7 @@ class TestDiscoverServiceCatalogPerPageClamping:
             json=_envelope(page2),
         )
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID, per_page=500)
 
         assert len(results) == 120
@@ -89,7 +89,7 @@ class TestDiscoverServiceCatalogPerPageClamping:
             json=_envelope([]),
         )
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID, per_page=0)
 
         assert len(results) == 1
@@ -101,7 +101,7 @@ class TestDiscoverServiceCatalogPerPageClamping:
             json=_envelope([]),
         )
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID, per_page=-5)
 
         assert results == []
@@ -113,7 +113,7 @@ class TestDiscoverServiceCatalogPerPageClamping:
             json=_envelope([_service("svc0"), _service("svc1")]),
         )
 
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             results = c.discover_service_catalog(HIVE_ID)
 
         assert len(results) == 2

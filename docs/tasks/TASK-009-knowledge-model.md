@@ -18,11 +18,11 @@ Create the `knowledge_entries` database table and `KnowledgeEntry` Eloquent mode
 - [x] FR-2: Create `KnowledgeEntry` model with `BelongsToHive` trait, `HasUlid` trait
 - [x] FR-3: Support three scope levels: `hive` (default), `apiary`, `agent:{id}`
 - [x] FR-4: JSONB `value` column with GIN index for search
-- [x] FR-5: Unique composite index on `(apiary_id, hive_id, key, scope)`
+- [x] FR-5: Unique composite index on `(superpos_id, hive_id, key, scope)`
 - [x] FR-6: Partial index for apiary-scoped entries
 - [x] FR-7: Version tracking (integer, default 1)
 - [x] FR-8: TTL support (nullable timestamp)
-- [x] FR-9: Relationships: belongsTo Agent (created_by), belongsTo Hive, belongsTo Apiary
+- [x] FR-9: Relationships: belongsTo Agent (created_by), belongsTo Hive, belongsTo Superpos
 - [x] FR-10: Add `knowledgeEntries()` hasMany on Hive model
 
 ### Non-Functional
@@ -57,7 +57,7 @@ Create the `knowledge_entries` database table and `KnowledgeEntry` Eloquent mode
 ```sql
 CREATE TABLE knowledge_entries (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL,
+    superpos_id       VARCHAR(26) NOT NULL,
     hive_id         VARCHAR(26) REFERENCES hives(id),
     key             VARCHAR(500) NOT NULL,
     value           JSONB NOT NULL,
@@ -70,9 +70,9 @@ CREATE TABLE knowledge_entries (
     updated_at      TIMESTAMP DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX idx_knowledge_key_scope ON knowledge_entries (apiary_id, hive_id, key, scope);
+CREATE UNIQUE INDEX idx_knowledge_key_scope ON knowledge_entries (superpos_id, hive_id, key, scope);
 CREATE INDEX idx_knowledge_search ON knowledge_entries USING gin (value jsonb_path_ops);
-CREATE INDEX idx_knowledge_apiary_scope ON knowledge_entries (apiary_id, scope) WHERE scope = 'apiary';
+CREATE INDEX idx_knowledge_apiary_scope ON knowledge_entries (superpos_id, scope) WHERE scope = 'apiary';
 ```
 
 ## Test Plan

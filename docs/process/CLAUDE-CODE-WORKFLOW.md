@@ -56,7 +56,7 @@ Downstream impact — tasks that depend on TASK-009:
 ```
 TASK-020 (Knowledge store API)    — depends on 009 → blocked until 009 merges
 TASK-021 (Knowledge TTL cleanup)  — depends on 009 → blocked until 009 merges
-TASK-069 (Apiary-scoped knowledge) — depends on 009 → blocked until 009 merges
+TASK-069 (Org-scoped knowledge) — depends on 009 → blocked until 009 merges
 ```
 
 ### Picking the Next Task

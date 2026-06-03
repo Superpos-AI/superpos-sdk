@@ -1,4 +1,4 @@
-# This directory holds a bundled copy of apiary-sdk.sh for copy-installed skills.
+# This directory holds a bundled copy of superpos-sdk.sh for copy-installed skills.
 # When installing via `cp -r`, copy the Shell SDK here:
-#   cp sdk/shell/src/apiary-sdk.sh sdk/openclaw/lib/
+#   cp sdk/shell/src/superpos-sdk.sh sdk/openclaw/lib/
 # The SDK resolver checks this path when the repo-relative path is unavailable.

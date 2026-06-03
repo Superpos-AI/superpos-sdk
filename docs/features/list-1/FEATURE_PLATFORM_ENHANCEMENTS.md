@@ -1,4 +1,4 @@
-# Apiary — Feature: Platform Gaps & Enhancements
+# Superpos — Feature: Platform Gaps & Enhancements
 
 ## Addendum to PRODUCT.md v4.0
 
@@ -87,7 +87,7 @@ What if previous run is still in progress?
 ```sql
 CREATE TABLE task_schedules (
     id                      VARCHAR(26) PRIMARY KEY,
-    apiary_id               VARCHAR(26) NOT NULL REFERENCES apiaries(id),
+    superpos_id               VARCHAR(26) NOT NULL REFERENCES apiaries(id),
     hive_id                 VARCHAR(26) NOT NULL REFERENCES hives(id),
     name                    VARCHAR(150) NOT NULL,
     description             VARCHAR(500),
@@ -340,12 +340,12 @@ POST /api/v1/knowledge
 ```php
 // config/apiary.php
 'attachments' => [
-    'disk' => env('APIARY_ATTACHMENT_DISK', 'local'),            // 'local' or 's3'
-    'max_size' => (int) env('APIARY_ATTACHMENT_MAX_SIZE', 10485760),  // 10 MB
-    'retention_days' => env('APIARY_ATTACHMENT_RETENTION', null), // null = forever
-    'presigned_url_ttl' => (int) env('APIARY_ATTACHMENT_URL_TTL', 60), // minutes
-    'path_prefix' => env('APIARY_ATTACHMENT_PATH_PREFIX', 'attachments'),
-    'quota_bytes' => env('APIARY_ATTACHMENT_QUOTA_BYTES', null),  // null = unlimited
+    'disk' => env('SUPERPOS_ATTACHMENT_DISK', 'local'),            // 'local' or 's3'
+    'max_size' => (int) env('SUPERPOS_ATTACHMENT_MAX_SIZE', 10485760),  // 10 MB
+    'retention_days' => env('SUPERPOS_ATTACHMENT_RETENTION', null), // null = forever
+    'presigned_url_ttl' => (int) env('SUPERPOS_ATTACHMENT_URL_TTL', 60), // minutes
+    'path_prefix' => env('SUPERPOS_ATTACHMENT_PATH_PREFIX', 'attachments'),
+    'quota_bytes' => env('SUPERPOS_ATTACHMENT_QUOTA_BYTES', null),  // null = unlimited
 ],
 ```
 
@@ -357,7 +357,7 @@ Cloud: S3 with per-apiary prefixes. Pre-signed download URLs.
 ```sql
 CREATE TABLE attachments (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL,
+    superpos_id       VARCHAR(26) NOT NULL,
     hive_id         VARCHAR(26) NOT NULL,
     
     filename        VARCHAR(255) NOT NULL,
@@ -523,36 +523,36 @@ Dashboard is great for humans. Ops teams need machine-readable metrics for alert
 ```
 GET /api/v1/metrics
 
-# HELP apiary_tasks_total Total tasks created
-# TYPE apiary_tasks_total counter
-apiary_tasks_total{hive="backend",type="code_review",status="completed"} 1247
-apiary_tasks_total{hive="backend",type="code_review",status="failed"} 23
+# HELP superpos_tasks_total Total tasks created
+# TYPE superpos_tasks_total counter
+superpos_tasks_total{hive="backend",type="code_review",status="completed"} 1247
+superpos_tasks_total{hive="backend",type="code_review",status="failed"} 23
 
-# HELP apiary_tasks_pending Current pending tasks
-# TYPE apiary_tasks_pending gauge
-apiary_tasks_pending{hive="backend",type="code_review"} 12
+# HELP superpos_tasks_pending Current pending tasks
+# TYPE superpos_tasks_pending gauge
+superpos_tasks_pending{hive="backend",type="code_review"} 12
 
-# HELP apiary_task_duration_seconds Task completion time
-# TYPE apiary_task_duration_seconds histogram
-apiary_task_duration_seconds_bucket{hive="backend",type="code_review",le="60"} 890
-apiary_task_duration_seconds_bucket{hive="backend",type="code_review",le="300"} 1200
+# HELP superpos_task_duration_seconds Task completion time
+# TYPE superpos_task_duration_seconds histogram
+superpos_task_duration_seconds_bucket{hive="backend",type="code_review",le="60"} 890
+superpos_task_duration_seconds_bucket{hive="backend",type="code_review",le="300"} 1200
 
-# HELP apiary_agents_online Current online agents
-# TYPE apiary_agents_online gauge
-apiary_agents_online{hive="backend",capability="code_review"} 2
+# HELP superpos_agents_online Current online agents
+# TYPE superpos_agents_online gauge
+superpos_agents_online{hive="backend",capability="code_review"} 2
 
-# HELP apiary_proxy_requests_total Proxy requests
-# TYPE apiary_proxy_requests_total counter
-apiary_proxy_requests_total{service="github",status="200"} 5420
+# HELP superpos_proxy_requests_total Proxy requests
+# TYPE superpos_proxy_requests_total counter
+superpos_proxy_requests_total{service="github",status="200"} 5420
 
-# HELP apiary_dead_letter_count Dead letter queue depth
-# TYPE apiary_dead_letter_count gauge
-apiary_dead_letter_count{hive="backend"} 0
+# HELP superpos_dead_letter_count Dead letter queue depth
+# TYPE superpos_dead_letter_count gauge
+superpos_dead_letter_count{hive="backend"} 0
 ```
 
 **Notification endpoints:**
 
-Apiary can POST notifications to external URLs on system events. This is implemented via the `notification_endpoints` table and corresponding API:
+Superpos can POST notifications to external URLs on system events. This is implemented via the `notification_endpoints` table and corresponding API:
 
 ```
 GET    /api/v1/notification-endpoints          — List endpoints
@@ -649,7 +649,7 @@ Agent B gets full history without reading scattered Knowledge Store entries.
 ```sql
 CREATE TABLE threads (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL,
+    superpos_id       VARCHAR(26) NOT NULL,
     hive_id         VARCHAR(26) NOT NULL,
     title           VARCHAR(255),
     created_at      TIMESTAMP DEFAULT NOW()
@@ -837,7 +837,7 @@ If `rate_limit_per_minute` is `NULL`, no rate limit is enforced (unlimited).
 
 #### Problem
 
-Developer building an agent wants to test against Apiary without real side effects.
+Developer building an agent wants to test against Superpos without real side effects.
 No way to: test policy evaluation without executing, test webhook routing without creating tasks, run agent against mock data.
 
 #### Design
@@ -900,7 +900,7 @@ Response:
 
 #### Problem
 
-Apiary orchestrates AI agents but knows nothing about the LLMs powering them.
+Superpos orchestrates AI agents but knows nothing about the LLMs powering them.
 Can't answer: "How much did my agents spend on OpenAI today?" or "Which tasks consume the most tokens?"
 
 #### Design
@@ -964,7 +964,7 @@ Agents can use `llm_hint` to decide which model to use. Platform tracks whether 
 ```sql
 CREATE TABLE llm_usage_logs (
     id                  VARCHAR(26) PRIMARY KEY,   -- ULID
-    apiary_id           VARCHAR(26) NOT NULL REFERENCES apiaries(id),
+    superpos_id           VARCHAR(26) NOT NULL REFERENCES apiaries(id),
     hive_id             VARCHAR(26) REFERENCES hives(id),
     agent_id            VARCHAR(26) REFERENCES agents(id),
     task_id             VARCHAR(26) REFERENCES tasks(id),
@@ -982,7 +982,7 @@ CREATE TABLE llm_usage_logs (
     updated_at          TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_llm_usage_logs_apiary ON llm_usage_logs (apiary_id, created_at);
+CREATE INDEX idx_llm_usage_logs_apiary ON llm_usage_logs (superpos_id, created_at);
 CREATE INDEX idx_llm_usage_logs_hive   ON llm_usage_logs (hive_id, created_at);
 CREATE INDEX idx_llm_usage_logs_agent  ON llm_usage_logs (agent_id);
 CREATE INDEX idx_llm_usage_logs_task   ON llm_usage_logs (task_id);
@@ -1154,7 +1154,7 @@ Marketplace → "GitHub Code Reviewer" → [Install]
 ```sql
 CREATE TABLE marketplace_personas (
     id              VARCHAR(26) PRIMARY KEY,    -- ULID
-    apiary_id       VARCHAR(26) NOT NULL,
+    superpos_id       VARCHAR(26) NOT NULL,
     name            VARCHAR(255) NOT NULL,
     slug            VARCHAR(100) NOT NULL UNIQUE,
     description     TEXT,

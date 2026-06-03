@@ -2,13 +2,13 @@
 
 import time
 
-from apiary_sdk import ApiaryClient
-from apiary_sdk.exceptions import ConflictError
+from superpos_sdk import SuperposClient
+from superpos_sdk.exceptions import ConflictError
 
-APIARY_URL = "http://localhost:8080"
+SUPERPOS_URL = "http://localhost:8080"
 HIVE_ID = "your-hive-id-here"  # 26-char ULID
 
-client = ApiaryClient(APIARY_URL)
+client = SuperposClient(SUPERPOS_URL)
 
 # Authenticate with existing credentials
 client.login(agent_id="your-agent-id", secret="your-secret")

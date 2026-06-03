@@ -2,7 +2,7 @@
 
 **Status:** done
 **Branch:** `task/023-dashboard-home`
-**PR:** https://github.com/Apiary-AI/Apiary-SaaS/pull/26
+**PR:** https://github.com/Superpos-AI/superpos-app/pull/26
 **Depends On:** TASK-015 (Agent Heartbeat), TASK-022 (Inertia + React)
 
 ## Objective

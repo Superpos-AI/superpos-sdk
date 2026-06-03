@@ -7,9 +7,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from apiary_sdk.workers.sheets import SheetsWorker
+from superpos_sdk.workers.sheets import SheetsWorker
 
-BASE_URL = "https://apiary.test"
+BASE_URL = "https://superpos.test"
 HIVE_ID = "01HXYZ00000000000000000001"
 
 FAKE_CREDS_JSON = json.dumps(

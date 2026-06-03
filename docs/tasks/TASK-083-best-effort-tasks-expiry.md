@@ -59,8 +59,8 @@ New status: `expired` — terminal state for tasks that missed their window.
 - `app/Services/PoolHealthService.php` — expired count in metrics
 - `bootstrap/app.php` — scheduler registration
 - `database/factories/TaskFactory.php` — bestEffort/withExpiry/expired states
-- `sdk/python/src/apiary_sdk/client.py` — guarantee, expires_at params
-- `sdk/shell/src/apiary-sdk.sh` — -g, -e options
+- `sdk/python/src/superpos_sdk/client.py` — guarantee, expires_at params
+- `sdk/shell/src/superpos-sdk.sh` — -g, -e options
 - `tests/Feature/TaskBestEffortExpiryTest.php`
 
 ## Test Plan

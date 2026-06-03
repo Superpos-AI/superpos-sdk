@@ -2,7 +2,7 @@
 
 **Status:** done
 **Branch:** `task/018-task-progress-completion`
-**PR:** https://github.com/Apiary-AI/Apiary-SaaS/pull/20
+**PR:** https://github.com/Superpos-AI/superpos-app/pull/20
 **Depends On:** TASK-017 (Task Polling & Atomic Claiming)
 **Blocked By:** —
 

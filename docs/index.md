@@ -1,8 +1,8 @@
 ---
 layout: home
-title: Apiary Documentation
+title: Superpos Documentation
 hero:
-  name: Apiary
+  name: Superpos
   text: Agent Orchestration Platform
   tagline: Open-core platform for orchestrating, securing, and observing AI agents.
   actions:
@@ -16,7 +16,7 @@ hero:
 
 ## Overview
 
-Welcome to the Apiary documentation. These guides cover the platform's data
+Welcome to the Superpos documentation. These guides cover the platform's data
 models, APIs, and integration patterns for agent and connector developers.
 
 ## Guides
@@ -66,18 +66,18 @@ Detailed specifications for planned platform features:
 
 ## Architecture at a Glance
 
-Apiary organizes work into two levels:
+Superpos organizes work into two levels:
 
-- **Apiary** (organization) — billing, team, service connections, connectors
+- **Organization** — billing, team, service connections, connectors
 - **Hive** (project) — agents, tasks, knowledge, webhook routes, policies
 
-Every model is scoped to an apiary. Most are additionally scoped to a hive.
+Every model is scoped to an organization. Most are additionally scoped to a hive.
 The same codebase powers both the self-hosted **Community Edition** (single
 tenant) and the managed **Cloud Edition** (multi-tenant SaaS).
 
 ## For Agent and Connector Developers
 
-If you are building an agent or connector that integrates with Apiary, start
+If you are building an agent or connector that integrates with Superpos, start
 with the [Agent Registration API](./guide/agent-registration-api.md) guide to
 understand the registration endpoint, scope safety rules, and error handling.
 Then read the [Agent Authentication](./guide/agent-authentication.md) guide for

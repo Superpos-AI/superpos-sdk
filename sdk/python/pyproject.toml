@@ -3,16 +3,16 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "apiary-sdk"
+name = "superpos-sdk"
 version = "0.1.0"
-description = "Python SDK for the Apiary agent orchestration platform"
+description = "Python SDK for the Superpos agent orchestration platform"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
-    { name = "Apiary AI", email = "dev@apiary.ai" },
+    { name = "Superpos AI", email = "dev@superpos.ai" },
 ]
-keywords = ["apiary", "agent", "orchestration", "sdk"]
+keywords = ["superpos", "agent", "orchestration", "sdk"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -43,16 +43,21 @@ workers = [
 ]
 dev = [
     "pytest>=8.0",
+    "pytest-asyncio>=0.23",
     "pytest-httpx>=0.34",
+    "pytest-xdist>=3.6",
     "ruff>=0.8",
     "sqlalchemy>=2.0",
 ]
 
+[project.scripts]
+superpos-gh-token = "superpos_sdk.gh_token:main"
+
 [project.urls]
-Homepage = "https://github.com/Apiary-AI/Apiary-SaaS"
-Documentation = "https://github.com/Apiary-AI/Apiary-SaaS/tree/main/sdk/python"
-Repository = "https://github.com/Apiary-AI/Apiary-SaaS"
-Issues = "https://github.com/Apiary-AI/Apiary-SaaS/issues"
+Homepage = "https://github.com/Superpos-AI/superpos-sdk"
+Documentation = "https://github.com/Superpos-AI/superpos-sdk/tree/main/sdk/python"
+Repository = "https://github.com/Superpos-AI/superpos-sdk"
+Issues = "https://github.com/Superpos-AI/superpos-sdk/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -65,7 +70,8 @@ line-length = 100
 select = ["E", "F", "I", "N", "W"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["apiary_sdk"]
+known-first-party = ["superpos_sdk"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_mode = "auto"

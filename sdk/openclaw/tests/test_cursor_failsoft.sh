@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_cursor_failsoft.sh — Tests for cursor.json fail-soft behaviour.
 #
-# Validates that _apiary_oc_load_cursor handles malformed, empty,
+# Validates that _superpos_oc_load_cursor handles malformed, empty,
 # truncated, and missing cursor.json without aborting under set -e.
 
 set -euo pipefail
@@ -11,12 +11,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Reuse the Shell SDK test harness
 source "${SCRIPT_DIR}/../../shell/tests/test_harness.sh"
 
-# We need the SDK loaded (provides _apiary_request, APIARY_OK, etc.)
-source "${SCRIPT_DIR}/../../shell/src/apiary-sdk.sh"
-_APIARY_SDK_LOADED=1
+# We need the SDK loaded (provides _superpos_request, SUPERPOS_OK, etc.)
+source "${SCRIPT_DIR}/../../shell/src/superpos-sdk.sh"
+_SUPERPOS_SDK_LOADED=1
 
-# Source events module (defines _apiary_oc_load_cursor)
-source "${SCRIPT_DIR}/../bin/apiary-events.sh"
+# Source events module (defines _superpos_oc_load_cursor)
+source "${SCRIPT_DIR}/../bin/superpos-events.sh"
 
 # ── helpers ──────────────────────────────────────────────────────
 
@@ -24,7 +24,7 @@ _tmp_config_dir=$(mktemp -d)
 trap 'rm -rf "$_tmp_config_dir"' EXIT
 
 _setup() {
-    export APIARY_CONFIG_DIR="$_tmp_config_dir"
+    export SUPERPOS_CONFIG_DIR="$_tmp_config_dir"
     rm -f "${_tmp_config_dir}/cursor.json"
 }
 
@@ -36,7 +36,7 @@ _setup
 echo "NOT VALID JSON{{{" > "${_tmp_config_dir}/cursor.json"
 
 set +e
-cursor=$(_apiary_oc_load_cursor 2>/dev/null)
+cursor=$(_superpos_oc_load_cursor 2>/dev/null)
 rc=$?
 set -e
 
@@ -45,7 +45,7 @@ assert_eq "$cursor" "" "cursor is empty on malformed file"
 
 # Verify warning is emitted to stderr
 set +e
-stderr=$(_apiary_oc_load_cursor 2>&1 1>/dev/null)
+stderr=$(_superpos_oc_load_cursor 2>&1 1>/dev/null)
 set -e
 
 assert_contains "$stderr" "malformed cursor.json" "emits warning on malformed file"
@@ -58,7 +58,7 @@ _setup
 : > "${_tmp_config_dir}/cursor.json"
 
 set +e
-cursor=$(_apiary_oc_load_cursor 2>/dev/null)
+cursor=$(_superpos_oc_load_cursor 2>/dev/null)
 rc=$?
 set -e
 
@@ -73,7 +73,7 @@ _setup
 echo '{"last_event_id":' > "${_tmp_config_dir}/cursor.json"
 
 set +e
-cursor=$(_apiary_oc_load_cursor 2>/dev/null)
+cursor=$(_superpos_oc_load_cursor 2>/dev/null)
 rc=$?
 set -e
 
@@ -88,7 +88,7 @@ _setup
 echo '{"last_event_id": "evt-abc-123"}' > "${_tmp_config_dir}/cursor.json"
 
 set +e
-cursor=$(_apiary_oc_load_cursor 2>/dev/null)
+cursor=$(_superpos_oc_load_cursor 2>/dev/null)
 rc=$?
 set -e
 
@@ -103,7 +103,7 @@ _setup
 # No file created
 
 set +e
-cursor=$(_apiary_oc_load_cursor 2>/dev/null)
+cursor=$(_superpos_oc_load_cursor 2>/dev/null)
 rc=$?
 set -e
 
@@ -118,7 +118,7 @@ _setup
 echo '{"last_event_id": null}' > "${_tmp_config_dir}/cursor.json"
 
 set +e
-cursor=$(_apiary_oc_load_cursor 2>/dev/null)
+cursor=$(_superpos_oc_load_cursor 2>/dev/null)
 rc=$?
 set -e
 
@@ -133,7 +133,7 @@ _setup
 printf '\x00\xff\xfe\x80' > "${_tmp_config_dir}/cursor.json"
 
 set +e
-cursor=$(_apiary_oc_load_cursor 2>/dev/null)
+cursor=$(_superpos_oc_load_cursor 2>/dev/null)
 rc=$?
 set -e
 
@@ -145,32 +145,32 @@ assert_eq "$cursor" "" "cursor is empty on binary garbage"
 describe "poll_raw does not advance cursor"
 
 _setup
-export APIARY_HIVE_ID="hive-test-001"
+export SUPERPOS_HIVE_ID="hive-test-001"
 # Seed existing cursor
-_apiary_oc_save_cursor "evt-prev"
+_superpos_oc_save_cursor "evt-prev"
 
-_apiary_request() {
+_superpos_request() {
     echo '[{"id":"evt-new-1","type":"test"}]'
     return 0
 }
 
 set +e
-result=$(apiary_oc_events_poll_raw)
+result=$(superpos_oc_events_poll_raw)
 rc=$?
 set -e
 
 assert_eq "$rc" "0" "poll_raw succeeds"
 assert_contains "$result" "evt-new-1" "poll_raw returns fetched events"
-assert_eq "$(_apiary_oc_load_cursor 2>/dev/null)" "evt-prev" "cursor unchanged after poll_raw"
+assert_eq "$(_superpos_oc_load_cursor 2>/dev/null)" "evt-prev" "cursor unchanged after poll_raw"
 
 # ── Test: explicit cursor commit persists last handled event ────
 
 describe "commit_cursor persists last handled event id"
 
 _setup
-apiary_oc_events_commit_cursor "evt-committed"
+superpos_oc_events_commit_cursor "evt-committed"
 
-assert_eq "$(_apiary_oc_load_cursor 2>/dev/null)" "evt-committed" "commit_cursor writes cursor"
+assert_eq "$(_superpos_oc_load_cursor 2>/dev/null)" "evt-committed" "commit_cursor writes cursor"
 
 # ── Summary ──────────────────────────────────────────────────────
 

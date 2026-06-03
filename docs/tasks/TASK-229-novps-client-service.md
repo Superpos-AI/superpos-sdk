@@ -1,5 +1,14 @@
 # TASK-229: novps.io public-api HTTP client
 
+> **NOTE (post-merge):** the legacy S2S surface this task originally
+> targeted (`/public-api/*` paths, `x-novps-token` header,
+> `private-api.novps.io` host) was retired in favour of the public API.
+> The shipped client now talks to `https://api.novps.io` with an
+> `Authorization: <nvps_...>` PAT and uses `/apps/*` / `/resources/*`
+> paths. The contract requirements below are kept for historical
+> context; the runtime now matches the public API. See the NoVPS PAT
+> setup runbook for current operator config.
+
 **Status:** pending
 **Branch:** `task/229-novps-client-service`
 **PR:** —

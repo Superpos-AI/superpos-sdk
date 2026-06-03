@@ -1,4 +1,4 @@
-# Apiary — Feature: Hive Map (Visual Topology)
+# Superpos — Feature: Hive Map (Visual Topology)
 
 ## Addendum to PRODUCT.md v4.0
 
@@ -26,13 +26,13 @@ Live. Animated. Showing actual data flowing through edges right now.
 
 Three zoom levels, from broad to focused.
 
-### 3.1 Apiary View (Organization Level)
+### 3.1 Superpos View (Organization Level)
 
 Shows all hives and their interconnections. Entry point when you open Hive Map.
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
-│  🏢 Apiary: Acme Engineering                                      │
+│  🏢 Superpos: Acme Engineering                                      │
 │                                                                    │
 │         ┌──────────────────┐                                       │
 │         │  ☁️  Services      │                                       │
@@ -207,7 +207,7 @@ Rate limited service: yellow pulsing border on service node.
 
 ### 5.0 Navigation Between Zoom Levels
 
-A breadcrumb bar at the top of the map shows the current navigation path: `Apiary > Hive: Backend > Agent: code-reviewer-1`. Click any breadcrumb segment to navigate up to that level. The browser back button returns to the previous zoom level. Deep-link URLs update on navigation (e.g., clicking into a hive updates the URL to `/hives/backend/map`).
+A breadcrumb bar at the top of the map shows the current navigation path: `Superpos > Hive: Backend > Agent: code-reviewer-1`. Click any breadcrumb segment to navigate up to that level. The browser back button returns to the previous zoom level. Deep-link URLs update on navigation (e.g., clicking into a hive updates the URL to `/hives/backend/map`).
 
 ### 5.1 Drag & Rearrange
 
@@ -301,7 +301,7 @@ Right-click any node:
 | Inactive | Gray envelope, dashed                           |
 | Overloaded | Orange envelope, rate limit warning badge     |
 
-### 6.4 Hive Card (Apiary View)
+### 6.4 Hive Card (Superpos View)
 
 | State    | Visual                                          |
 |----------|------------------------------------------------|
@@ -365,7 +365,7 @@ The Hive Map stays live via WebSocket (Laravel Reverb).
 ### 8.2 Reverb Channels
 
 ```
-apiary.{apiary_id}.topology     — Apiary view updates
+apiary.{superpos_id}.topology     — Superpos view updates
 hive.{hive_id}.topology         — Hive view updates
 ```
 
@@ -740,7 +740,7 @@ Shareable URLs for post-mortems and team discussions.
 | P0       | Node detail panels               | 3 days   |
 | P1       | Live WebSocket updates           | 3 days   |
 | P1       | Animated edges (pulse dots)      | 3 days   |
-| P1       | Apiary View (hive cards)         | 3 days   |
+| P1       | Superpos View (hive cards)         | 3 days   |
 | P2       | Edge click → flow detail         | 2 days   |
 | P2       | Filter & highlight               | 3 days   |
 | P2       | Layout options                   | 2 days   |

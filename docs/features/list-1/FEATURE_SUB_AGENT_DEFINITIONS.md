@@ -1,4 +1,4 @@
-# Apiary — Feature: Sub-Agent Definitions
+# Superpos — Feature: Sub-Agent Definitions
 
 ## Addendum to PRODUCT.md
 
@@ -72,7 +72,7 @@ A versioned, immutable record defining a sub-agent's identity and behavior.
 | Field | Type | Description |
 |---|---|---|
 | `id` | ULID | Primary key |
-| `apiary_id` | FK → apiaries | Tenant scope |
+| `superpos_id` | FK → apiaries | Tenant scope |
 | `hive_id` | FK → hives | Hive scope |
 | `slug` | string(100) | URL-friendly identifier, unique per hive |
 | `name` | string(255) | Human-readable display name |
@@ -129,7 +129,7 @@ Concatenated with `\n\n`, each prefixed with `# {DOCUMENT_NAME}`.
 ```php
 Schema::create('sub_agent_definitions', function (Blueprint $table) {
     $table->string('id', 26)->primary();              // ULID
-    $table->string('apiary_id', 26);
+    $table->string('superpos_id', 26);
     $table->string('hive_id', 26);
     $table->string('slug', 100);
     $table->string('name', 255);
@@ -145,7 +145,7 @@ Schema::create('sub_agent_definitions', function (Blueprint $table) {
     $table->timestamp('created_at')->nullable();
 
     // Foreign keys
-    $table->foreign('apiary_id')->references('id')->on('apiaries');
+    $table->foreign('superpos_id')->references('id')->on('apiaries');
     $table->foreign('hive_id')->references('id')->on('hives')->cascadeOnDelete();
 
     // Composite unique: one row per (hive, slug, version)
@@ -153,21 +153,37 @@ Schema::create('sub_agent_definitions', function (Blueprint $table) {
 
     // Lookup indexes
     $table->index('hive_id', 'idx_sub_agent_hive');
-    $table->index('apiary_id', 'idx_sub_agent_apiary');
+    $table->index('superpos_id', 'idx_sub_agent_apiary');
 });
 
 // Partial unique index: only one active definition per slug per hive.
-// Driver-specific strategy (same pattern as agent_personas, persona_experiments):
-//   - pgsql / sqlite: CREATE UNIQUE INDEX ... WHERE is_active = true
-//   - sqlsrv: CREATE UNIQUE INDEX ... WHERE is_active = 1
-//     (SQL Server supports filtered indexes with WHERE clause)
-//   - mysql / mariadb: no partial index support — enforce via
-//     application-level validation in SubAgentDefinitionService
-DB::statement(
-    'CREATE UNIQUE INDEX idx_sub_agent_active '
-    . 'ON sub_agent_definitions (hive_id, slug) '
-    . 'WHERE is_active = true'
-);
+// Driver-specific strategy (same pattern as add_approvable_columns migration):
+$driver = DB::connection()->getDriverName();
+
+if ($driver === 'pgsql') {
+    DB::statement(
+        'CREATE UNIQUE INDEX idx_sub_agent_active '
+        . 'ON sub_agent_definitions (hive_id, slug) '
+        . 'WHERE is_active = true'
+    );
+} elseif ($driver === 'sqlsrv') {
+    // SQL Server supports filtered indexes via WHERE clause.
+    DB::statement(
+        'CREATE UNIQUE NONCLUSTERED INDEX idx_sub_agent_active '
+        . 'ON sub_agent_definitions (hive_id, slug) '
+        . 'WHERE is_active = 1'
+    );
+} elseif ($driver === 'sqlite') {
+    // SQLite: no partial index support — regular composite index as fallback.
+    Schema::table('sub_agent_definitions', function (Blueprint $table) {
+        $table->index(
+            ['hive_id', 'slug', 'is_active'],
+            'idx_sub_agent_active',
+        );
+    });
+}
+// MySQL / MariaDB: skip — uniqueness enforced at application level
+// in SubAgentDefinitionService.
 ```
 
 ### 5.2 Add `sub_agent_definition_id` to `tasks` Migration
@@ -204,10 +220,11 @@ Returns all active sub-agent definitions in the agent's hive.
 {
   "data": [
     {
+      "id": "01JGRX...",
       "slug": "coder",
       "name": "Coding Agent",
       "description": "Focused coding agent for implementing features and fixes",
-      "model": "claude-opus-4-6",
+      "model": "claude-opus-4-7",
       "version": 3,
       "document_count": 4
     }
@@ -227,10 +244,11 @@ Returns a specific sub-agent definition with full documents.
 ```json
 {
   "data": {
+    "id": "01JGRX...",
     "slug": "coder",
     "name": "Coding Agent",
     "description": "Focused coding agent for implementing features and fixes",
-    "model": "claude-opus-4-6",
+    "model": "claude-opus-4-7",
     "version": 3,
     "documents": {
       "SOUL": "You are a focused coding agent...",
@@ -298,7 +316,7 @@ When a task has `sub_agent_definition_id` set, the sub-agent information is incl
 
 #### Lightweight Reference (`formatTask()` — polls, listings)
 
-`formatTask()` includes only a lightweight `sub_agent` reference — no assembled prompt. This keeps poll responses small, since `formatTask()` is called on every `/api/v1/tasks/claim` poll cycle and task listing:
+`formatTask()` includes only a lightweight `sub_agent` reference — no assembled prompt. This keeps poll responses small, since `formatTask()` is called on every `GET /api/v1/hives/{hive}/tasks/poll` poll cycle and task listing:
 
 ```json
 {
@@ -315,9 +333,9 @@ When a task has `sub_agent_definition_id` set, the sub-agent information is incl
 }
 ```
 
-#### Full Prompt (`claimNextTask()` — claim response only)
+#### Full Prompt (`claim()` — claim response only)
 
-The full assembled prompt, config, and tool allowlist are included **only** in the `claimNextTask()` response — the single moment when the agent actually needs the sub-agent instructions:
+The full assembled prompt, config, and tool allowlist are included **only** in the `claim()` response — the single moment when the agent actually needs the sub-agent instructions:
 
 ```json
 {
@@ -330,7 +348,7 @@ The full assembled prompt, config, and tool allowlist are included **only** in t
     "id": "01DEF...",
     "slug": "coder",
     "name": "Coding Agent",
-    "model": "claude-opus-4-6",
+    "model": "claude-opus-4-7",
     "version": 3,
     "prompt": "# SOUL\n\nYou are a focused coding agent...",
     "config": { "temperature": 0.2 },
@@ -364,7 +382,7 @@ If an agent needs the full prompt outside of the claim flow (e.g., for a previou
   "slug": "coder",
   "name": "Coding Agent",
   "description": "Focused coding agent for implementing features and fixes",
-  "model": "claude-opus-4-6",
+  "model": "claude-opus-4-7",
   "documents": {
     "SOUL": "You are a focused coding agent...",
     "AGENT": "When you receive a coding task..."
@@ -378,7 +396,7 @@ If an agent needs the full prompt outside of the claim flow (e.g., for a previou
 
 ### 7.3 Validation Rules
 
-- `slug`: required, alpha_dash, max:100, unique per hive (among active definitions)
+- `slug`: required, alpha_dash, max:100, unique per hive (among active definitions). Recreating a previously deactivated slug is allowed — the new definition receives a monotonically allocated version (`max(version) + 1` across all historical rows for the slug+hive) to avoid collision with the `uq_sub_agent_slug_version` constraint
 - `name`: required, string, max:255
 - `description`: nullable, string
 - `model`: nullable, string, max:100
@@ -433,7 +451,7 @@ In the workflow builder, steps reference sub-agents by slug:
 
 ### 9.2 Version Pinning at Snapshot Time
 
-When a workflow version is snapshotted (published), `WorkflowVersionService::snapshot()` resolves each step's `sub_agent_definition_slug` to the **currently active** `sub_agent_definition_id` and stores the concrete ID in the step configuration snapshot:
+When a workflow version is snapshotted (published), `Workflow::snapshotVersion()` resolves each step's `sub_agent_definition_slug` to the **currently active** `sub_agent_definition_id` and stores the concrete ID in the step configuration snapshot:
 
 ```php
 // During workflow version snapshot:
@@ -489,7 +507,7 @@ If the pinned definition has been deleted since snapshot time, the task is creat
 
 ## 10. Fan-Out Integration
 
-Fan-out child tasks can each specify a different `sub_agent_definition_id`:
+Fan-out child tasks can each specify a different `sub_agent_definition_slug` (resolved to `sub_agent_definition_id` at creation time):
 
 ```json
 {
@@ -515,6 +533,21 @@ Fan-out child tasks can each specify a different `sub_agent_definition_id`:
   ]
 }
 ```
+
+---
+
+## 10.5 Marketplace Persona Prefill (TASK-276)
+
+Users creating a new sub-agent definition can bootstrap the form from an existing `MarketplacePersona` via a "Start from Marketplace Persona" dropdown at the top of `/dashboard/sub-agents/create`.
+
+**Fork model, not link.** The prefill is a one-shot snapshot:
+
+- Documents, config (stringified JSON), model, description, and capabilities (mapped to `allowed_tools`) are copied into the form on selection.
+- `name` and `slug` are **never** prefilled — the user picks their own identifier.
+- There is **no FK** from `sub_agent_definitions` to `marketplace_personas`. Updates to the source persona do not propagate to forks.
+- There is **no `install_count` increment** — prefill is a UI preview, not an install.
+
+The dropdown is populated server-side via an Inertia prop (`marketplacePersonas`) filtered by `MarketplacePersona::visibleTo($organizationId)` (public personas from any apiary + private personas owned by the current apiary). On selection the client fetches the full detail via the existing `GET /dashboard/persona-marketplace/{slug}` JSON endpoint — no new endpoint introduced.
 
 ---
 
@@ -544,7 +577,7 @@ task = client.claim_task()
 if task.sub_agent:
     print(task.sub_agent.slug)    # "coder"
     print(task.sub_agent.prompt)  # assembled prompt (included at claim time)
-    print(task.sub_agent.model)   # "claude-opus-4-6"
+    print(task.sub_agent.model)   # "claude-opus-4-7"
     print(task.sub_agent.id)      # "01DEF..." — use for version-stable re-fetch
 ```
 
@@ -554,7 +587,7 @@ The task JSON response includes the `sub_agent` block. The shell SDK parses it a
 
 ```bash
 SUB_AGENT_SLUG="coder"
-SUB_AGENT_MODEL="claude-opus-4-6"
+SUB_AGENT_MODEL="claude-opus-4-7"
 SUB_AGENT_PROMPT="# SOUL\n\n..."
 ```
 
@@ -593,22 +626,22 @@ SUB_AGENT_PROMPT="# SOUL\n\n..."
 
 - [ ] Migration: add `sub_agent_definition_id` to `tasks`
 - [ ] Update `formatTask()` in `TaskController` to include lightweight `sub_agent` reference (id, slug, version)
-- [ ] Update `claimNextTask()` to include full `sub_agent` block with assembled prompt, config, and allowed_tools
+- [ ] Update `claim()` to include full `sub_agent` block with assembled prompt, config, and allowed_tools
 - [ ] Update `CreateTaskRequest` validation to accept `sub_agent_definition_slug`
 - [ ] Resolve slug → id in task creation (controller + service)
-- [ ] Update `FanOutService` to handle `sub_agent_definition_slug` on children
-- [ ] Python SDK: add `get_sub_agent_definitions()`, `get_sub_agent_definition()`, `get_sub_agent_assembled()`, `get_sub_agent_definition_by_id()`, `get_sub_agent_assembled_by_id()`, parse `sub_agent` from task response
-- [ ] Shell SDK: parse `sub_agent` block from task JSON
+- [x] Update `FanOutService` to handle `sub_agent_definition_slug` on children
+- [x] Python SDK: add `get_sub_agent_definitions()`, `get_sub_agent_definition()`, `get_sub_agent_assembled()`, `get_sub_agent_definition_by_id()`, `get_sub_agent_assembled_by_id()`, parse `sub_agent` from task response
+- [x] Shell SDK: parse `sub_agent` block from task JSON
 
 ### Phase 3 — Webhook & Workflow Integration
 
-- [ ] `WebhookRouteEvaluator::executeCreateTask()` — resolve `sub_agent_definition_slug` from `action_config`
-- [ ] Webhook route form: add sub-agent definition selector
-- [ ] Workflow step definition schema: add `sub_agent_definition_slug` field
-- [ ] `WorkflowVersionService::snapshot()` — resolve `sub_agent_definition_slug` → pinned `sub_agent_definition_id` at snapshot time
-- [ ] `WorkflowExecutionService::createStepTask()` — use pinned `sub_agent_definition_id` from snapshot (no live slug resolution)
-- [ ] Workflow builder UI: sub-agent selector dropdown per step
-- [ ] `WorkflowValidationService` — validate sub-agent slugs exist
+- [x] `WebhookRouteEvaluator::executeCreateTask()` — resolve `sub_agent_definition_slug` from `action_config`
+- [x] Webhook route form: add sub-agent definition selector
+- [x] Workflow step definition schema: add `sub_agent_definition_slug` field
+- [x] `Workflow::snapshotVersion()` — resolve `sub_agent_definition_slug` → pinned `sub_agent_definition_id` at snapshot time
+- [x] `WorkflowExecutionService::createStepTask()` — use pinned `sub_agent_definition_id` from snapshot (no live slug resolution)
+- [x] Workflow builder UI: sub-agent selector dropdown per step
+- [x] `WorkflowValidationService` — validate sub-agent slugs exist
 
 ### Phase 4 — Advanced (Future)
 
@@ -631,4 +664,4 @@ SUB_AGENT_PROMPT="# SOUL\n\n..."
 
 4. **Sub-agent definition size limits.** Should there be a max document size or total token count? Persona has `PersonaTokenService` for this — should sub-agents get the same?
 
-5. **Cross-hive sub-agents.** Should sub-agent definitions be shareable across hives within an apiary? The schema already includes `apiary_id` for this, but the access control and UI need design.
+5. **Cross-hive sub-agents.** Should sub-agent definitions be shareable across hives within an apiary? The schema already includes `superpos_id` for this, but the access control and UI need design.

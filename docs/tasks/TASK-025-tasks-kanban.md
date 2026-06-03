@@ -2,7 +2,7 @@
 
 **Status:** review
 **Branch:** `task/025-tasks-kanban`
-**PR:** https://github.com/Apiary-AI/Apiary-SaaS/pull/30
+**PR:** https://github.com/Superpos-AI/superpos-app/pull/30
 **Depends on:** TASK-016, TASK-017, TASK-018, TASK-022
 **Blocks:** —
 

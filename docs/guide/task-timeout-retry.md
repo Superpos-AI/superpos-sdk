@@ -64,9 +64,9 @@ Where `base` is `config('apiary.task.retry_backoff')` (default 30 seconds).
 
 | Key | Env Variable | Default | Description |
 |-----|-------------|---------|-------------|
-| `apiary.task.default_timeout` | `APIARY_TASK_TIMEOUT` | `1800` | Default timeout in seconds (30 min) |
-| `apiary.task.max_retries` | `APIARY_TASK_MAX_RETRIES` | `3` | Default max retry attempts |
-| `apiary.task.retry_backoff` | `APIARY_TASK_RETRY_BACKOFF` | `30` | Base backoff in seconds |
+| `apiary.task.default_timeout` | `SUPERPOS_TASK_TIMEOUT` | `1800` | Default timeout in seconds (30 min) |
+| `apiary.task.max_retries` | `SUPERPOS_TASK_MAX_RETRIES` | `3` | Default max retry attempts |
+| `apiary.task.retry_backoff` | `SUPERPOS_TASK_RETRY_BACKOFF` | `30` | Base backoff in seconds |
 
 Tasks can override `timeout_seconds` and `max_retries` at creation time.
 Setting `timeout_seconds` to `0` disables timeout detection for that task.
@@ -94,7 +94,7 @@ Two fields were added to the task representation:
 | `task.retried` | Task reset to pending for retry |
 | `task.max_retries_exceeded` | Task permanently failed after all retries |
 
-All entries include the task's `apiary_id`, `hive_id`, and `task_id` for
+All entries include the task's `superpos_id`, `hive_id`, and `task_id` for
 filtering and auditing.
 
 ## Running Manually

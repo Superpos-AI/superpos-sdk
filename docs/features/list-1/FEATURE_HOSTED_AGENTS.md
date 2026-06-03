@@ -1,11 +1,11 @@
-# Apiary — Feature: Hosted Agents (novps.io Runtime)
+# Superpos — Feature: Hosted Agents (novps.io Runtime)
 
 ## Addendum to PRODUCT.md v4.0
 
 > **Naming note.** This feature was previously called *Managed Agents* in
 > earlier drafts. That name was retired because `App\Cloud\Services\ManagedAgentRuntime`
 > already denotes the in-process zero-code LLM runtime (see TASKS #147–148).
-> *Hosted Agents* refers specifically to agent **processes** that Apiary
+> *Hosted Agents* refers specifically to agent **processes** that Superpos
 > builds, deploys, and manages on an external container platform.
 
 ---
@@ -13,10 +13,10 @@
 ## 1. Problem
 
 BYOA (Bring Your Own Agent) works but blocks onboarding: a user needs their
-own infrastructure before they can try Apiary. That creates four pain points:
+own infrastructure before they can try Superpos. That creates four pain points:
 
 - Infra dependency: VPS, Docker host, or container platform required.
-- No lifecycle management: agents run somewhere Apiary can't see.
+- No lifecycle management: agents run somewhere Superpos can't see.
 - Scaling is DIY: more capacity means "go deploy another container."
 - Security surface: user's box has the LLM key *and* network access to the
   rest of their stack.
@@ -26,33 +26,33 @@ that gap for Cloud tenants.
 
 ## 2. Solution: Hosted Agents on novps.io
 
-Apiary deploys preset agent images onto **novps.io** — a PaaS with a
+Superpos deploys preset agent images onto **novps.io** — a PaaS with a
 declarative public API for apps, resources, logs, and deployments. Each
 hosted agent is a single `worker` resource (container) inside a novps app.
 
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
-│                       Apiary Platform                                 │
+│                       Superpos Platform                                 │
 │                                                                       │
 │   ┌───────────────┐     ┌────────────────────────────────────────┐    │
-│   │  Apiary Core  │     │  HostedAgentDeploymentService (Laravel)│    │
-│   │  (Laravel)    │◂───▸│  · issues APIARY_TOKEN                 │    │
+│   │  Superpos Core  │     │  HostedAgentDeploymentService (Laravel)│    │
+│   │  (Laravel)    │◂───▸│  · issues SUPERPOS_API_TOKEN             │    │
 │   │               │     │  · builds novps PUT /apps/{name}/apply │    │
 │   │  agents       │     │  · polls deployment status             │    │
 │   │  hosted_agents│     │  · mirrors status → hosted_agents      │    │
 │   └───────┬───────┘     └─────────────────┬──────────────────────┘    │
 │           │                                │                          │
 │           │ normal REST polling            │ HTTPS                    │
-│           │                                │ x-novps-token            │
+│           │                                │ Authorization: nvps_...  │
 │           │              ┌─────────────────▼──────────────────┐       │
 │           │              │        novps.io public API         │       │
-│           │              │  /public-api/apps, /resources      │       │
+│           │              │       /apps, /resources            │       │
 │           │              └──────────────┬─────────────────────┘       │
 │           │                             │ runs                        │
 │           │              ┌──────────────▼─────────────────────┐       │
-│           └────── poll ──│   Worker Pod: apiary-slim-agent    │       │
-│                          │   (Claude SDK or Codex SDK image)  │       │
-│                          │   ENV: APIARY_TOKEN,               │       │
+│           └────── poll ──│   Worker Pod: superpos-*-agent     │       │
+│                          │   (Claude or Codex SDK image)      │       │
+│                          │   ENV: SUPERPOS_API_TOKEN,           │       │
 │                          │        ANTHROPIC_API_KEY / OPENAI  │       │
 │                          └────────────────────────────────────┘       │
 └───────────────────────────────────────────────────────────────────────┘
@@ -62,7 +62,7 @@ Key differences from the retired K8s design:
 
 | Retired (K8s design)                      | Hosted Agents (novps.io)                |
 |-------------------------------------------|-----------------------------------------|
-| Apiary runs its own control plane         | novps.io runs the control plane         |
+| Superpos runs its own control plane         | novps.io runs the control plane         |
 | Kaniko in-cluster build                   | No build — prebuilt images on GHCR      |
 | NetworkPolicy + ResourceQuota authored    | novps enforces isolation + quotas       |
 | Autoscaler service polling queue depth    | Fixed replicas (admin picks size)       |
@@ -81,10 +81,26 @@ arbitrary user-provided images. A preset bundles:
 - the list of models the user may choose from,
 - the env-var schema (which values the user must provide, which are secret).
 
-MVP ships with two presets, hard-coded in `config/apiary.php`:
+MVP ships with two presets defined in `config/platform.php`. The agent
+images themselves are **built and published by their own dedicated public
+repos** — there is no Dockerfile or build workflow inside `superpos-app`:
 
-- `claude-sdk` — [Apiary-Slim-Agent-Claude-SDK](https://github.com/Apiary-AI/Apiary-Slim-Agent-Claude-SDK)
-- `codex-sdk` — [Apiary-Slim-Agent-Codex-SDK](https://github.com/Apiary-AI/Apiary-Slim-Agent-Codex-SDK)
+- `claude-sdk` — image built by [Superpos-AI/superpos-claude-agent](https://github.com/Superpos-AI/superpos-claude-agent),
+  published to `ghcr.io/superpos-ai/superpos-claude-agent` (override via
+  `PLATFORM_HOSTED_CLAUDE_IMAGE`)
+- `codex-sdk` — image built by [Superpos-AI/superpos-codex-agent](https://github.com/Superpos-AI/superpos-codex-agent),
+  published to `ghcr.io/superpos-ai/superpos-codex-agent` (override via
+  `PLATFORM_HOSTED_CODEX_IMAGE`)
+
+The command (NoVPS `config.command` — Kubernetes semantics: it OVERRIDES
+the image's ENTRYPOINT, it does not just supply args / CMD) is preset-
+specific. Including `entrypoint.sh` explicitly is required so the image's
+auth.json setup runs before the python agent starts; without it
+codex/claude auth fails and the container restart-loops. The default can
+be overridden per preset:
+
+- `claude-sdk` — `PLATFORM_HOSTED_CLAUDE_COMMAND` (default `/app/entrypoint.sh python3 -m src.main`)
+- `codex-sdk` — `PLATFORM_HOSTED_CODEX_COMMAND` (default `/app/entrypoint.sh python3 -m superpos_agent_codex`)
 
 Admin-editable presets (DB-backed CRUD) are tracked as a follow-up
 (TASK-254). Shape of the DB row is intentionally identical to the config
@@ -93,18 +109,18 @@ array so the migration path is a straight import.
 ### 3.1 Preset Config Shape
 
 ```php
-// config/apiary.php — under 'hosted_agents.presets'
+// config/platform.php — under 'hosted_agents.presets'
 'claude-sdk' => [
     'label' => 'Claude SDK Agent',
-    'description' => 'Claude-powered agent using Apiary Slim SDK image.',
+    'description' => 'Claude-powered agent using the Superpos hosted-agent image.',
     'image' => [
-        'name' => 'ghcr.io/apiary-ai/apiary-slim-agent-claude-sdk',
-        'tag'  => env('APIARY_HOSTED_CLAUDE_TAG', 'latest'),
+        'name' => env('PLATFORM_HOSTED_CLAUDE_IMAGE', 'ghcr.io/superpos-ai/superpos-claude-agent'),
+        'tag'  => env('PLATFORM_HOSTED_CLAUDE_TAG', 'latest'),
     ],
-    'command' => '/app/entrypoint.sh',
+    'command' => env('PLATFORM_HOSTED_CLAUDE_COMMAND', '/app/entrypoint.sh python3 -m src.main'),
     'replicas' => ['size' => 'xs', 'count' => 1],
     'restart_policy' => 'always',
-    'models' => ['claude-sonnet-4-5', 'claude-opus-4-6', 'claude-haiku-4-5'],
+    'models' => ['claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5-20251001'],
     'model_env_key' => 'CLAUDE_MODEL',
     'user_env' => [
         'ANTHROPIC_API_KEY' => [
@@ -124,30 +140,50 @@ array so the migration path is a straight import.
 
 ```php
 'novps' => [
-    'base_url' => env('NOVPS_BASE_URL', 'https://private-api.novps.io'),
+    'base_url' => env('NOVPS_BASE_URL', 'https://api.novps.io'),
     'api_token' => env('NOVPS_API_TOKEN'),
     'project_id' => env('NOVPS_PROJECT_ID'),
-    'registry_credential_id' => env('NOVPS_GHCR_CREDENTIAL_ID'),
     'request_timeout' => env('NOVPS_HTTP_TIMEOUT', 30),
+    'image_credentials' => env('NOVPS_IMAGE_CREDENTIALS'),
+    'registry_credential_id' => env('NOVPS_REGISTRY_CREDENTIAL_ID'),  // deprecated fallback
 ],
 ```
 
-The novps project must already have a GHCR credential registered that can
-pull `ghcr.io/apiary-ai/*`. See the
-[novps registry credential setup runbook](../../runbooks/novps-registry-credential.md)
-(TASK-255) for provisioning, registration, and rotation steps.
+Authentication is via a NoVPS personal access token (prefixed `nvps_`)
+sent in the `Authorization` header (raw, no `Bearer` prefix). The
+hosted-agent presets default to **public** GHCR images but operators
+can override the image names via `PLATFORM_HOSTED_CLAUDE_IMAGE` and
+`PLATFORM_HOSTED_CODEX_IMAGE` env vars before publishing their own.
+The container command (NoVPS `config.command`, which OVERRIDES the image's
+ENTRYPOINT — Kubernetes semantics) is also overridable via
+`PLATFORM_HOSTED_CLAUDE_COMMAND` (default `/app/entrypoint.sh python3 -m src.main`)
+and `PLATFORM_HOSTED_CODEX_COMMAND` (default `/app/entrypoint.sh python3 -m superpos_agent_codex`),
+so the image's auth-init step runs before the python agent starts.
+If a preset references a private image, set `NOVPS_IMAGE_CREDENTIALS`
+to an inline `username:token` string (for GHCR: `<github_username>:<classic PAT with read:packages>`)
+— the value is sent per-payload via `source.credentials`.
+The deprecated `NOVPS_REGISTRY_CREDENTIAL_ID` env var is still read as a
+fallback when `NOVPS_IMAGE_CREDENTIALS` is not configured (null), but new
+deploys should use `NOVPS_IMAGE_CREDENTIALS`. Set it to an empty string
+for anonymous pulls (public packages only).
+See the [NoVPS PAT setup runbook](../../runbooks/novps-pat-setup.md)
+for full PAT provisioning, env-var configuration, and rotation steps.
 
-### 4.2 `config/apiary.php`
+### 4.2 `config/platform.php`
 
 ```php
 'hosted_agents' => [
-    'enabled' => env('APIARY_HOSTED_AGENTS_ENABLED', false),
-    'app_name_prefix' => env('APIARY_HOSTED_AGENTS_APP_PREFIX', 'apiary-hosted'),
-    'deploy_poll_interval' => 5,
-    'deploy_timeout' => 600,
+    'enabled' => (bool) env('PLATFORM_HOSTED_AGENTS_ENABLED', env('APIARY_HOSTED_AGENTS_ENABLED', false)),
+    'apiary_base_url' => env('PLATFORM_HOSTED_AGENTS_BASE_URL', env('APIARY_HOSTED_AGENTS_BASE_URL')),
+    'app_name_prefix' => env('PLATFORM_HOSTED_AGENTS_APP_PREFIX', env('APIARY_HOSTED_AGENTS_APP_PREFIX', 'apiary-hosted')),
+    'deploy_poll_interval' => (int) env('PLATFORM_HOSTED_AGENTS_POLL_INTERVAL', env('APIARY_HOSTED_AGENTS_POLL_INTERVAL', 5)),
+    'deploy_timeout' => (int) env('PLATFORM_HOSTED_AGENTS_DEPLOY_TIMEOUT', env('APIARY_HOSTED_AGENTS_DEPLOY_TIMEOUT', 600)),
     'presets' => [ /* see §3.1 */ ],
 ],
 ```
+
+Each `PLATFORM_HOSTED_AGENTS_*` env var falls back to its `APIARY_HOSTED_AGENTS_*`
+counterpart for backward compatibility. New deploys should use the `PLATFORM_*` prefix.
 
 CE hard-hides the feature: when `hosted_agents.enabled === false`, the
 dashboard route is removed and API routes 404.
@@ -158,30 +194,37 @@ Written into the resource `envs[]` by the deploy job:
 
 | Env                 | Source                                               |
 |---------------------|------------------------------------------------------|
-| `APIARY_BASE_URL`   | Cluster-internal Apiary URL                          |
-| `APIARY_TOKEN`      | Freshly issued agent token (hashed in `agents`)      |
-| `APIARY_HIVE_ID`    | From owning hive                                     |
-| `APIARY_AGENT_ID`   | From created agent record                            |
-| `APIARY_AGENT_NAME` | From created agent record                            |
+| `SUPERPOS_BASE_URL`   | Cluster-internal Superpos URL                          |
+| `SUPERPOS_API_TOKEN`  | Freshly issued agent token (hashed in `agents`)      |
+| `SUPERPOS_HIVE_ID`    | From owning hive                                     |
+| `SUPERPOS_AGENT_ID`   | From created agent record                            |
 
-**Reserved prefix.** The `APIARY_*` name prefix is reserved by the
+**Reserved prefix.** The `SUPERPOS_*` name prefix is reserved by the
 platform. Neither the preset `user_env` schema nor a user's
-`user_env` payload may declare a key beginning with `APIARY_`.
+`user_env` payload may declare a key beginning with `SUPERPOS_`.
 Validation rejects such keys with a 422 in both the create/update API
 (TASK-228) and the admin preset CRUD (TASK-254), so admins cannot
 shadow reserved names by editing a preset.
 
 **Env merge order (last write wins).** The deploy job builds the
-final `envs[]` array in this order, so the auto-injected `APIARY_*`
+final `envs[]` array in this order, so the auto-injected `SUPERPOS_*`
 values are always the final write:
 
 1. Preset-defined non-secret defaults (from `user_env` schema defaults).
-2. User-supplied `user_env` (the values entered in the wizard / PATCH).
-3. **Auto-injected `APIARY_*` envs** (this layer is last and wins
+2. **Preset model env** — the preset's `model_env_key` is written with
+   the agent's selected model value (e.g. `CLAUDE_MODEL=claude-sonnet-4-6`
+   or `CODEX_MODEL=gpt-5.4`). This sits between the preset
+   defaults and user-supplied values so that the model selection is
+   always present, even when the user supplies no `user_env` at all.
+3. User-supplied `user_env` (the values entered in the wizard / PATCH).
+   **Note:** the resolver strips any `user_env` key that matches the
+   preset's `model_env_key` before merging, so a user cannot shadow
+   the model selection via `user_env` even if validation was bypassed.
+4. **Auto-injected `SUPERPOS_*` envs** (this layer is last and wins
    unconditionally over anything earlier).
 
 Because the reserved-prefix check happens at validation time, layers
-1 and 2 cannot legally contain `APIARY_*` keys; the final-write
+1–3 cannot legally contain `SUPERPOS_*` keys; the final-write
 ordering is a defence-in-depth backstop.
 
 ---
@@ -189,7 +232,7 @@ ordering is a defence-in-depth backstop.
 ## 5. Create / Deploy Flow
 
 ```
-┌────────── User ──────────┐   ┌─────── Apiary ───────┐   ┌── novps.io ──┐
+┌────────── User ──────────┐   ┌─────── Superpos ───────┐   ┌── novps.io ──┐
 │                          │   │                      │   │              │
 │ 1. Dashboard: +Add       │                              │              │
 │    → pick preset         │                              │              │
@@ -200,15 +243,15 @@ ordering is a defence-in-depth backstop.
 │                          │    agents                    │              │
 │                          │    · Validate preset+model   │              │
 │                          │    · Create `agents` row     │              │
-│                          │    · Issue APIARY_TOKEN      │              │
+│                          │    · Issue SUPERPOS_API_TOKEN  │              │
 │                          │    · Create `hosted_agents`  │              │
 │                          │      row (status=deploying)  │              │
 │                          │    · Enqueue DeployJob       │              │
 │                          │                              │              │
 │                          │ 3. DeployHostedAgentJob      │              │
 │                          │    · Build apply payload     │              │
-│                          │    · PUT /public-api/apps/   │───────────▸  │
-│                          │      {name}/apply             │              │
+│                          │    · PUT /apps/{name}/apply  │───────────▸  │
+│                          │                              │              │
 │                          │                              │ 4. Provision │
 │                          │                              │    worker    │
 │                          │                              │    (docker)  │
@@ -222,13 +265,13 @@ ordering is a defence-in-depth backstop.
 │                          │                              │ 7. Container │
 │                          │                              │    starts,   │
 │                          │ 8. GET /tasks (polling) ◂── │    polls      │
-│                          │                             │    Apiary     │
+│                          │                             │    Superpos     │
 └──────────────────────────┘                             └──────────────┘
 ```
 
 ### 5.1 Idempotency
 
-`PUT /public-api/apps/{app_name}/apply` is declarative — running it twice
+`PUT /apps/{app_name}/apply` is declarative — running it twice
 with identical payload is a no-op. The deploy job is safe to retry.
 
 ### 5.2 App-Name Allocation
@@ -266,20 +309,21 @@ images need zero modification.
 
 | Env                  | Provider     | Notes                                |
 |----------------------|--------------|--------------------------------------|
-| `APIARY_BASE_URL`    | Apiary       | Auto-injected                        |
-| `APIARY_TOKEN`       | Apiary       | Auto-injected, per-agent             |
-| `APIARY_HIVE_ID`     | Apiary       | Auto-injected                        |
-| `APIARY_AGENT_ID`    | Apiary       | Auto-injected                        |
+| `SUPERPOS_BASE_URL`    | Superpos       | Auto-injected                        |
+| `SUPERPOS_API_TOKEN`   | Superpos       | Auto-injected, per-agent             |
+| `SUPERPOS_HIVE_ID`     | Superpos       | Auto-injected                        |
+| `SUPERPOS_AGENT_ID`    | Superpos       | Auto-injected                        |
 | `ANTHROPIC_API_KEY`  | User         | Required, secret                     |
-| `CLAUDE_MODEL`       | User→Apiary  | Value from preset's `models` list    |
+| `TELEGRAM_BOT_TOKEN` | User         | Optional, secret                     |
+| `CLAUDE_MODEL`       | User→Superpos  | Value from preset's `models` list    |
 
 ### 6.2 Codex SDK image
 
 | Env              | Provider     | Notes                                    |
 |------------------|--------------|------------------------------------------|
-| `APIARY_*`       | Apiary       | Auto-injected (same as Claude)           |
+| `SUPERPOS_*`       | Superpos       | Auto-injected (same as Claude)           |
 | `OPENAI_API_KEY` | User         | Required, secret                         |
-| `OPENAI_MODEL`   | User→Apiary  | Value from preset's `models` list        |
+| `CODEX_MODEL`    | User→Superpos  | Value from preset's `models` list        |
 
 ---
 
@@ -287,12 +331,12 @@ images need zero modification.
 
 All operations proxy to novps.io:
 
-| Operation | novps call                                                | Apiary side-effect                                   |
+| Operation | novps call                                                | Superpos side-effect                                   |
 |-----------|-----------------------------------------------------------|------------------------------------------------------|
-| Start     | `POST /public-api/apps/{id}/deployment` (redeploy)        | Rotate `APIARY_TOKEN`; status → `deploying`          |
-| Stop      | `PATCH /public-api/resources/{id}` with `replicas.count=0`| Status → `stopped`                                   |
-| Restart   | `POST /public-api/apps/{id}/deployment`                   | Status → `deploying`                                 |
-| Destroy   | `DELETE /public-api/apps/{id}`                            | Soft-delete `hosted_agents`; deactivate agent token  |
+| Start     | `POST /apps/{id}/deployment` (redeploy)                   | Rotate `SUPERPOS_API_TOKEN`; status → `deploying`      |
+| Stop      | `DELETE /resources/{id}` (recreated on next start)        | Status → `stopped`; `novps_resource_id` cleared      |
+| Restart   | `POST /apps/{id}/deployment`                              | Status → `deploying`                                 |
+| Destroy   | `DELETE /apps/{id}`                                       | Soft-delete `hosted_agents`; deactivate agent token  |
 
 Manual scaling (`PATCH .../resources/{id}` with a new `replicas.count`) is
 exposed through the same lifecycle endpoint as a `replicas` override.
@@ -306,9 +350,9 @@ Autoscale is deferred — novps does not expose a scale-on-queue hook.
 GET /api/v1/hives/{hive}/hosted-agents/{id}/logs?start&end&pod&search&limit
 ```
 
-Thin proxy to `GET /public-api/resources/{resource_id}/logs` — novps returns
-a Loki-style ranged response, Apiary forwards it plus a `meta.source=novps`
-marker. No log retention on the Apiary side.
+Thin proxy to `GET /resources/{resource_id}/logs` — novps returns
+a Loki-style ranged response, Superpos forwards it plus a `meta.source=novps`
+marker. No log retention on the Superpos side.
 
 Dashboard renders a live-follow viewer with optional pod/search filters.
 
@@ -322,7 +366,7 @@ Dashboard renders a live-follow viewer with optional pod/search filters.
 CREATE TABLE hosted_agents (
     id                   VARCHAR(26) PRIMARY KEY,
     agent_id             VARCHAR(26) NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
-    apiary_id            VARCHAR(26) NOT NULL,
+    superpos_id            VARCHAR(26) NOT NULL,
     hive_id              VARCHAR(26) NOT NULL,
 
     -- Preset + user selections
@@ -435,7 +479,7 @@ POST /api/v1/hives/backend/hosted-agents
 {
   "name": "code-reviewer",
   "preset_key": "claude-sdk",
-  "model": "claude-sonnet-4-5",
+  "model": "claude-sonnet-4-6",
   "user_env": {
     "ANTHROPIC_API_KEY": "sk-ant-..."
   },
@@ -452,7 +496,7 @@ Response:
     "agent_id": "agt_01J...",
     "name": "code-reviewer",
     "preset_key": "claude-sdk",
-    "model": "claude-sonnet-4-5",
+    "model": "claude-sonnet-4-6",
     "status": "deploying",
     "novps_app_name": "apiary-hosted-backend-code-reviewer",
     "latest_deployment": {
@@ -469,7 +513,7 @@ Response:
 ## 11. Dashboard
 
 Hosted Agents live under **Agents → Hosted** in the hive sidebar. Hidden
-entirely when `apiary.hosted_agents.enabled` is false.
+entirely when `platform.hosted_agents.enabled` is false.
 
 ### 11.1 Deploy Wizard
 
@@ -479,7 +523,7 @@ Step 1: "Pick a preset"
    ○ OpenAI Codex SDK Agent
 
 Step 2: "Pick a model"
-   [claude-sonnet-4-5 ▾]
+   [claude-sonnet-4-6 ▾]
 
 Step 3: "Provide credentials"
    ANTHROPIC_API_KEY  [••••••••••••••••]  (required, secret)
@@ -507,14 +551,14 @@ Tabs beyond the standard agent view:
 
 ```
 Layer 1: novps.io tenancy
-  └── Each Apiary Cloud tenant lives in a novps project we control
+  └── Each Superpos Cloud tenant lives in a novps project we control
 
 Layer 2: novps network isolation
   └── Worker pods can reach the public internet but not intra-tenant
-      resources in the Apiary project. No NetworkPolicy authored by us.
+      resources in the Superpos project. No NetworkPolicy authored by us.
 
-Layer 3: Apiary auth
-  └── Per-agent APIARY_TOKEN, same permission model as BYOA.
+Layer 3: Superpos auth
+  └── Per-agent SUPERPOS_API_TOKEN, same permission model as BYOA.
       Token rotated on every redeploy.
 
 Layer 4: Secret handling
@@ -526,14 +570,13 @@ Layer 4: Secret handling
 
 ### 12.2 What novps sees
 
-novps sees the full env payload at deploy time (image, APIARY_TOKEN,
+novps sees the full env payload at deploy time (image, SUPERPOS_API_TOKEN,
 user-supplied API keys). That is the same trust model as any PaaS —
 documented explicitly in `docs/SECURITY.md` for this feature.
 
-### 12.3 What Apiary never logs
+### 12.3 What Superpos never logs
 
 - `NOVPS_API_TOKEN`
-- `NOVPS_GHCR_CREDENTIAL_ID`
 - Any value in `hosted_agents.user_env`
 - Anything in the resolved env payload sent to novps
 
@@ -549,11 +592,12 @@ button, the UI section is absent. Enforcement:
 | Layer       | Check                                                               |
 |-------------|---------------------------------------------------------------------|
 | Routes      | `Route::middleware('apiary.hosted.enabled')` wraps API + web routes |
-| Controllers | Abort 404 if `config('apiary.hosted_agents.enabled') === false`     |
+| Controllers | Abort 404 if `config('platform.hosted_agents.enabled') === false`   |
 | Inertia     | Dashboard nav entry omitted via `HandleInertiaRequests` shared prop |
 | Code path   | All classes under `app/Cloud/` namespace                            |
 
-The ops toggle is `APIARY_HOSTED_AGENTS_ENABLED=true` in `.env`.
+The ops toggle is `PLATFORM_HOSTED_AGENTS_ENABLED=true` in `.env`
+(`APIARY_HOSTED_AGENTS_ENABLED` is accepted as a fallback).
 
 ---
 
@@ -571,7 +615,7 @@ Detail lives in TASK-244.
 |----------|-------------------------------------------------|-----------------------------------|
 | P0       | hosted_agents migration + models                | TASK-227                          |
 | P0       | Seeded preset config + `HostedAgentPresetRegistry` | TASK-253                       |
-| P0       | novps public-api HTTP client                    | TASK-229                          |
+| P0       | novps public API HTTP client                    | TASK-229                          |
 | P0       | Hosted agents CRUD API                          | TASK-228                          |
 | P0       | Deploy job (apply + poll)                       | TASK-230                          |
 | P0       | Auto-injected + user env                        | TASK-231                          |
@@ -599,7 +643,40 @@ These tasks are **deleted**, not deferred — they do not map onto novps:
 
 ---
 
+## 16. Ops Prerequisites
+
+Before hosted-agent deploys will work in any environment, the following
+must be in place:
+
+1. **GHCR image publishing.** The two preset images are built and pushed
+   automatically by the publish workflow inside each agent's own public
+   repo (NOT inside `superpos-app` — there is no `docker/agents/`
+   directory or build workflow here). Default names (overridable via
+   `PLATFORM_HOSTED_CLAUDE_IMAGE` / `PLATFORM_HOSTED_CODEX_IMAGE`):
+   - `ghcr.io/superpos-ai/superpos-claude-agent` — published from
+     [Superpos-AI/superpos-claude-agent](https://github.com/Superpos-AI/superpos-claude-agent)
+   - `ghcr.io/superpos-ai/superpos-codex-agent` — published from
+     [Superpos-AI/superpos-codex-agent](https://github.com/Superpos-AI/superpos-codex-agent)
+
+   The packages must be readable by NoVPS (public, or with registry
+   credentials provided inline via the `NOVPS_IMAGE_CREDENTIALS` env
+   var — see §4.1). The old
+   `ghcr.io/apiary-ai/apiary-slim-agent-*` images are retired and no
+   longer published.
+
+   See the [NoVPS PAT setup runbook §3](../../runbooks/novps-pat-setup.md#3-container-image-publishing-prerequisite)
+   for full details.
+
+2. **NoVPS PAT.** A personal access token with app/resource management
+   scope, configured via `NOVPS_API_TOKEN` and `NOVPS_PROJECT_ID`.
+   See the [NoVPS PAT setup runbook](../../runbooks/novps-pat-setup.md).
+
+3. **Feature flag.** `PLATFORM_HOSTED_AGENTS_ENABLED=true` in the
+   deployment environment.
+
+---
+
 *Feature version: 2.0 (novps.io rewrite)*
 *Supersedes: FEATURE_MANAGED_AGENTS.md v1.0 (K8s design, retired)*
 *Depends on: PRODUCT.md v4.0 (agents, hives), FEATURE_PLATFORM_ENHANCEMENTS.md (drain mode)*
-*Infrastructure dependency: novps.io project + GHCR registry credential*
+*Infrastructure dependency: novps.io project + GHCR image publishing (see §16)*

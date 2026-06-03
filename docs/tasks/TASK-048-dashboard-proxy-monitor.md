@@ -22,7 +22,7 @@ Create the `proxy_log` table (apiary-scoped, as defined in PRODUCT.md):
 | Column | Type | Notes |
 |--------|------|-------|
 | id | BIGSERIAL | PK |
-| apiary_id | VARCHAR(26) | NOT NULL |
+| superpos_id | VARCHAR(26) | NOT NULL |
 | hive_id | VARCHAR(26) | nullable |
 | agent_id | VARCHAR(26) | NOT NULL |
 | service_id | VARCHAR(26) | NOT NULL |
@@ -34,7 +34,7 @@ Create the `proxy_log` table (apiary-scoped, as defined in PRODUCT.md):
 | approval_id | VARCHAR(26) | nullable |
 | created_at | TIMESTAMP | DEFAULT NOW() |
 
-Indexes: `(apiary_id, created_at DESC)`, `(hive_id, created_at DESC)`.
+Indexes: `(superpos_id, created_at DESC)`, `(hive_id, created_at DESC)`.
 
 Model: `App\Models\ProxyLog` with `BelongsToApiary` trait, immutable (no
 updated_at), relationships to Agent, ServiceConnection, ApprovalRequest.

@@ -58,7 +58,7 @@ Create a scheduled Artisan command that periodically deletes expired knowledge e
 - [ ] Non-expired entries are preserved
 - [ ] Entries with null TTL are preserved
 - [ ] Activity log created for each deleted entry
-- [ ] Activity log contains correct apiary_id and hive_id
+- [ ] Activity log contains correct superpos_id and hive_id
 - [ ] Artisan command executes successfully and outputs count
 - [ ] Entries across multiple apiaries/hives are cleaned up
 - [ ] Entries expiring exactly now are deleted

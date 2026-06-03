@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 
-from apiary_sdk import ApiaryClient
+from superpos_sdk import SuperposClient
 
 from .conftest import BASE_URL, HIVE_ID, TOKEN, envelope
 
@@ -17,7 +17,7 @@ AGENT_ID = "01HXYZ00000000000000000002"
 def _channel_data(**overrides):
     base = {
         "id": CHANNEL_ID,
-        "apiary_id": "A" * 26,
+        "organization_id": "A" * 26,
         "hive_id": HIVE_ID,
         "title": "Test Channel",
         "topic": "Testing",
@@ -89,7 +89,7 @@ class TestListChannels:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels",
             json=envelope([_channel_data()]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             channels = c.list_channels(HIVE_ID)
         assert len(channels) == 1
         assert channels[0]["id"] == CHANNEL_ID
@@ -99,7 +99,7 @@ class TestListChannels:
             url=re.compile(rf"{re.escape(BASE_URL)}/api/v1/hives/{HIVE_ID}/channels\?.*"),
             json=envelope([_channel_data()]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.list_channels(HIVE_ID, status="open", channel_type="discussion")
         request = httpx_mock.get_request()
         assert "status=open" in str(request.url)
@@ -113,7 +113,7 @@ class TestCreateChannel:
             status_code=201,
             json=envelope(_channel_detail()),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             channel = c.create_channel(HIVE_ID, title="Test Channel", channel_type="discussion")
         assert channel["id"] == CHANNEL_ID
         body = json.loads(httpx_mock.get_request().content)
@@ -126,7 +126,7 @@ class TestCreateChannel:
             status_code=201,
             json=envelope(_channel_detail()),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.create_channel(
                 HIVE_ID,
                 title="Full Channel",
@@ -157,7 +157,7 @@ class TestGetChannel:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels/{CHANNEL_ID}",
             json=envelope(_channel_detail()),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             channel = c.get_channel(HIVE_ID, CHANNEL_ID)
         assert channel["id"] == CHANNEL_ID
         assert channel["participants"][0]["role"] == "initiator"
@@ -169,7 +169,7 @@ class TestUpdateChannel:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels/{CHANNEL_ID}",
             json=envelope(_channel_detail(title="Updated Title")),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             channel = c.update_channel(HIVE_ID, CHANNEL_ID, title="Updated Title")
         assert channel["title"] == "Updated Title"
         body = json.loads(httpx_mock.get_request().content)
@@ -180,7 +180,7 @@ class TestUpdateChannel:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels/{CHANNEL_ID}",
             json=envelope(_channel_detail(stale_after=120)),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.update_channel(HIVE_ID, CHANNEL_ID, stale_after=120)
         body = json.loads(httpx_mock.get_request().content)
         assert body["stale_after"] == 120
@@ -193,7 +193,7 @@ class TestArchiveChannel:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels/{CHANNEL_ID}",
             json=envelope(_channel_data(status="archived")),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             channel = c.archive_channel(HIVE_ID, CHANNEL_ID)
         assert channel["status"] == "archived"
 
@@ -209,7 +209,7 @@ class TestListChannelMessages:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels/{CHANNEL_ID}/messages",
             json=envelope([_message_data()]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             messages = c.list_channel_messages(HIVE_ID, CHANNEL_ID)
         assert len(messages) == 1
         assert messages[0]["id"] == MESSAGE_ID
@@ -222,7 +222,7 @@ class TestListChannelMessages:
             ),
             json=envelope([_message_data()]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.list_channel_messages(HIVE_ID, CHANNEL_ID, since="2026-04-15T09:00:00Z")
         request = httpx_mock.get_request()
         assert "since=2026-04-15" in str(request.url)
@@ -235,7 +235,7 @@ class TestListChannelMessages:
             ),
             json=envelope([_message_data()]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.list_channel_messages(HIVE_ID, CHANNEL_ID, after_id="prev-msg-id")
         request = httpx_mock.get_request()
         assert "after_id=prev-msg-id" in str(request.url)
@@ -248,7 +248,7 @@ class TestPostChannelMessage:
             status_code=201,
             json=envelope(_message_data()),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             msg = c.post_channel_message(HIVE_ID, CHANNEL_ID, "Hello world")
         assert msg["id"] == MESSAGE_ID
         body = json.loads(httpx_mock.get_request().content)
@@ -261,7 +261,7 @@ class TestPostChannelMessage:
             status_code=201,
             json=envelope(_message_data(mentions=[AGENT_ID])),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.post_channel_message(HIVE_ID, CHANNEL_ID, "Hey @agent", mentions=[AGENT_ID])
         body = json.loads(httpx_mock.get_request().content)
         assert body["mentions"] == [AGENT_ID]
@@ -272,7 +272,7 @@ class TestPostChannelMessage:
             status_code=201,
             json=envelope(_message_data(message_type="context")),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.post_channel_message(
                 HIVE_ID,
                 CHANNEL_ID,
@@ -293,7 +293,7 @@ class TestEditChannelMessage:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels/{CHANNEL_ID}/messages/{MESSAGE_ID}",
             json=envelope(_message_data(content="Updated content")),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             msg = c.edit_channel_message(HIVE_ID, CHANNEL_ID, MESSAGE_ID, "Updated content")
         assert msg["content"] == "Updated content"
         body = json.loads(httpx_mock.get_request().content)
@@ -311,7 +311,7 @@ class TestListChannelParticipants:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels/{CHANNEL_ID}",
             json=envelope(_channel_detail()),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             channel = c.list_channel_participants(HIVE_ID, CHANNEL_ID)
         assert len(channel["participants"]) == 1
 
@@ -330,7 +330,7 @@ class TestAddChannelParticipant:
             status_code=201,
             json=envelope(participant),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             result = c.add_channel_participant(
                 HIVE_ID,
                 CHANNEL_ID,
@@ -359,7 +359,7 @@ class TestAddChannelParticipant:
             status_code=201,
             json=envelope(participant),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.add_channel_participant(HIVE_ID, CHANNEL_ID, "agent", AGENT_ID)
         body = json.loads(httpx_mock.get_request().content)
         assert body["participant_type"] == "agent"
@@ -374,7 +374,7 @@ class TestRemoveChannelParticipant:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels/{CHANNEL_ID}/participants/{AGENT_ID}",
             status_code=204,
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             result = c.remove_channel_participant(HIVE_ID, CHANNEL_ID, AGENT_ID)
         assert result is None
 
@@ -395,7 +395,7 @@ class TestVoteOnProposal:
             status_code=201,
             json=envelope(vote_msg),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             msg = c.vote_on_proposal(HIVE_ID, CHANNEL_ID, "prop-id", "approve")
         assert msg["message_type"] == "vote"
         body = json.loads(httpx_mock.get_request().content)
@@ -417,7 +417,7 @@ class TestVoteOnProposal:
             status_code=201,
             json=envelope(vote_msg),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.vote_on_proposal(
                 HIVE_ID,
                 CHANNEL_ID,
@@ -452,7 +452,7 @@ class TestGetProposalVotes:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels/{CHANNEL_ID}/messages/{MESSAGE_ID}/votes",
             json=envelope(tally),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             result = c.get_proposal_votes(HIVE_ID, CHANNEL_ID, MESSAGE_ID)
         assert result["total_votes"] == 3
         assert result["tally"]["approve"] == 2
@@ -478,7 +478,7 @@ class TestChannelSummary:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels/{CHANNEL_ID}/summary",
             json=envelope(summary),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             result = c.channel_summary(HIVE_ID, CHANNEL_ID)
         assert result["unread_count"] == 5
         assert result["mentioned"] is True
@@ -495,7 +495,7 @@ class TestMarkChannelRead:
                 }
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             result = c.mark_channel_read(HIVE_ID, CHANNEL_ID)
         assert result["channel_id"] == CHANNEL_ID
         assert result["last_read_at"] == "2026-04-15T12:00:00Z"
@@ -524,7 +524,7 @@ class TestMaterializeChannel:
             status_code=201,
             json=envelope(tasks),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             result = c.materialize_channel(
                 HIVE_ID,
                 CHANNEL_ID,
@@ -553,7 +553,7 @@ class TestListChannelTasks:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels/{CHANNEL_ID}/tasks",
             json=envelope(tasks),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             result = c.list_channel_tasks(HIVE_ID, CHANNEL_ID)
         assert len(result) == 1
 
@@ -569,7 +569,7 @@ class TestResolveChannel:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels/{CHANNEL_ID}/resolve",
             json=envelope(_channel_detail(status="resolved")),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             channel = c.resolve_channel(HIVE_ID, CHANNEL_ID, outcome="We agreed on option A")
         assert channel["status"] == "resolved"
         body = json.loads(httpx_mock.get_request().content)
@@ -580,7 +580,7 @@ class TestResolveChannel:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels/{CHANNEL_ID}/resolve",
             json=envelope(_channel_detail(status="resolved")),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             c.resolve_channel(
                 HIVE_ID,
                 CHANNEL_ID,
@@ -597,7 +597,7 @@ class TestReopenChannel:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels/{CHANNEL_ID}/reopen",
             json=envelope(_channel_detail(status="deliberating")),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             channel = c.reopen_channel(HIVE_ID, CHANNEL_ID)
         assert channel["status"] == "deliberating"
 
@@ -613,7 +613,7 @@ class TestPollChannels:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels/poll",
             json=envelope([{"channel_id": CHANNEL_ID, "unread": 3}]),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             result = c.poll_channels(HIVE_ID)
         assert len(result) == 1
         assert result[0]["channel_id"] == CHANNEL_ID
@@ -628,7 +628,7 @@ class TestPollChannelsWithMeta:
                 meta={"next_poll_ms": 2000},
             ),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             result = c.poll_channels_with_meta(HIVE_ID)
         assert "data" in result
         assert "meta" in result
@@ -641,7 +641,7 @@ class TestPollChannelsWithMeta:
             url=f"{BASE_URL}/api/v1/hives/{HIVE_ID}/channels/poll",
             json=envelope([], meta={"next_poll_ms": 5000}),
         )
-        with ApiaryClient(BASE_URL, token=TOKEN) as c:
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
             result = c.poll_channels_with_meta(HIVE_ID)
         assert result["data"] == []
         assert result["meta"]["next_poll_ms"] == 5000
@@ -654,7 +654,7 @@ class TestPollChannelsWithMeta:
 
 class TestChannelModel:
     def test_channel_from_dict(self):
-        from apiary_sdk.models import Channel
+        from superpos_sdk.models import Channel
 
         data = _channel_data()
         ch = Channel.from_dict(data)
@@ -664,7 +664,7 @@ class TestChannelModel:
         assert ch.status == "open"
 
     def test_channel_from_dict_with_participants(self):
-        from apiary_sdk.models import Channel
+        from superpos_sdk.models import Channel
 
         data = _channel_detail()
         ch = Channel.from_dict(data)
@@ -674,7 +674,7 @@ class TestChannelModel:
 
 class TestChannelMessageModel:
     def test_message_from_dict(self):
-        from apiary_sdk.models import ChannelMessage
+        from superpos_sdk.models import ChannelMessage
 
         data = _message_data()
         msg = ChannelMessage.from_dict(data)

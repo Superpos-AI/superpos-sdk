@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from apiary_sdk import ApiaryClient, ApiaryError, ServiceWorker, StreamingTask
+from superpos_sdk import ServiceWorker, StreamingTask, SuperposClient, SuperposError
 
 from .conftest import BASE_URL, HIVE_ID, TASK_ID, TOKEN, envelope
 
@@ -14,7 +14,7 @@ from .conftest import BASE_URL, HIVE_ID, TASK_ID, TOKEN, envelope
 
 STREAM_TASK_DATA = {
     "id": TASK_ID,
-    "apiary_id": "A" * 26,
+    "organization_id": "A" * 26,
     "hive_id": HIVE_ID,
     "type": "stream_test",
     "delivery_mode": "stream",
@@ -66,7 +66,7 @@ def _stream_chunk_url(task_id: str = TASK_ID) -> str:
 
 
 class TestStreamingTaskSendChunk:
-    def _stream(self, client: ApiaryClient) -> StreamingTask:
+    def _stream(self, client: SuperposClient) -> StreamingTask:
         return StreamingTask(client, HIVE_ID, TASK_ID)
 
     def test_send_chunk_posts_to_stream_chunk_endpoint(self, authed_client, httpx_mock):
@@ -138,7 +138,7 @@ class TestStreamingTaskSendChunk:
 
 
 class TestStreamingTaskComplete:
-    def _stream(self, client: ApiaryClient) -> StreamingTask:
+    def _stream(self, client: SuperposClient) -> StreamingTask:
         return StreamingTask(client, HIVE_ID, TASK_ID)
 
     def test_complete_sends_is_final_true(self, authed_client, httpx_mock):
@@ -246,7 +246,7 @@ class TestStreamingTaskContextManager:
 
 
 # ---------------------------------------------------------------------------
-# ApiaryClient.send_stream_chunk()
+# SuperposClient.send_stream_chunk()
 # ---------------------------------------------------------------------------
 
 
@@ -330,7 +330,7 @@ def _stream_chunks_url(task_id: str = TASK_ID) -> str:
 
 
 # ---------------------------------------------------------------------------
-# ApiaryClient.get_stream_chunks()
+# SuperposClient.get_stream_chunks()
 # ---------------------------------------------------------------------------
 
 
@@ -646,15 +646,15 @@ class TestCreateStreamTaskAndChunk:
 class TestStreamingTaskFinalizationErrorPropagation:
     """Finalization errors from the final POST /stream-chunk must not be swallowed.
 
-    Previously __exit__ caught ApiaryError during the implicit complete() call
+    Previously __exit__ caught SuperposError during the implicit complete() call
     and silently discarded it, leaving the parent task stuck in_progress on the
     server while the handler appeared to have succeeded locally.
     """
 
-    def test_context_manager_exit_propagates_apiary_error_from_complete(
+    def test_context_manager_exit_propagates_superpos_error_from_complete(
         self, authed_client, httpx_mock
     ):
-        """ApiaryError from the final stream-chunk POST must propagate out of the `with` block."""
+        """SuperposError from the final stream-chunk POST must propagate out of the `with` block."""
         error_body = {
             "data": None,
             "meta": {},
@@ -667,7 +667,7 @@ class TestStreamingTaskFinalizationErrorPropagation:
             json=error_body,
         )
 
-        with pytest.raises(ApiaryError):
+        with pytest.raises(SuperposError):
             with StreamingTask(authed_client, HIVE_ID, TASK_ID):
                 pass  # __exit__ triggers implicit complete(), which should raise
 
@@ -695,7 +695,7 @@ class TestStreamingTaskFinalizationErrorPropagation:
             json=error_body,
         )
 
-        with pytest.raises(ApiaryError):
+        with pytest.raises(SuperposError):
             with StreamingTask(authed_client, HIVE_ID, TASK_ID) as stream:
                 stream.send_chunk({"text": "hello"}, sequence=0)
             # __exit__ triggers complete(), which fails
@@ -722,7 +722,7 @@ class HandleStreamWorker(ServiceWorker):
 
 
 class TestServiceWorkerStreamFinalizationFailure:
-    """_process() must call fail_task() when stream finalization raises ApiaryError."""
+    """_process() must call fail_task() when stream finalization raises SuperposError."""
 
     def _worker(self) -> HandleStreamWorker:
         return HandleStreamWorker(BASE_URL, HIVE_ID, token=TOKEN, claim_type="data_request")

@@ -15,7 +15,7 @@ app(ActivityLogger::class)
 ## Why Use the Logger
 
 - **Auto-resolution** — passing a model instance (e.g. `Agent`) automatically
-  populates `apiary_id` and `hive_id` from the model's relationships.
+  populates `superpos_id` and `hive_id` from the model's relationships.
 - **Conflict detection** — mismatched context (an agent from one hive, a task
   from another) is caught immediately with a clear `LogicException`.
 - **Immutability** — every setter returns a new instance, so a base logger can
@@ -51,10 +51,10 @@ is never modified.
 
 | Method | Accepts | Sets | Auto-resolves |
 |--------|---------|------|---------------|
-| `forApiary($apiary)` | `string\|Apiary` | `apiary_id` | — |
-| `forHive($hive)` | `string\|Hive` | `hive_id` | `apiary_id` (from model) |
-| `byAgent($agent)` | `string\|Agent` | `agent_id` | `apiary_id`, `hive_id` (from model) |
-| `onTask($task)` | `string\|Task` | `task_id` | `apiary_id`, `hive_id` (from model) |
+| `forApiary($apiary)` | `string\|Superpos` | `superpos_id` | — |
+| `forHive($hive)` | `string\|Hive` | `hive_id` | `superpos_id` (from model) |
+| `byAgent($agent)` | `string\|Agent` | `agent_id` | `superpos_id`, `hive_id` (from model) |
+| `onTask($task)` | `string\|Task` | `task_id` | `superpos_id`, `hive_id` (from model) |
 
 ### Terminal Method
 
@@ -70,19 +70,19 @@ persisted model instance.
 ### Auto-Resolution from Model Instances
 
 When you pass a model instance to `byAgent()`, `onTask()`, or `forHive()`, the
-logger reads the model's `apiary_id` and `hive_id` properties and fills in any
+logger reads the model's `superpos_id` and `hive_id` properties and fills in any
 context that hasn't been set yet:
 
 ```php
 $logger = app(ActivityLogger::class)
     ->byAgent($agent);
-// apiary_id = $agent->apiary_id  (auto-set)
+// superpos_id = $agent->superpos_id  (auto-set)
 // hive_id   = $agent->hive_id    (auto-set)
 // agent_id  = $agent->id
 
 $logger = app(ActivityLogger::class)
     ->forHive($hive);
-// apiary_id = $hive->apiary_id   (auto-set)
+// superpos_id = $hive->superpos_id   (auto-set)
 // hive_id   = $hive->id
 ```
 
@@ -98,7 +98,7 @@ database:
 $logger = app(ActivityLogger::class)
     ->byAgent('01HWXYZ...');
 // agent_id = '01HWXYZ...'
-// apiary_id = null  (not resolved)
+// superpos_id = null  (not resolved)
 // hive_id   = null  (not resolved)
 ```
 
@@ -208,7 +208,7 @@ mismatches before the entry is written.
 | `forApiary()` with no argument | Uses default apiary from config | Resolved from tenant context |
 | Global scopes during resolution | No filtering — all entities visible | Bypassed via `withoutGlobalScopes()` |
 | String-ID DB lookups | Always find the entity (single tenant) | Use `withoutGlobalScopes()` to bypass tenant filter |
-| `apiary_id` on `log()` | Typically the CE default ULID | Resolved from context or explicit binding |
+| `superpos_id` on `log()` | Typically the CE default ULID | Resolved from context or explicit binding |
 
 In CE mode, the single-apiary/single-hive model means `forApiary()` and
 `forHive()` are often unnecessary — `byAgent()` or `onTask()` alone provides
@@ -226,7 +226,7 @@ app(ActivityLogger::class)
     ->log('task.claimed');
 ```
 
-Both `apiary_id` and `hive_id` are auto-resolved from whichever model is
+Both `superpos_id` and `hive_id` are auto-resolved from whichever model is
 passed first.
 
 ### Agent registration (no task)
@@ -291,11 +291,11 @@ app(ActivityLogger::class)
 
 ## Common Pitfalls
 
-### Forgetting `apiary_id` in queue jobs
+### Forgetting `superpos_id` in queue jobs
 
 Outside of an HTTP request, there is no ambient tenant context. If you call
 `->log()` without binding an apiary (and without a model that provides one),
-the entry will be created with `apiary_id = null`, which fails the `NOT NULL`
+the entry will be created with `superpos_id = null`, which fails the `NOT NULL`
 database constraint.
 
 **Fix:** Always bind context explicitly in queue jobs:
@@ -358,7 +358,7 @@ the authoritative check.
 
 ```php
 app(ActivityLogger::class)
-    ->byAgent($agent)          // auto-sets apiary_id from agent
+    ->byAgent($agent)          // auto-sets superpos_id from agent
     ->forApiary($otherApiary)  // throws — apiary already bound
     ->log('action');
 ```
@@ -397,14 +397,14 @@ isolation.
 
 | Scenario | Exception | When |
 |----------|-----------|------|
-| Apiary mismatch (explicit vs explicit) | `LogicException` | At the setter call |
-| Apiary mismatch (explicit vs model-auto) | `LogicException` | At the setter call |
+| Superpos mismatch (explicit vs explicit) | `LogicException` | At the setter call |
+| Superpos mismatch (explicit vs model-auto) | `LogicException` | At the setter call |
 | Hive mismatch (bound agent/task vs new hive) | `LogicException` | At `forHive()` call |
 | Agent apiary/hive mismatch | `LogicException` | At `byAgent()` call |
 | Task apiary/hive mismatch | `LogicException` | At `onTask()` call |
 | Cross-entity apiary/hive mismatch | `LogicException` | At the later setter call |
 | Invalid string ID (nonexistent) | `RuntimeException` or DB error | At `log()` → `create()` |
-| Missing `apiary_id` at `log()` | DB constraint violation | At `log()` → `create()` |
+| Missing `superpos_id` at `log()` | DB constraint violation | At `log()` → `create()` |
 | Updating a created entry | `RuntimeException` | On `save()` / `update()` |
 
 ### Running the Tests

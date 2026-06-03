@@ -1,6 +1,6 @@
 # Local Development Setup
 
-This guide walks you through setting up Apiary for local development on Linux or
+This guide walks you through setting up Superpos for local development on Linux or
 macOS. By the end you will have all six Docker services running, a seeded
 database, and a passing test suite.
 
@@ -85,7 +85,7 @@ You should see:
 ```
 🔄 Running migrations...
 📦 Caching configuration...
-✅ Apiary is ready!
+✅ Superpos is ready!
 🌐 Server listening on :80
 ```
 
@@ -104,7 +104,7 @@ Environment variables are defined inline in `docker-compose.yml` — there is no
 ```yaml
 APP_ENV: local
 APP_DEBUG: 'true'
-APIARY_EDITION: ce            # Community Edition (single apiary/hive)
+SUPERPOS_EDITION: ce            # Community Edition (single apiary/hive)
 DB_DATABASE: apiary
 DB_USERNAME: apiary
 DB_PASSWORD: apiary
@@ -130,7 +130,7 @@ docker compose down && docker compose up -d
 
 ### Switching to Cloud edition
 
-Set `APIARY_EDITION: cloud` on every service in `docker-compose.yml`. Cloud
+Set `SUPERPOS_EDITION: cloud` on every service in `docker-compose.yml`. Cloud
 edition also requires Stripe keys — see `config/apiary.php` for the full list.
 
 ---
@@ -299,7 +299,7 @@ docker compose restart horizon
 
 ### Code style / linting
 
-Apiary uses [Laravel Pint](https://laravel.com/docs/pint) (PSR-12).
+Superpos uses [Laravel Pint](https://laravel.com/docs/pint) (PSR-12).
 Requires dev dependencies — see [Installing Dev Dependencies](#installing-dev-dependencies).
 
 ```bash

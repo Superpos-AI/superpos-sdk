@@ -1,4 +1,4 @@
-# Apiary — Feature: Inbox (Simple Webhook-to-Task)
+# Superpos — Feature: Inbox (Simple Webhook-to-Task)
 
 ## Addendum to PRODUCT.md v4.0
 
@@ -37,7 +37,7 @@ POST https://acme.apiary.ai/inbox/inb_a1B2c3D4e5F6
 No connector. No route config. No signature validation.
 Just URL → task.
 
-**ID vs Slug:** Every inbox has two identifiers. The **id** is a standard 26-character ULID (like all Apiary resources). The **slug** is a URL-safe string prefixed `inb_` followed by 12 random characters (e.g. `inb_a1B2c3D4e5F6`). The public receiver URL uses the slug — it is what you copy/paste into external services. The id is what the API returns for management operations (list, show, update, delete).
+**ID vs Slug:** Every inbox has two identifiers. The **id** is a standard 26-character ULID (like all Superpos resources). The **slug** is a URL-safe string prefixed `inb_` followed by 12 random characters (e.g. `inb_a1B2c3D4e5F6`). The public receiver URL uses the slug — it is what you copy/paste into external services. The id is what the API returns for management operations (list, show, update, delete).
 
 ## 3. How It Works
 
@@ -63,7 +63,7 @@ Response:
 ```json
 {
   "id": "01HQXK5V8N3YGT4P9RZM6WJCBA",
-  "apiary_id": "01HQXK5V8N3YGT4P9RZM6WJAAA",
+  "superpos_id": "01HQXK5V8N3YGT4P9RZM6WJAAA",
   "hive_id": "01HQXK5V8N3YGT4P9RZM6WJBBB",
   "name": "CI Pipeline Alerts",
   "slug": "inb_a1B2c3D4e5F6",
@@ -136,7 +136,7 @@ The entire POST body becomes the task payload, wrapped with inbox metadata:
 }
 ```
 
-`_inbox` — metadata added by Apiary.
+`_inbox` — metadata added by Superpos.
 `_body` — raw POST body, untouched.
 
 Agent receives the full context and decides what to do.
@@ -165,7 +165,7 @@ POST /api/v1/hives/{hive}/inboxes
   "target_capability": "incident_response",
   "target_agent_id": null,
   "priority": "critical",
-  "description": "PagerDuty → Apiary bridge",
+  "description": "PagerDuty → Superpos bridge",
 
   "transform": {
     "task_type_from": "$.severity",
@@ -401,7 +401,7 @@ Uses the same idempotency key infrastructure from FEATURE_TASK_SEMANTICS.
 ```sql
 CREATE TABLE inboxes (
     id              VARCHAR(26) PRIMARY KEY,     -- ULID
-    apiary_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id),
+    superpos_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id),
     hive_id         VARCHAR(26) NOT NULL REFERENCES hives(id),
     name            VARCHAR(255) NOT NULL,
     slug            VARCHAR(100) NOT NULL,       -- URL-safe identifier (inb_ + 12 random chars)
@@ -439,7 +439,7 @@ CREATE TABLE inboxes (
     created_at      TIMESTAMP DEFAULT NOW(),
     updated_at      TIMESTAMP DEFAULT NOW(),
     
-    UNIQUE(apiary_id, hive_id, slug)
+    UNIQUE(superpos_id, hive_id, slug)
 );
 
 CREATE INDEX idx_inboxes_slug ON inboxes (slug) WHERE is_active = TRUE;
@@ -452,7 +452,7 @@ Lightweight request log for debugging and dashboard:
 ```sql
 CREATE TABLE inbox_log (
     id              BIGSERIAL PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id) ON DELETE CASCADE,
+    superpos_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id) ON DELETE CASCADE,
     hive_id         VARCHAR(26) NOT NULL,
     inbox_id        VARCHAR(26) NOT NULL,
     task_id         VARCHAR(26),                -- null if rejected
@@ -466,7 +466,7 @@ CREATE TABLE inbox_log (
     created_at      TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_inbox_log_apiary ON inbox_log (apiary_id, created_at);
+CREATE INDEX idx_inbox_log_apiary ON inbox_log (superpos_id, created_at);
 CREATE INDEX idx_inbox_log_hive ON inbox_log (hive_id, created_at);
 CREATE INDEX idx_inbox_log_inbox ON inbox_log (inbox_id, created_at);
 ```
@@ -631,7 +631,7 @@ public function receive(string $slug, Request $request)
     // Create task
     $task = Task::create([
         'hive_id' => $inbox->hive_id,
-        'apiary_id' => $inbox->apiary_id,
+        'superpos_id' => $inbox->superpos_id,
         'type' => $this->resolveTaskType($inbox, $payload['_body']),
         'target_capability' => $inbox->target_capability,
         'target_agent_id' => $inbox->target_agent_id,

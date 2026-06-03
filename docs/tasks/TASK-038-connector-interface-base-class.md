@@ -32,11 +32,11 @@ Define a `ConnectorInterface` contract and a reusable `BaseConnector` abstract c
 ### 3. Connector Model (`app/Models/Connector.php`)
 
 - Uses `BelongsToApiary` + `HasUlid` + `HasFactory` traits
-- Fields: `apiary_id`, `type`, `name`, `class_path`, `is_builtin`, `created_by`
+- Fields: `superpos_id`, `type`, `name`, `class_path`, `is_builtin`, `created_by`
 - Constants for built-in types
 - Relations: `apiary()`, `serviceConnections()`
 - Scopes: `builtin()`, `custom()`, `ofType()`
-- Unique constraint: `(apiary_id, type)`
+- Unique constraint: `(superpos_id, type)`
 
 ### 4. Migration (`create_connectors_table`)
 
@@ -44,7 +44,7 @@ Schema from PRODUCT.md section 9.1:
 ```sql
 CREATE TABLE connectors (
     id              VARCHAR(26) PRIMARY KEY,
-    apiary_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id) ON DELETE CASCADE,
+    superpos_id       VARCHAR(26) NOT NULL REFERENCES apiaries(id) ON DELETE CASCADE,
     type            VARCHAR(100) NOT NULL,
     name            VARCHAR(255) NOT NULL,
     class_path      VARCHAR(500) NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE connectors (
     created_by      VARCHAR(26),
     created_at      TIMESTAMP DEFAULT NOW(),
     updated_at      TIMESTAMP DEFAULT NOW(),
-    UNIQUE(apiary_id, type)
+    UNIQUE(superpos_id, type)
 );
 ```
 
@@ -61,7 +61,7 @@ CREATE TABLE connectors (
 - Add `connector()` BelongsTo relationship on ServiceConnection model
 - Add FK migration: `connector_id` references `connectors(id)` SET NULL on delete
 
-### 6. Apiary Model Update
+### 6. Superpos Model Update
 
 - Add `connectors()` HasMany relationship
 
@@ -73,7 +73,7 @@ CREATE TABLE connectors (
 
 - Connector model ULID generation
 - BelongsToApiary trait integration (CE auto-set, cloud fail-closed)
-- Unique constraint `(apiary_id, type)` enforcement
+- Unique constraint `(superpos_id, type)` enforcement
 - Cascade delete: apiary deletion cascades to connectors
 - Relationships: `connector.apiary()`, `connector.serviceConnections()`, `apiary.connectors()`
 - ServiceConnection → Connector relationship (nullable FK)
@@ -89,6 +89,6 @@ CREATE TABLE connectors (
 - `database/migrations/..._add_connector_fk_to_service_connections.php` (new)
 - `database/factories/ConnectorFactory.php` (new)
 - `app/Models/ServiceConnection.php` (edit — add connector relationship)
-- `app/Models/Apiary.php` (edit — add connectors relationship)
+- `app/Models/Superpos.php` (edit — add connectors relationship)
 - `tests/Feature/ConnectorModelTest.php` (new)
 - `tests/Unit/BaseConnectorTest.php` (new)

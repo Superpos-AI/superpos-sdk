@@ -46,7 +46,7 @@ All endpoints enforce:
 - Sanctum agent authentication
 - Permission middleware (`tasks.read` or `tasks.create`)
 - Hive resolution + cross-hive permission check
-- Apiary isolation (task must belong to agent's apiary)
+- Superpos isolation (task must belong to agent's apiary)
 - Standard JSON envelope `{ data, meta, errors }`
 
 ### New: `ReplayTaskRequest`
@@ -66,15 +66,15 @@ Replay operations log `task.replayed` with details including `original_task_id`,
 
 ### SDK Updates
 
-**Python SDK** (`sdk/python/src/apiary_sdk/client.py`):
+**Python SDK** (`sdk/python/src/superpos_sdk/client.py`):
 - `get_task_trace(hive_id, task_id)` — GET trace
 - `replay_task(hive_id, task_id, override_payload=)` — POST replay
 - `compare_tasks(hive_id, task_a=, task_b=)` — GET compare
 
-**Shell SDK** (`sdk/shell/src/apiary-sdk.sh`):
-- `apiary_get_task_trace HIVE_ID TASK_ID`
-- `apiary_replay_task HIVE_ID TASK_ID [-d OVERRIDE_PAYLOAD_JSON]`
-- `apiary_compare_tasks HIVE_ID TASK_A_ID TASK_B_ID`
+**Shell SDK** (`sdk/shell/src/superpos-sdk.sh`):
+- `superpos_get_task_trace HIVE_ID TASK_ID`
+- `superpos_replay_task HIVE_ID TASK_ID [-d OVERRIDE_PAYLOAD_JSON]`
+- `superpos_compare_tasks HIVE_ID TASK_A_ID TASK_B_ID`
 
 ## Tests
 
