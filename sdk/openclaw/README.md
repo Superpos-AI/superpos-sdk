@@ -68,6 +68,7 @@ See `config/openclaw.example.json` for all available options.
 | `SUPERPOS_AGENT_ID` | For refresh/login | — | Agent ID (auto-populated after registration/UI connect) |
 | `SUPERPOS_AGENT_REFRESH_TOKEN` | Recommended | — | Refresh token from Connect Agent dialog (secret-less renewal path) |
 | `SUPERPOS_AGENT_SECRET` | Optional fallback | — | Legacy/shared secret for register/login fallback |
+| `SUPERPOS_REGISTRATION_TOKEN` | For registration | — | Registration token (`srt_…`), required by default when the hive gates registration |
 | `SUPERPOS_CAPABILITIES` | No | `general` | Comma-separated capabilities |
 | `SUPERPOS_POLL_INTERVAL` | No | `10` | Daemon poll interval (seconds) |
 | `SUPERPOS_HEARTBEAT_INTERVAL` | No | `30` | Heartbeat interval (seconds) |

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 
@@ -257,6 +259,35 @@ class TestLogoutTokenClearing:
             with pytest.raises(httpx.ConnectError):
                 c.logout()
             assert c.token is None
+
+
+# ------------------------------------------------------------------
+# Registration token
+# ------------------------------------------------------------------
+
+
+class TestRegistrationToken:
+    def test_registration_token_sent_when_passed(self, httpx_mock):
+        httpx_mock.add_response(
+            url=f"{BASE_URL}/api/v1/agents/register",
+            status_code=201,
+            json=envelope({"agent": {"id": "a"}, "token": "t"}),
+        )
+        with SuperposClient(BASE_URL) as c:
+            c.register(name="x", hive_id="h" * 26, secret="s" * 16, registration_token="srt_abc")
+        body = json.loads(httpx_mock.get_request().content)
+        assert body["registration_token"] == "srt_abc"
+
+    def test_registration_token_omitted_when_not_passed(self, httpx_mock):
+        httpx_mock.add_response(
+            url=f"{BASE_URL}/api/v1/agents/register",
+            status_code=201,
+            json=envelope({"agent": {"id": "a"}, "token": "t"}),
+        )
+        with SuperposClient(BASE_URL) as c:
+            c.register(name="x", hive_id="h" * 26, secret="s" * 16)
+        body = json.loads(httpx_mock.get_request().content)
+        assert "registration_token" not in body
 
 
 # ------------------------------------------------------------------

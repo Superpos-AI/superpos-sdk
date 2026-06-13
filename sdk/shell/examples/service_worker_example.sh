@@ -47,6 +47,7 @@ if [[ -z "${SUPERPOS_TOKEN:-}" ]]; then
             -n "$WORKER_NAME" \
             -h "$HIVE_ID" \
             -s "$AGENT_SECRET" \
+            -r "${SUPERPOS_REGISTRATION_TOKEN:-}" \
             -T "service_worker" \
             -c "$CAPABILITY" >/dev/null
     fi

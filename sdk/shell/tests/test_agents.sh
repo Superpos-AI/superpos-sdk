@@ -51,6 +51,26 @@ body=$(mock_last_body)
 assert_eq "$(echo "$body" | jq '.capabilities | length')" "2" "register sends capabilities array"
 assert_eq "$(echo "$body" | jq -r '.metadata.version')" "1.0" "register sends metadata object"
 
+# Register with a registration token
+mock_reset
+mock_response POST "/api/v1/agents/register" 200 \
+    '{"data":{"agent":{"id":"agent-3"},"token":"tok-789","refresh_token":"rt-789"},"meta":{},"errors":null}'
+
+superpos_register -n "bot3" -h "$HIVE" -s "ssssssssssssssss" -r "srt_xyz" >/dev/null
+
+body=$(mock_last_body)
+assert_eq "$(echo "$body" | jq -r '.registration_token')" "srt_xyz" "register sends registration token in body"
+
+# Register without a registration token omits the key
+mock_reset
+mock_response POST "/api/v1/agents/register" 200 \
+    '{"data":{"agent":{"id":"agent-4"},"token":"tok-000","refresh_token":"rt-000"},"meta":{},"errors":null}'
+
+superpos_register -n "bot4" -h "$HIVE" -s "ssssssssssssssss" >/dev/null
+
+body=$(mock_last_body)
+assert_eq "$(echo "$body" | jq -r '.registration_token')" "null" "register omits registration token when not passed"
+
 # ── Login ────────────────────────────────────────────────────────
 
 describe "superpos_login"
@@ -173,6 +193,26 @@ mock_response POST "/api/v1/agents/heartbeat" 200 \
 superpos_heartbeat -m '{"cpu":42}' >/dev/null
 body=$(mock_last_body)
 assert_eq "$(echo "$body" | jq '.metadata.cpu')" "42" "heartbeat sends metadata in body"
+
+# Heartbeat with model and effort
+mock_reset
+mock_response POST "/api/v1/agents/heartbeat" 200 \
+    '{"data":{"id":"agent-1","status":"online","model":"claude-opus-4-7","effort":"high"},"meta":{},"errors":null}'
+
+superpos_heartbeat -M "claude-opus-4-7" -E "high" >/dev/null
+body=$(mock_last_body)
+assert_eq "$(echo "$body" | jq -r '.model')" "claude-opus-4-7" "heartbeat sends model in body"
+assert_eq "$(echo "$body" | jq -r '.effort')" "high" "heartbeat sends effort in body"
+
+# Heartbeat omits unset fields
+mock_reset
+mock_response POST "/api/v1/agents/heartbeat" 200 \
+    '{"data":{"id":"agent-1","status":"online","model":"claude-opus-4-7"},"meta":{},"errors":null}'
+
+superpos_heartbeat -M "claude-opus-4-7" >/dev/null
+body=$(mock_last_body)
+assert_eq "$(echo "$body" | jq 'has("effort")')" "false" "heartbeat omits effort when unset"
+assert_eq "$(echo "$body" | jq 'has("metadata")')" "false" "heartbeat omits metadata when unset"
 
 # ── Update status ────────────────────────────────────────────────
 

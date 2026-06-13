@@ -129,6 +129,34 @@ class TestHeartbeat:
         payload = json.loads(httpx_mock.get_request().content)
         assert payload["metadata"]["cpu"] == 42
 
+    def test_heartbeat_with_model_and_effort(self, httpx_mock):
+        httpx_mock.add_response(
+            url=f"{BASE_URL}/api/v1/agents/heartbeat",
+            json=envelope(
+                {
+                    "id": AGENT_ID,
+                    "status": "online",
+                    "model": "claude-opus-4-7",
+                    "effort": "high",
+                }
+            ),
+        )
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            c.heartbeat(model="claude-opus-4-7", effort="high")
+        payload = json.loads(httpx_mock.get_request().content)
+        assert payload["model"] == "claude-opus-4-7"
+        assert payload["effort"] == "high"
+
+    def test_heartbeat_omits_unset_fields(self, httpx_mock):
+        httpx_mock.add_response(
+            url=f"{BASE_URL}/api/v1/agents/heartbeat",
+            json=envelope({"id": AGENT_ID, "status": "online", "model": "claude-opus-4-7"}),
+        )
+        with SuperposClient(BASE_URL, token=TOKEN) as c:
+            c.heartbeat(model="claude-opus-4-7")
+        payload = json.loads(httpx_mock.get_request().content)
+        assert payload == {"model": "claude-opus-4-7"}
+
 
 class TestUpdateStatus:
     def test_update_status(self, httpx_mock):

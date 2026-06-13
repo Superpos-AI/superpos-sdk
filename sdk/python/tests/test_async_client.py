@@ -64,6 +64,38 @@ class TestAuth:
         assert client._event_cursors == {}
         await client.aclose()
 
+    async def test_register_sends_registration_token(self):
+        seen: dict[str, Any] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen["body"] = json.loads(request.content)
+            return httpx.Response(
+                200,
+                json=_envelope({"agent": {"id": "a1"}, "token": "newtok"}),
+            )
+
+        client = AsyncSuperposClient("https://superpos.test", transport=_mock_transport(handler))
+        await client.register(
+            name="worker", hive_id="hive-1", secret="s" * 16, registration_token="srt_abc"
+        )
+        assert seen["body"]["registration_token"] == "srt_abc"
+        await client.aclose()
+
+    async def test_register_omits_registration_token_when_not_passed(self):
+        seen: dict[str, Any] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen["body"] = json.loads(request.content)
+            return httpx.Response(
+                200,
+                json=_envelope({"agent": {"id": "a1"}, "token": "newtok"}),
+            )
+
+        client = AsyncSuperposClient("https://superpos.test", transport=_mock_transport(handler))
+        await client.register(name="worker", hive_id="hive-1", secret="s" * 16)
+        assert "registration_token" not in seen["body"]
+        await client.aclose()
+
     async def test_login_resets_event_cursors(self):
         def handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(

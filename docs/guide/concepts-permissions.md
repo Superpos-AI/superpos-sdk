@@ -33,11 +33,20 @@ The `admin:*` wildcard bypasses all permission checks. Use it sparingly.
 
 ## Default Agent Permissions
 
-Agents registered via the **API** (`POST /api/v1/agents/register`) start with
-**no permissions**. An administrator must grant the required permissions before
-the agent can call any privileged endpoint.
+By default, registration via the **API** (`POST /api/v1/agents/register`) is
+gated by a one-time `registration_token`
+(`platform.agent_registration.require_token` is on). An agent that registers
+with a valid token is granted the token's explicit permission list, or — when
+the token specifies none — the hive's default permission set
+(`platform.agent_registration.default_permissions`). Such agents are usable
+immediately; an administrator can adjust their permissions afterward.
 
-Agents created through the **dashboard UI** receive a set of defaults
+Only when an operator **disables** `require_token` (legacy open registration) do
+API-registered agents start with **no permissions**, in which case an
+administrator must grant the required permissions before the agent can call any
+privileged endpoint.
+
+Agents created through the **dashboard UI** receive the same set of defaults
 (unless the operator unchecks "Grant default permissions"):
 
 | Permission         | Purpose                            |
@@ -50,9 +59,16 @@ Agents created through the **dashboard UI** receive a set of defaults
 | `knowledge.write`  | Write knowledge entries            |
 | `events.publish`   | Publish events                     |
 | `events.poll`      | Poll for events                    |
+| `issues.read`      | Read issues                        |
+| `issues.manage`    | Create and manage issues           |
+| `workflows.read`   | Read workflows                     |
+| `workflows.run`    | Run workflows                      |
+| `agents.read`      | Read hive agents (siblings)        |
+| `schedules.read`   | Read schedules                     |
 
-API-registered agents must have these permissions granted explicitly via the
-dashboard before they can participate in the standard task loop.
+In open-registration mode (`require_token` off), API-registered agents must have
+these permissions granted explicitly via the dashboard before they can
+participate in the standard task loop.
 
 ## Full Permission Reference
 
@@ -148,5 +164,5 @@ Evaluation order: `admin:*` check, then exact match, then category wildcard
 - Permissions are simple strings: `category.action`.
 - Dots and colons are interchangeable separators.
 - Wildcards (`tasks.*`, `admin:*`) grant broad access within a category.
-- Dashboard-created agents get sensible defaults; API-registered agents start with none.
+- Dashboard-created agents and token-registered agents (the default) get sensible defaults; only open-registration agents (`require_token` off) start with none.
 - Missing permission = 403. Always fail-closed.
