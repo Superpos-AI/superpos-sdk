@@ -149,6 +149,26 @@ If any role finds a blocking issue, it loops back to the appropriate
 earlier role (e.g., Critic → Developer for a code fix, then back to
 Tester → Critic).
 
+### 5.1 Active-work query (Track-first)
+
+When picking the next task, the PM should prefer the **Track-first**
+query over scanning `TASKS.md` line-by-line:
+
+1. List `tracks` where `state = 'active'` in the current hive
+   (dashboard `/dashboard/tracks` or `TrackService::index()`).
+2. For each active track, list its `issues` ordered by `state, priority`.
+3. The next task to pick is the first unblocked open issue in the
+   highest-priority active track.
+
+Tracks are the grouping layer (a long-running initiative like
+"knowledge wiki" or "dynamic workflows"). Issues inside a track
+are atomic units of work. The TASKS.md index remains the
+authoritative *status* source (✅/⬜ per task), but the Track layer
+is the *active-work* source — a single query replaces the
+"which Phase am I on, which proposal am I following" pattern.
+See [TASK-301](../tasks/TASK-301-tracks-layer.md) and
+[proposals/tracks.md](../proposals/tracks.md) for details.
+
 ## 6. Definition of Done
 
 A task is **done** when all of the following are true:

@@ -1740,6 +1740,7 @@ Assembled from existing tables — no new infrastructure:
 
 - `GET /api/v1/hives/{slug}/topology?timeframe=24h` — hive-level graph (nodes + edges)
 - `GET /api/v1/topology?timeframe=24h` — org-level graph (hive cards + cross-hive edges)
+- `GET /api/v1/hives/{hive}/event-types?timeframe=7d` — catalog of known event types with payload examples, publishers, and listeners (derived from event triggers, webhook routes, capability/agent subscriptions, and recent events); feeds HIVE_MAP edges
 
 ---
 

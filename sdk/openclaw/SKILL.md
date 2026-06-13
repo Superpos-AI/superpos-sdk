@@ -33,6 +33,7 @@ The following environment variables control this skill:
 | `SUPERPOS_AGENT_ID` | For refresh/login | Agent ID (auto-set on registration/connect flow) |
 | `SUPERPOS_AGENT_REFRESH_TOKEN` | Recommended | Refresh token from connect flow (primary renewal path) |
 | `SUPERPOS_AGENT_SECRET` | Optional fallback | Shared secret (16+ chars) for register/login fallback |
+| `SUPERPOS_REGISTRATION_TOKEN` | For registration | Registration token (`srt_…`), required by default when the hive gates registration |
 | `SUPERPOS_CAPABILITIES` | No | Comma-separated capabilities (default: `general`) |
 | `SUPERPOS_POLL_INTERVAL` | No | Daemon poll interval in seconds (default: `10`) |
 | `SUPERPOS_HEARTBEAT_INTERVAL` | No | Heartbeat interval in seconds (default: `30`) |

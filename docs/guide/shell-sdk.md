@@ -14,9 +14,17 @@ No package manager or installation step needed — just source the library file.
 
 ## Permissions
 
-Freshly registered agents have **no permissions** by default and cannot access
-privileged endpoints. An administrator must grant the required permissions
-before the agent can create tasks, write knowledge, etc.
+When the hive gates registration with a token (the **default** —
+`platform.agent_registration.require_token` is on), a freshly registered agent
+is granted the registration token's permissions, or the hive's default
+permission set when the token specifies none. That makes the agent **immediately
+usable** for the privileged functions below — you do not need an admin to grant
+permissions first. An admin can still adjust an agent's permissions afterward.
+
+If an operator disables `require_token` (legacy open registration), the
+`registration_token` is optional and **no** permissions are auto-granted — an
+administrator must grant the required permissions before the agent can create
+tasks, write knowledge, etc.
 
 | Function | Required permission |
 |----------|---------------------|
@@ -42,8 +50,11 @@ code 4 (HTTP 403).
 
 ## Quick start
 
-> **Note:** The example below assumes the agent has been granted `tasks.create`
-> permission. Without it, `superpos_create_task` will return exit code 4.
+> **Note:** With the default token-gated registration, the new agent is granted
+> the token's permissions (or the hive defaults, which include `tasks:create`),
+> so `superpos_create_task` works right away. If the hive runs in
+> open-registration mode (`require_token` off), an admin must grant
+> `tasks:create` first or `superpos_create_task` returns exit code 4.
 
 ```bash
 #!/usr/bin/env bash
@@ -51,8 +62,9 @@ source /path/to/sdk/shell/src/superpos-sdk.sh
 
 export SUPERPOS_BASE_URL="http://localhost:8080"
 
-# Register a new agent (token is stored automatically)
-superpos_register -n "my-agent" -h "$HIVE_ID" -s "my-secure-secret-16+"
+# Register a new agent (token is stored automatically).
+# -r passes the srt_… registration token, required by default.
+superpos_register -n "my-agent" -h "$HIVE_ID" -s "my-secure-secret-16+" -r "$REGISTRATION_TOKEN"
 
 # Create a task (requires tasks.create permission)
 task=$(superpos_create_task "$HIVE_ID" -t "summarize" -d '{"text": "Hello world"}')
@@ -70,7 +82,9 @@ automatically.
 source superpos-sdk.sh
 export SUPERPOS_BASE_URL="http://localhost:8080"
 
-superpos_register -n "my-agent" -h "$HIVE_ID" -s "change-me-to-something-secure"
+# -r passes the srt_… registration token (required by default; optional only
+# when require_token is disabled).
+superpos_register -n "my-agent" -h "$HIVE_ID" -s "change-me-to-something-secure" -r "$REGISTRATION_TOKEN"
 # SUPERPOS_TOKEN is now set — all subsequent calls are authenticated
 ```
 
@@ -196,8 +210,8 @@ The `superpos-cli` script provides a command-line interface for ad-hoc use:
 ```bash
 export SUPERPOS_BASE_URL="http://localhost:8080"
 
-# Register
-./sdk/shell/bin/superpos-cli register -n "bot" -h "$HIVE_ID" -s "secret-16chars+"
+# Register (-r passes the srt_… registration token, required by default)
+./sdk/shell/bin/superpos-cli register -n "bot" -h "$HIVE_ID" -s "secret-16chars+" -r "$REGISTRATION_TOKEN"
 
 # Show profile
 ./sdk/shell/bin/superpos-cli me | jq .
@@ -264,9 +278,12 @@ or other tools.
 
 ## API reference
 
-### `superpos_register -n NAME -h HIVE_ID -s SECRET [-a SUPERPOS_ID] [-t TYPE] [-c CAPS_JSON] [-m META_JSON]`
+### `superpos_register -n NAME -h HIVE_ID -s SECRET [-r REGISTRATION_TOKEN] [-a SUPERPOS_ID] [-t TYPE] [-c CAPS_JSON] [-m META_JSON]`
 
-Register agent, store token. Returns agent + token JSON.
+Register agent, store token. Returns agent + token JSON. `-r` carries the
+`srt_…` registration token, which is required by default
+(`platform.agent_registration.require_token`) and optional only when an operator
+disables it.
 
 ### `superpos_login -i AGENT_ID -s SECRET`
 

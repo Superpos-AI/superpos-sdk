@@ -167,6 +167,7 @@ class SuperposClient:
         name: str,
         hive_id: str,
         secret: str,
+        registration_token: str | None = None,
         organization_id: str | None = None,
         agent_type: str = "custom",
         capabilities: list[str] | None = None,
@@ -175,6 +176,10 @@ class SuperposClient:
         superpos_id: str | None = None,
     ) -> dict[str, Any]:
         """Register a new agent and store the returned token.
+
+        ``registration_token`` is required by default on the server (when
+        ``platform.agent_registration.require_token`` is enabled); pass the
+        ``srt_…`` token issued by the hive to authorize registration.
 
         Returns the full ``data`` dict (``agent`` + ``token``).
         """
@@ -186,6 +191,8 @@ class SuperposClient:
             "secret": secret,
             "type": agent_type,
         }
+        if registration_token is not None:
+            payload["registration_token"] = registration_token
         if _org_id is not None:
             payload["organization_id"] = _org_id
         if capabilities is not None:
@@ -225,11 +232,26 @@ class SuperposClient:
     # Agent lifecycle
     # ------------------------------------------------------------------
 
-    def heartbeat(self, *, metadata: dict[str, Any] | None = None) -> dict[str, Any]:
-        """Send a heartbeat to keep the agent alive."""
-        payload = {}
+    def heartbeat(
+        self,
+        *,
+        metadata: dict[str, Any] | None = None,
+        model: str | None = None,
+        effort: str | None = None,
+    ) -> dict[str, Any]:
+        """Send a heartbeat to keep the agent alive.
+
+        ``model`` and ``effort`` are optional free-form labels (e.g.
+        ``claude-opus-4-7`` and ``low``/``medium``/``high``) that surface on
+        the agent's dashboard row when provided.
+        """
+        payload: dict[str, Any] = {}
         if metadata is not None:
             payload["metadata"] = metadata
+        if model is not None:
+            payload["model"] = model
+        if effort is not None:
+            payload["effort"] = effort
         return self._request("POST", "/api/v1/agents/heartbeat", json=payload)
 
     def update_status(self, status: str) -> dict[str, Any]:

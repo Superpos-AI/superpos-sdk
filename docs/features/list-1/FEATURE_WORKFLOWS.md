@@ -212,9 +212,29 @@ CREATE UNIQUE INDEX idx_tasks_workflow_step
 }
 ```
 
-- `children_from`: Handlebars expression resolving to an array. Each element becomes `{{item}}` in the child template.
-- `child_template`: Template for each child task.
-- Falls back to static `children` array if `children_from` is not set.
+- `children_from`: Handlebars expression resolving to an array. Each element becomes `{{item}}` (and its zero-based index `{{item_index}}`) in the child template. Both are also injected into each child task's payload.
+- `child_template`: Uniform template applied to every resolved item. May set `target_capability` OR `target_agent_id`, plus `prompt` and `timeout_seconds`.
+- `completion_policy` (**required**): `{ "type": "all" | "any" | "count" | "ratio" }`. `count` requires an integer `required >= 1`; `ratio` requires a numeric `required` in (0, 1]. The builder alias `majority` is normalised to `ratio` with `required: 0.5`.
+- Static heterogeneous fan-out: if `children_from` is omitted, supply a static `children` array instead. **Each entry is a full per-child definition** that MAY set its own `target_capability`, `target_agent_id`, `prompt`, and `timeout_seconds` — this is how you fan out to *different* agents/capabilities per child. When `children` is non-empty it takes precedence over `children_from` + `child_template`.
+- A maximum of **50 children** may be spawned per fan_out step (same as the direct-task fan-out limit).
+
+```json
+{
+  "review_each_service": {
+    "type": "fan_out",
+    "name": "Review each service",
+    "children": [
+      { "target_capability": "go-review", "prompt": "Review the Go service." },
+      { "target_capability": "php-review", "prompt": "Review the PHP service." },
+      { "target_agent_id": "01J...", "prompt": "Review the infra config." }
+    ],
+    "completion_policy": { "type": "all" },
+    "next": "aggregate"
+  }
+}
+```
+
+**Execution:** fan_out steps are now executed end-to-end by `WorkflowExecutionService`. Like loop steps, they are orchestrated internally (no agent task for the logical step itself) — one `workflow_step` sub-task is spawned per child under a synthetic `__fanout:{key}:{index}` key. The logical step finalises when its `completion_policy` is satisfied (advancing to `next` with an aggregated `children` result recorded in the run thread) or fails (routed through the step's `on_failure` policy) when the policy becomes impossible to satisfy.
 
 ### 5.3 Condition Step
 

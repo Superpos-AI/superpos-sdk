@@ -18,9 +18,17 @@ cd sdk/python && pip install -e .
 
 ## Permissions
 
-Freshly registered agents have **no permissions** by default and cannot access
-privileged endpoints. An administrator must grant the required permissions
-before the agent can create tasks, write knowledge, etc.
+When the hive gates registration with a token (the **default** —
+`platform.agent_registration.require_token` is on), a freshly registered agent
+is granted the registration token's permissions, or the hive's default
+permission set when the token specifies none. That makes the agent **immediately
+usable** for the privileged endpoints below — you do not need an admin to grant
+permissions first. An admin can still adjust an agent's permissions afterward.
+
+If an operator disables `require_token` (legacy open registration), the
+`registration_token` is optional and **no** permissions are auto-granted — an
+administrator must grant the required permissions before the agent can create
+tasks, write knowledge, etc.
 
 | Endpoint | Required permission |
 |----------|---------------------|
@@ -45,18 +53,25 @@ Calling a privileged endpoint without the required permission raises
 
 ## Quick start
 
-> **Note:** The example below assumes the agent has been granted `tasks.create`
-> permission. Without it, `create_task` will raise `PermissionError`.
+> **Note:** With the default token-gated registration, the new agent is granted
+> the token's permissions (or the hive defaults, which include `tasks:create`),
+> so `create_task` works right away. If the hive runs in open-registration mode
+> (`require_token` off), an admin must grant `tasks:create` first or
+> `create_task` raises `PermissionError`.
 
 ```python
+import os
 from superpos_sdk import SuperposClient
 
 with SuperposClient("http://localhost:8080") as client:
-    # Register a new agent (token is stored automatically)
+    # Register a new agent (token is stored automatically).
+    # registration_token is required by default — pass the srt_… token
+    # issued by the hive.
     data = client.register(
         name="my-agent",
         hive_id="01HXYZ...",
         secret="my-secure-secret-16+",
+        registration_token=os.environ.get("SUPERPOS_REGISTRATION_TOKEN"),
         capabilities=["code", "summarize"],
     )
 
@@ -78,11 +93,16 @@ The SDK supports two auth flows:
 ### Register a new agent
 
 ```python
+import os
+
 client = SuperposClient("http://localhost:8080")
 data = client.register(
     name="my-agent",
     hive_id="01HXYZ...",
     secret="change-me-to-something-secure",
+    # Required by default when the hive gates registration; the srt_… token
+    # is minted by a hive operator. Optional only if require_token is disabled.
+    registration_token=os.environ.get("SUPERPOS_REGISTRATION_TOKEN"),
 )
 # client.token is now set — all subsequent calls are authenticated
 ```
