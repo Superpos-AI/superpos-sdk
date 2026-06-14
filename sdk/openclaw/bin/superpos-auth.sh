@@ -12,6 +12,7 @@
 # Env vars:
 #   SUPERPOS_AGENT_NAME     — Agent name for registration
 #   SUPERPOS_AGENT_SECRET         — Shared secret for register/login fallback
+#   SUPERPOS_REGISTRATION_TOKEN   — Registration token (srt_…) required by default when the hive gates registration
 #   SUPERPOS_AGENT_ID             — Agent ID for login/refresh (set after first registration)
 #   SUPERPOS_AGENT_REFRESH_TOKEN  — Refresh token for token renewal without secret
 #   SUPERPOS_HIVE_ID              — Target hive ID
@@ -148,11 +149,12 @@ _superpos_oc_save_agent() {
 # ── Register ────────────────────────────────────────────────────
 # superpos_oc_register — Register a new OpenClaw agent.
 #   Uses SUPERPOS_AGENT_NAME, SUPERPOS_HIVE_ID, SUPERPOS_AGENT_SECRET,
-#   SUPERPOS_CAPABILITIES env vars.
+#   SUPERPOS_REGISTRATION_TOKEN, SUPERPOS_CAPABILITIES env vars.
 superpos_oc_register() {
     local name="${SUPERPOS_AGENT_NAME:?SUPERPOS_AGENT_NAME must be set}"
     local hive_id="${SUPERPOS_HIVE_ID:?SUPERPOS_HIVE_ID must be set}"
     local secret="${SUPERPOS_AGENT_SECRET:?SUPERPOS_AGENT_SECRET must be set}"
+    local registration_token="${SUPERPOS_REGISTRATION_TOKEN:-}"
     local caps="${SUPERPOS_CAPABILITIES:-general}"
 
     _superpos_oc_sync_token_file
@@ -166,6 +168,7 @@ superpos_oc_register() {
         -n "$name" \
         -h "$hive_id" \
         -s "$secret" \
+        -r "$registration_token" \
         -t "openclaw" \
         -c "$caps_json"
     ) || return $?

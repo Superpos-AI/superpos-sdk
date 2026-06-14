@@ -15,13 +15,22 @@ source "${SCRIPT_DIR}/../src/superpos-sdk.sh"
 superpos_check_deps || exit $?
 
 HIVE_ID="${HIVE_ID:?Set HIVE_ID to your target hive}"
+# Registration is token-gated by default (platform.agent_registration.require_token),
+# so a registration token (srt_…) is required; without it the server returns 422.
+# A valid token also grants the agent its permissions (the token's own, or the
+# hive defaults). If your hive runs with require_token=false (open registration),
+# replace the line below with SUPERPOS_REGISTRATION_TOKEN="${SUPERPOS_REGISTRATION_TOKEN:-}".
+SUPERPOS_REGISTRATION_TOKEN="${SUPERPOS_REGISTRATION_TOKEN:?Set SUPERPOS_REGISTRATION_TOKEN to the srt_… token issued by your hive (or unset require_token for open registration)}"
 
 echo "==> Registering agent..."
 # Avoid command-substitution: superpos_register sets SUPERPOS_TOKEN in the
 # current shell.  Running it inside $(...) would execute in a subshell and
 # the token assignment would be lost for subsequent authenticated calls.
 _reg_tmp=$(mktemp)
-superpos_register -n "shell-quickstart" -h "$HIVE_ID" -s "my-secure-secret-16chars" > "$_reg_tmp"
+# -r supplies the registration token (srt_…), required by default when the hive
+# gates registration.
+superpos_register -n "shell-quickstart" -h "$HIVE_ID" -s "my-secure-secret-16chars" \
+    -r "$SUPERPOS_REGISTRATION_TOKEN" > "$_reg_tmp"
 result=$(<"$_reg_tmp"); rm -f "$_reg_tmp"
 echo "Agent ID: $(echo "$result" | jq -r '.agent.id')"
 echo "Token stored automatically."

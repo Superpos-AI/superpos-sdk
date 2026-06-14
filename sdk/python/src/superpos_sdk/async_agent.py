@@ -177,9 +177,15 @@ class AsyncAgentContext:
     # Lifecycle
     # ------------------------------------------------------------------
 
-    async def heartbeat(self, *, metadata: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def heartbeat(
+        self,
+        *,
+        metadata: dict[str, Any] | None = None,
+        model: str | None = None,
+        effort: str | None = None,
+    ) -> dict[str, Any]:
         """Send a heartbeat to keep the agent alive."""
-        return await self._client.heartbeat(metadata=metadata)
+        return await self._client.heartbeat(metadata=metadata, model=model, effort=effort)
 
     # ------------------------------------------------------------------
     # Tasks

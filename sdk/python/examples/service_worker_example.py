@@ -31,6 +31,8 @@ logging.basicConfig(
 SUPERPOS_URL = os.environ.get("SUPERPOS_BASE_URL", "http://localhost:8080")
 HIVE_ID = os.environ["HIVE_ID"]
 AGENT_SECRET = os.environ["AGENT_SECRET"]
+# Required by default when the hive gates registration; None-safe when unset.
+REGISTRATION_TOKEN = os.environ.get("SUPERPOS_REGISTRATION_TOKEN")
 
 
 # ── Option A: subclass pattern ────────────────────────────────────────
@@ -80,6 +82,7 @@ def run_with_composition():
         hive_id=HIVE_ID,
         name="crm-worker-v2",
         secret=AGENT_SECRET,
+        registration_token=REGISTRATION_TOKEN,
     )
 
     def fetch_contacts(params: dict) -> dict:
@@ -126,5 +129,6 @@ if __name__ == "__main__":
         hive_id=HIVE_ID,
         name="crm-worker",
         secret=AGENT_SECRET,
+        registration_token=REGISTRATION_TOKEN,
     )
     worker.run()

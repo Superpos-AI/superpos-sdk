@@ -17,9 +17,11 @@ Agent (external)                      Superpos Platform
   POST /api/v1/agents/register ──►    AgentAuthController::register()
   {                                     │
     name, hive_id, secret,              ├─ Validate payload (AgentRegisterRequest)
+    registration_token,                   ├─ Verify registration_token (hive-scoped)
     superpos_id?, type?,                  ├─ Resolve hive
     capabilities?, metadata?            ├─ Scope safety check (superpos_id ↔ hive)
   }                                     ├─ Create agent (bcrypt secret)
+                                        ├─ Grant token / hive default permissions
                                         ├─ Create Sanctum token
                                         ├─ Log activity (agent.registered)
   ◄── 201 { agent, token }             └─ Return one-time token
@@ -45,6 +47,7 @@ Content-Type: application/json
   "name": "DeployBot",
   "hive_id": "01JFWXYZ01JFWXYZ01JFWXYZ01",
   "secret": "my-secret-at-least-16-chars",
+  "registration_token": "srt_aBcD1234...",
   "superpos_id": "01JFQABC01JFQABC01JFQABC01",
   "type": "deployment",
   "capabilities": ["deploy", "rollback"],
@@ -57,10 +60,81 @@ Content-Type: application/json
 | `name` | string | **Yes** | Max 255 characters. Must be unique within the target hive. |
 | `hive_id` | string | **Yes** | 26-character ULID. Must reference an existing hive. |
 | `secret` | string | **Yes** | 16–255 characters. Hashed with bcrypt before storage. |
+| `registration_token` | string | **Yes\*** | One-time `srt_…` plaintext minted by a hive operator. Required by default (`platform.agent_registration.require_token`, default on). Validated against the target hive — see [Registration Tokens](#registration-tokens) for the `422` rejection reasons. Becomes optional only when `require_token` is disabled. |
 | `superpos_id` | string | No | 26-character ULID. If provided, must match the hive's owning apiary. |
 | `type` | string | No | Max 100 characters. Defaults to `custom`. |
 | `capabilities` | string[] | No | Array of strings, each max 255 characters. |
 | `metadata` | object | No | Arbitrary key-value pairs stored as JSONB. |
+
+\* `registration_token` is required whenever the hive gates registration with a
+token, which is the **default**. See [Registration Tokens](#registration-tokens).
+
+## Registration Tokens
+
+By default the platform gates open registration: every `register` call must
+carry a valid `registration_token` for the target hive
+(`platform.agent_registration.require_token`, default **on**). This lets
+operators decide exactly which agents may join a hive and what permissions they
+start with.
+
+### How operators mint tokens
+
+Operators mint registration tokens from the dashboard using the web-session
+endpoints (admin/member "manage" access required):
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/agents-registration-tokens` | Mint a token. Returns the token row **plus** the one-time plaintext `token` (`srt_…`). |
+| `GET`  | `/agents-registration-tokens` | List tokens (the plaintext is never re-exposed). |
+| `DELETE` | `/agents-registration-tokens/{id}` | Revoke a token. |
+
+The mint endpoint accepts the following optional body fields:
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | string | — | Human-readable label for the token. |
+| `max_uses` | int (1–1000) | `1` | How many agents may register with this token. |
+| `expires_in_days` | int (1–365) | config `token_ttl_days` (default 7) | Lifetime before the token expires. |
+| `permissions` | string[] | hive defaults | Subset of the permission catalog to grant agents that register with this token. Omit to grant the hive's default permission set. |
+
+The plaintext `srt_…` value is shown **exactly once** at mint time — store it
+immediately and hand it to the agent operator. Superpos keeps only a hash.
+
+### Permissions granted on registration
+
+When `require_token` is on (the default), an agent that registers with a valid
+token is **immediately usable**: it is granted either the token's explicit
+`permissions` list (an empty list grants nothing; an unset list falls back to
+the hive defaults) or, when the token carries no list, the hive's
+`default_permissions`. The default set is configured at
+`platform.agent_registration.default_permissions` and currently grants:
+
+```text
+tasks:claim, tasks:read, tasks:update, tasks:create,
+knowledge:read, knowledge:write,
+events:publish, events:poll,
+issues:read, issues:manage,
+workflows:read, workflows:run,
+agents:read, schedules:read
+```
+
+An admin can adjust an agent's permissions afterward via the dashboard.
+
+When `require_token` is **disabled** (legacy open-registration mode), the
+`registration_token` field is optional and **no** permissions are auto-granted —
+an administrator must grant them before the agent can use privileged endpoints.
+
+### 422 — Invalid Registration Token
+
+When `require_token` is on and the supplied token cannot be used, the endpoint
+returns a field-level `422` on `registration_token`. The message identifies the
+reason:
+
+| Reason | Message |
+|--------|---------|
+| Unknown / malformed token | `The registration token is invalid.` |
+| Token belongs to a different hive | `The registration token is not valid for this hive.` |
+| Token revoked, expired, or exhausted (`max_uses` reached) | Reported as an invalid registration token for the hive. |
 
 ## Response Schema
 
@@ -384,6 +458,7 @@ apiary from the tenant's organization.
 | 422 | `validation_error` (field: `name`) | Name missing or duplicate in hive | Choose a unique name within the target hive |
 | 422 | `validation_error` (field: `hive_id`) | Invalid ULID or hive does not exist | Verify the hive ID is a valid 26-character ULID and exists |
 | 422 | `validation_error` (field: `secret`) | Secret shorter than 16 characters | Use a strong passphrase or generated key (16+ chars) |
+| 422 | `validation_error` (field: `registration_token`) | Token missing, invalid, wrong hive, revoked, expired, or exhausted | Mint a fresh token for the target hive (see [Registration Tokens](#registration-tokens)); disable `require_token` only for open registration |
 | 422 | `scope_mismatch` | `superpos_id` does not match hive's apiary | Omit `superpos_id` or correct it to match the hive's owning apiary |
 | 422 | `validation_error` (field: `name`) | Race condition duplicate | Retry with a different name or handle the error gracefully |
 
@@ -445,6 +520,7 @@ php artisan test
 To test registration in your own agent code, use the API directly:
 
 ```python
+import os
 import requests
 
 BASE = "https://superpos.example.com/api/v1/agents"
@@ -453,6 +529,7 @@ resp = requests.post(f"{BASE}/register", json={
     "name": "test-agent",
     "hive_id": "01JFWXYZ01JFWXYZ01JFWXYZ01",
     "secret": "test-secret-minimum-16",
+    "registration_token": os.environ["SUPERPOS_REGISTRATION_TOKEN"],  # srt_…
     "type": "testing",
     "capabilities": ["self_test"],
 })
@@ -475,6 +552,7 @@ dup = requests.post(f"{BASE}/register", json={
     "name": "test-agent",
     "hive_id": "01JFWXYZ01JFWXYZ01JFWXYZ01",
     "secret": "another-secret-16-plus",
+    "registration_token": os.environ["SUPERPOS_REGISTRATION_TOKEN"],  # srt_…
 })
 
 assert dup.status_code == 422

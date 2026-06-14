@@ -99,7 +99,7 @@ auth.json setup runs before the python agent starts; without it
 codex/claude auth fails and the container restart-loops. The default can
 be overridden per preset:
 
-- `claude-sdk` — `PLATFORM_HOSTED_CLAUDE_COMMAND` (default `/app/entrypoint.sh python3 -m src.main`)
+- `claude-sdk` — `PLATFORM_HOSTED_CLAUDE_COMMAND` (default `/app/entrypoint.sh python3 -m superpos_agent_claude`)
 - `codex-sdk` — `PLATFORM_HOSTED_CODEX_COMMAND` (default `/app/entrypoint.sh python3 -m superpos_agent_codex`)
 
 Admin-editable presets (DB-backed CRUD) are tracked as a follow-up
@@ -117,7 +117,7 @@ array so the migration path is a straight import.
         'name' => env('PLATFORM_HOSTED_CLAUDE_IMAGE', 'ghcr.io/superpos-ai/superpos-claude-agent'),
         'tag'  => env('PLATFORM_HOSTED_CLAUDE_TAG', 'latest'),
     ],
-    'command' => env('PLATFORM_HOSTED_CLAUDE_COMMAND', '/app/entrypoint.sh python3 -m src.main'),
+    'command' => env('PLATFORM_HOSTED_CLAUDE_COMMAND', '/app/entrypoint.sh python3 -m superpos_agent_claude'),
     'replicas' => ['size' => 'xs', 'count' => 1],
     'restart_policy' => 'always',
     'models' => ['claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5-20251001'],
@@ -156,7 +156,7 @@ can override the image names via `PLATFORM_HOSTED_CLAUDE_IMAGE` and
 `PLATFORM_HOSTED_CODEX_IMAGE` env vars before publishing their own.
 The container command (NoVPS `config.command`, which OVERRIDES the image's
 ENTRYPOINT — Kubernetes semantics) is also overridable via
-`PLATFORM_HOSTED_CLAUDE_COMMAND` (default `/app/entrypoint.sh python3 -m src.main`)
+`PLATFORM_HOSTED_CLAUDE_COMMAND` (default `/app/entrypoint.sh python3 -m superpos_agent_claude`)
 and `PLATFORM_HOSTED_CODEX_COMMAND` (default `/app/entrypoint.sh python3 -m superpos_agent_codex`),
 so the image's auth-init step runs before the python agent starts.
 If a preset references a private image, set `NOVPS_IMAGE_CREDENTIALS`

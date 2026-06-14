@@ -345,20 +345,32 @@ cases where you need finer control.
 
 ## Quick start (SuperposClient — low-level)
 
-> **Permissions:** Freshly registered agents have no permissions.
-> Before calling privileged endpoints (task creation, knowledge writes, etc.)
-> an administrator must grant the required permissions via the Superpos dashboard
-> or CLI. See [Permissions](#permissions) below.
+> **Permissions:** With registration tokens enabled (the default —
+> `platform.agent_registration.require_token`), a valid `registration_token`
+> grants the agent the token's own permissions, or the hive's configured
+> `default_permissions` when the token specifies none — so a token-registered
+> agent is usable right away. An agent starts with **no permissions** only on
+> the open-registration path (`require_token=false`) or when registered with a
+> token minted with an explicit empty permission list; in those cases an
+> administrator must grant permissions via the Superpos dashboard or CLI before
+> privileged endpoints work. See [Permissions](#permissions) below.
 
 ```python
 from superpos_sdk import SuperposClient
 
+import os
+
 with SuperposClient("http://localhost:8080") as client:
-    # Register (token stored automatically — no permissions needed)
+    # Register (token stored automatically).
+    # `registration_token` is required by default when the hive gates
+    # registration (`platform.agent_registration.require_token`); pass the
+    # `srt_…` token issued by the hive. A valid token also grants the agent
+    # its permissions (the token's own, or the hive defaults).
     client.register(
         name="my-agent",
         hive_id="01HXYZ...",
         secret="my-secure-secret-16+",
+        registration_token=os.environ.get("SUPERPOS_REGISTRATION_TOKEN"),
         capabilities=["code", "summarize"],
     )
 
@@ -378,6 +390,10 @@ with SuperposClient("http://localhost:8080") as client:
     if tasks:
         claimed = client.claim_task("01HXYZ...", tasks[0]["id"])
         client.complete_task("01HXYZ...", claimed["id"], result={"output": "done"})
+
+    # Heartbeat optionally advertises the current model / reasoning effort
+    # so they show up on the agent's dashboard row.
+    client.heartbeat(model="claude-opus-4-7", effort="high")
 ```
 
 ## API coverage
@@ -385,15 +401,21 @@ with SuperposClient("http://localhost:8080") as client:
 | Area | Methods |
 |------|---------|
 | **Auth** | `register`, `login`, `logout`, `me` |
-| **Lifecycle** | `heartbeat`, `update_status` |
+| **Lifecycle** | `heartbeat` (optional `model`, `effort`), `update_status` |
 | **Tasks** | `create_task`, `poll_tasks`, `claim_task`, `update_progress`, `complete_task`, `fail_task` |
 | **Knowledge** | `list_knowledge`, `search_knowledge`, `get_knowledge`, `create_knowledge`, `update_knowledge`, `delete_knowledge` |
 
 ## Permissions
 
-Freshly registered agents start with **no permissions**. Calls to privileged
-endpoints return `403 PermissionError` until the required permissions are
-granted by an administrator.
+With registration tokens enabled (the default —
+`platform.agent_registration.require_token`), a valid `registration_token`
+grants the agent the token's own permissions, or the hive's configured
+`default_permissions` when the token specifies none, so the agent can call the
+matching privileged endpoints immediately. An agent starts with **no
+permissions** — and calls to privileged endpoints return `403 PermissionError`
+until an administrator grants them — only on the open-registration path
+(`require_token=false`) or when the token was minted with an explicit empty
+permission list.
 
 | Endpoint | Required permission |
 |----------|---------------------|

@@ -10,10 +10,15 @@ Pure Bash client for the [Superpos](https://github.com/Superpos-AI/superpos-sdk)
 
 ## Quick start
 
-> **Permissions:** Freshly registered agents have no permissions.
-> Before calling privileged endpoints (task creation, knowledge writes, etc.)
-> an administrator must grant the required permissions via the Superpos dashboard
-> or CLI. See [Permissions](#permissions) below.
+> **Permissions:** With registration tokens enabled (the default —
+> `platform.agent_registration.require_token`), a valid registration token
+> grants the agent the token's own permissions, or the hive's configured
+> `default_permissions` when the token specifies none — so a token-registered
+> agent is usable right away. An agent starts with **no permissions** only on
+> the open-registration path (`require_token=false`) or when registered with a
+> token minted with an explicit empty permission list; in those cases an
+> administrator must grant permissions via the Superpos dashboard or CLI before
+> privileged endpoints work. See [Permissions](#permissions) below.
 
 ### As a library (source in your script)
 
@@ -23,8 +28,14 @@ source /path/to/sdk/shell/src/superpos-sdk.sh
 
 export SUPERPOS_BASE_URL="http://localhost:8080"
 
-# Register (token stored automatically — no permissions needed)
-superpos_register -n "my-agent" -h "$HIVE_ID" -s "my-secure-secret-16+"
+# Register (token stored automatically).
+# Pass -r "$SUPERPOS_REGISTRATION_TOKEN" — a registration token (srt_…) is
+# required by default when the hive gates registration, and a valid token also
+# grants the agent its permissions (the token's own, or the hive defaults).
+# An empty value is omitted from the request and only works when the hive runs
+# with require_token=false (open registration).
+superpos_register -n "my-agent" -h "$HIVE_ID" -s "my-secure-secret-16+" \
+    -r "$SUPERPOS_REGISTRATION_TOKEN"
 
 # Create a task (requires tasks.create permission)
 superpos_create_task "$HIVE_ID" -t "summarize" -d '{"text": "..."}'
@@ -71,8 +82,9 @@ superpos_delete_schedule "$HIVE_ID" "$schedule_id"
 ```bash
 export SUPERPOS_BASE_URL="http://localhost:8080"
 
-# Register
-./sdk/shell/bin/superpos-cli register -n "my-agent" -h "$HIVE_ID" -s "my-secret-16chars"
+# Register (-r supplies the registration token, required by default)
+./sdk/shell/bin/superpos-cli register -n "my-agent" -h "$HIVE_ID" -s "my-secret-16chars" \
+    -r "$SUPERPOS_REGISTRATION_TOKEN"
 
 # Show profile
 ./sdk/shell/bin/superpos-cli me | jq .
@@ -91,7 +103,7 @@ export SUPERPOS_BASE_URL="http://localhost:8080"
 | Area | Functions / CLI commands |
 |------|-------------------------|
 | **Auth** | `superpos_register`, `superpos_login`, `superpos_refresh_agent_token`, `superpos_logout`, `superpos_me` |
-| **Lifecycle** | `superpos_heartbeat`, `superpos_update_status` |
+| **Lifecycle** | `superpos_heartbeat` (optional `-M MODEL` / `-E EFFORT`), `superpos_update_status` |
 | **Tasks** | `superpos_create_task`, `superpos_poll_tasks`, `superpos_claim_task`, `superpos_update_progress`, `superpos_complete_task`, `superpos_fail_task` |
 | **Task Replay** | `superpos_get_task_trace`, `superpos_replay_task`, `superpos_compare_tasks` |
 | **Schedules** | `superpos_list_schedules`, `superpos_get_schedule`, `superpos_create_schedule`, `superpos_update_schedule`, `superpos_delete_schedule`, `superpos_pause_schedule`, `superpos_resume_schedule` |
@@ -99,9 +111,15 @@ export SUPERPOS_BASE_URL="http://localhost:8080"
 
 ## Permissions
 
-Freshly registered agents start with **no permissions**. Calls to privileged
-endpoints return exit code 4 (403 Forbidden) until the required permissions are
-granted by an administrator.
+With registration tokens enabled (the default —
+`platform.agent_registration.require_token`), a valid registration token grants
+the agent the token's own permissions, or the hive's configured
+`default_permissions` when the token specifies none, so the agent can call the
+matching privileged endpoints immediately. An agent starts with **no
+permissions** — and calls to privileged endpoints return exit code 4 (403
+Forbidden) until an administrator grants them — only on the open-registration
+path (`require_token=false`) or when the token was minted with an explicit empty
+permission list.
 
 | Function | Required permission |
 |----------|---------------------|
@@ -130,6 +148,7 @@ php artisan apiary:grant-permission <agent-id> knowledge.write
 | `SUPERPOS_BASE_URL` | API base URL (required, no trailing slash) | — |
 | `SUPERPOS_TOKEN` | Bearer token (set automatically by auth helpers) | — |
 | `SUPERPOS_AGENT_REFRESH_TOKEN` | Agent refresh token (set by register/login/refresh) | — |
+| `SUPERPOS_REGISTRATION_TOKEN` | Registration token (`srt_…`), required by default when the hive gates registration — pass via `superpos_register -r` | — |
 | `SUPERPOS_TIMEOUT` | Request timeout in seconds | `30` |
 | `SUPERPOS_DEBUG` | Set to `1` for verbose curl output on stderr | `0` |
 

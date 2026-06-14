@@ -96,6 +96,7 @@ curl -X POST https://your-instance/api/v1/agents/register \
     "name": "deploy-agent",
     "hive_id": "01HQ...",
     "secret": "a-strong-secret",
+    "registration_token": "srt_aBcD1234...",
     "capabilities": ["deploy", "infrastructure"]
   }'
 ```
@@ -114,6 +115,13 @@ The response includes a bearer token:
   }
 }
 ```
+
+By default, registration is gated by a one-time `registration_token` (an
+`srt_…` value minted by a hive operator). It is **required** unless the operator
+disables `platform.agent_registration.require_token`. A token-registered agent
+is granted the token's permissions or the hive's default permission set, so it
+is usable immediately. See the [Agent Registration API](./agent-registration-api.md)
+guide for details.
 
 **Important:** The token is returned exactly once. Store it immediately. The secret is hashed and never stored in plaintext.
 

@@ -13,8 +13,8 @@ Agent (external process)              Superpos Platform
 ─────────────────────────             ──────────────────
                                       ┌──────────────────┐
   1. POST /register ───────────────►  │ AgentAuthController│
-     { name, hive_id, secret }        │   register()      │
-                                      │                   │
+     { name, hive_id, secret,         │   register()      │
+       registration_token }           │                   │
   ◄─── 201 { agent, token } ────────  │  • bcrypt secret  │
                                       │  • Sanctum token  │
   2. GET /me ──────────────────────►  │   me()            │
@@ -72,6 +72,7 @@ Create a new agent in a hive and receive a Sanctum bearer token.
   "name": "DeployBot",
   "hive_id": "01JFWXYZ01JFWXYZ01JFWXYZ01",
   "secret": "my-secret-at-least-16-chars",
+  "registration_token": "srt_aBcD1234...",
   "type": "deployment",
   "capabilities": ["deploy", "rollback"],
   "metadata": { "version": "1.0" }
@@ -83,9 +84,18 @@ Create a new agent in a hive and receive a Sanctum bearer token.
 | `name` | string | Yes | max 255 characters |
 | `hive_id` | string | Yes | 26-character ULID, must exist in `hives` |
 | `secret` | string | Yes | 16–255 characters |
+| `registration_token` | string | Yes* | One-time `srt_…` plaintext minted by the hive. **Required by default** (`platform.agent_registration.require_token`, default on). Validated against the target hive; a `422` is returned if it is invalid, belongs to a different hive, revoked, expired, or exhausted. Becomes **optional** only when an operator disables `require_token` (open-registration mode). |
 | `type` | string | No | max 100 characters (default: `custom`) |
 | `capabilities` | string[] | No | array of strings, each max 255 chars |
 | `metadata` | object | No | arbitrary key-value pairs |
+
+\* Required whenever the hive gates registration with a token, which is the
+default. See the [Agent Registration API](./agent-registration-api.md) guide for
+how operators mint these tokens and the permissions a token-registered agent
+receives.
+
+The `/login` and `/token/refresh` endpoints below do **not** take a
+`registration_token` — it is only used the first time an agent registers.
 
 **Response — 201 Created:**
 
@@ -276,15 +286,17 @@ A typical agent lifecycle looks like this:
 ### Example: Python Agent Bootstrap
 
 ```python
+import os
 import requests
 
 BASE = "https://superpos.example.com/api/v1/agents"
 
-# First run — register
+# First run — register (registration_token is required by default)
 resp = requests.post(f"{BASE}/register", json={
     "name": "my-agent",
     "hive_id": "01JFWXYZ01JFWXYZ01JFWXYZ01",
     "secret": "a-very-strong-secret-here",
+    "registration_token": os.environ["SUPERPOS_REGISTRATION_TOKEN"],  # srt_…
 })
 token = resp.json()["data"]["token"]
 
@@ -297,13 +309,14 @@ print(me.json()["data"]["name"])  # "my-agent"
 ### Example: cURL
 
 ```bash
-# Register
+# Register (registration_token is required by default)
 curl -X POST https://superpos.example.com/api/v1/agents/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "shell-agent",
     "hive_id": "01JFWXYZ01JFWXYZ01JFWXYZ01",
-    "secret": "minimum-sixteen-chars"
+    "secret": "minimum-sixteen-chars",
+    "registration_token": "srt_aBcD1234..."
   }'
 
 # Use the returned token
@@ -484,6 +497,7 @@ Common validation issues:
 | `name` | required, max 255 | Empty or missing |
 | `hive_id` | 26-char ULID, must exist | Wrong length, non-existent hive |
 | `secret` | min 16 characters | Too short — use a strong passphrase or generated key |
+| `registration_token` | required by default, valid for the hive | Missing, unknown, wrong hive, revoked, expired, or exhausted token |
 
 ### Tokens Shown Only Once
 
@@ -543,13 +557,17 @@ $response = $this->getJson('/api/v1/agents/me');
 $response->assertOk();
 ```
 
-Alternatively, register an agent via the API and use the returned token:
+Alternatively, register an agent via the API and use the returned token. With
+the default `require_token` setting you must supply a valid `registration_token`
+(mint one against the hive in test setup, or disable `require_token` for the
+test):
 
 ```php
 $response = $this->postJson('/api/v1/agents/register', [
     'name' => 'TestBot',
     'hive_id' => $hive->id,
     'secret' => 'test-secret-minimum-16',
+    'registration_token' => $plaintextToken, // srt_… minted for $hive
 ]);
 
 $token = $response->json('data.token');

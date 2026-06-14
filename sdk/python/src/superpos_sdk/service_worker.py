@@ -67,6 +67,9 @@ class ServiceWorker:
         hive_id: The hive this worker belongs to.
         agent_id: Pre-registered agent ID (mutually exclusive with *name*).
         secret: Agent secret for authentication.
+        registration_token: ``srt_…`` token issued by the hive, required by
+            default when auto-registering (the server enforces it unless
+            ``platform.agent_registration.require_token`` is disabled).
         name: Agent name to use when auto-registering (mutually exclusive
             with *agent_id*).
         capabilities: Override the default capabilities list
@@ -90,6 +93,7 @@ class ServiceWorker:
         *,
         agent_id: str | None = None,
         secret: str | None = None,
+        registration_token: str | None = None,
         name: str | None = None,
         capabilities: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
@@ -110,6 +114,7 @@ class ServiceWorker:
 
         self._agent_id = agent_id
         self._secret = secret
+        self._registration_token = registration_token
         self._name = name
 
         # Custom operation registry (populated via register_operation)
@@ -238,6 +243,7 @@ class ServiceWorker:
                 name=self._name,
                 hive_id=self.hive_id,
                 secret=self._secret,
+                registration_token=self._registration_token,
                 agent_type="service_worker",
                 capabilities=self._capabilities,
                 metadata=meta or None,

@@ -251,16 +251,17 @@ _superpos_build_json() {
 # ── Agent Auth ───────────────────────────────────────────────────
 
 # superpos_register — register a new agent and store the token.
-#   -n NAME  -h HIVE_ID  -s SECRET  [-a ORGANIZATION_ID] [-t TYPE] [-c CAPABILITIES_JSON] [-m METADATA_JSON]
+#   -n NAME  -h HIVE_ID  -s SECRET  [-r REGISTRATION_TOKEN] [-a ORGANIZATION_ID] [-t TYPE] [-c CAPABILITIES_JSON] [-m METADATA_JSON]
 #   Outputs full data envelope (agent + token) to stdout.
 superpos_register() {
-    local name="" hive_id="" secret="" organization_id="" agent_type="" capabilities="" metadata=""
+    local name="" hive_id="" secret="" registration_token="" organization_id="" agent_type="" capabilities="" metadata=""
     local OPTIND OPTARG opt
-    while getopts "n:h:s:a:t:c:m:" opt; do
+    while getopts "n:h:s:r:a:t:c:m:" opt; do
         case "$opt" in
             n) name="$OPTARG" ;;
             h) hive_id="$OPTARG" ;;
             s) secret="$OPTARG" ;;
+            r) registration_token="$OPTARG" ;;
             a) organization_id="$OPTARG" ;;
             t) agent_type="$OPTARG" ;;
             c) capabilities="$OPTARG" ;;
@@ -279,6 +280,7 @@ superpos_register() {
         "name" "$name" \
         "hive_id" "$hive_id" \
         "secret" "$secret" \
+        "registration_token" "$registration_token" \
         "organization_id" "$organization_id" \
         "type" "$agent_type" \
         "capabilities" "$capabilities" \
@@ -409,20 +411,25 @@ superpos_me() {
 # ── Agent Lifecycle ──────────────────────────────────────────────
 
 # superpos_heartbeat — send a heartbeat signal.
-#   [-m METADATA_JSON]
+#   [-m METADATA_JSON] [-M MODEL] [-E EFFORT]
 superpos_heartbeat() {
-    local metadata=""
+    local metadata="" model="" effort=""
     local OPTIND OPTARG opt
-    while getopts "m:" opt; do
+    while getopts "m:M:E:" opt; do
         case "$opt" in
             m) metadata="$OPTARG" ;;
+            M) model="$OPTARG" ;;
+            E) effort="$OPTARG" ;;
             *) _superpos_err "heartbeat: unknown option -$opt"; return $SUPERPOS_ERR ;;
         esac
     done
 
     local body="{}"
-    if [[ -n "$metadata" ]]; then
-        body=$(_superpos_build_json "metadata" "$metadata") || return $SUPERPOS_ERR
+    if [[ -n "$metadata" || -n "$model" || -n "$effort" ]]; then
+        body=$(_superpos_build_json \
+            "metadata" "$metadata" \
+            "model" "$model" \
+            "effort" "$effort") || return $SUPERPOS_ERR
     fi
 
     _superpos_request POST "/api/v1/agents/heartbeat" "$body"
