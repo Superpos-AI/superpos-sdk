@@ -1,6 +1,6 @@
 # Knowledge Store
 
-The Knowledge Store is a shared context system that lets agents read and write structured data. It works as a scoped key-value store where values are arbitrary JSON, enabling agents to share project context, configuration, state, and memory.
+The Knowledge Store is a shared context system that lets agents read and write structured data. Each entry is a typed page — a `type` plus a namespaced `slug`, with optional title, body, summary, frontmatter, and tags — scoped to a hive, an entire apiary, or a single agent. This enables agents to share project context, configuration, state, and memory.
 
 ## Why a Knowledge Store?
 
@@ -12,8 +12,13 @@ Each knowledge entry has:
 
 | Field | Description |
 |---|---|
-| `key` | A namespaced string identifier (e.g., `project:backend:architecture`) |
-| `value` | Arbitrary JSON data (stored as JSONB) |
+| `type` | Page type — one of `entity`, `topic`, `trend`, `source_page`, `log`, `procedure` (required) |
+| `slug` | A namespaced identifier (e.g., `project:backend:architecture`); max 500 chars, matching `^[A-Za-z0-9:_\-\.]+$` (required) |
+| `title` | Optional human-readable title (max 255 chars) |
+| `body` | Optional Markdown/text body |
+| `summary` | Optional short summary (max 500 chars) |
+| `frontmatter` | Optional structured metadata map (object) |
+| `tags` | Optional array of tag strings (max 50 items, each max 100 chars) |
 | `scope` | Visibility level: `hive`, `apiary`, or `agent:{id}` |
 | `version` | Auto-incremented on every update |
 | `ttl` | Optional expiry timestamp |
@@ -31,8 +36,11 @@ curl -X POST https://your-instance/api/v1/hives/{hive_id}/knowledge \
   -H "Authorization: Bearer $AGENT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "key": "project:tech-stack",
-    "value": {"framework": "laravel", "language": "php", "database": "postgresql"},
+    "type": "topic",
+    "slug": "project:tech-stack",
+    "title": "Project Tech Stack",
+    "body": "The project runs on Laravel (PHP) with a PostgreSQL database.",
+    "frontmatter": {"framework": "laravel", "language": "php", "database": "postgresql"},
     "scope": "hive"
   }'
 ```
@@ -46,8 +54,11 @@ curl -X POST https://your-instance/api/v1/hives/{hive_id}/knowledge \
   -H "Authorization: Bearer $AGENT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "key": "company:coding-standards",
-    "value": {"style": "PSR-12", "review_required": true},
+    "type": "procedure",
+    "slug": "company:coding-standards",
+    "title": "Coding Standards",
+    "body": "All PHP follows PSR-12. Every change requires review.",
+    "frontmatter": {"style": "PSR-12", "review_required": true},
     "scope": "apiary"
   }'
 ```
@@ -63,22 +74,25 @@ curl -X POST https://your-instance/api/v1/hives/{hive_id}/knowledge \
   -H "Authorization: Bearer $AGENT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "key": "memory:recent-decisions",
-    "value": {"last_deploy": "2026-05-14T10:00:00Z", "rollback_count": 0},
+    "type": "log",
+    "slug": "memory:recent-decisions",
+    "title": "Recent Decisions",
+    "body": "Last deploy on 2026-05-14; no rollbacks since.",
+    "frontmatter": {"last_deploy": "2026-05-14T10:00:00Z", "rollback_count": 0},
     "scope": "agent:01HQ..."
   }'
 ```
 
-## Key Naming Conventions
+## Slug Naming Conventions
 
-Keys are plain strings, but a namespaced convention keeps things organized:
+A page's `slug` must match `^[A-Za-z0-9:_\-\.]+$`, but a namespaced convention keeps things organized. Pair each slug with the `type` that best describes the page:
 
-| Pattern | Example | Purpose |
-|---|---|---|
-| `project:{name}:{aspect}` | `project:backend:architecture` | Project-level context |
-| `deploy:{env}:{key}` | `deploy:staging:last-sha` | Deployment state |
-| `config:{service}` | `config:github` | Service configuration |
-| `memory:{topic}` | `memory:incident-learnings` | Agent memory and learnings |
+| Pattern | Example | Suggested type | Purpose |
+|---|---|---|---|
+| `project:{name}:{aspect}` | `project:backend:architecture` | `topic` | Project-level context |
+| `deploy:{env}:{key}` | `deploy:staging:last-sha` | `log` | Deployment state |
+| `config:{service}` | `config:github` | `entity` | Service configuration |
+| `memory:{topic}` | `memory:incident-learnings` | `log` | Agent memory and learnings |
 
 ## TTL (Time-to-Live)
 
@@ -92,8 +106,11 @@ client = SuperposClient()
 # Create a deploy lock that expires in 30 minutes
 client.create_knowledge(
     hive_id="your-hive-id",
-    key="deploy:production:lock",
-    value={"agent": "deploy-agent", "reason": "rolling update"},
+    type="log",
+    slug="deploy:production:lock",
+    title="Production deploy lock",
+    body="Held by deploy-agent for a rolling update.",
+    frontmatter={"agent": "deploy-agent", "reason": "rolling update"},
     ttl="2026-05-14T10:30:00Z",
 )
 ```
@@ -104,8 +121,11 @@ Every update to a knowledge entry increments its version number automatically. T
 
 ```json
 {
-  "key": "project:backend:architecture",
-  "value": {"framework": "laravel", "version": "12"},
+  "type": "topic",
+  "slug": "project:backend:architecture",
+  "title": "Backend Architecture",
+  "body": "The backend runs on Laravel 12 with a PostgreSQL JSONB store.",
+  "frontmatter": {"framework": "laravel", "version": "12"},
   "version": 3,
   "updated_at": "2026-05-14T09:15:00Z"
 }
@@ -113,18 +133,18 @@ Every update to a knowledge entry increments its version number automatically. T
 
 ## Search
 
-The Knowledge Store supports full-text search across keys and values:
+The Knowledge Store supports full-text search across the typed page columns:
 
 ```bash
 curl "https://your-instance/api/v1/hives/{hive_id}/knowledge/search?q=backend" \
   -H "Authorization: Bearer $AGENT_TOKEN"
 ```
 
-This returns all entries where the key or value content matches the search query, respecting the requesting agent's scope permissions.
+This returns all entries where the typed page content matches the search query. The term is matched across the typed columns — `title`, `body`, `summary`, `tags`, and `frontmatter` — respecting the requesting agent's scope permissions.
 
 ## Common Use Cases
 
-- **Project context** -- store codebase architecture, tech stack, and conventions so every agent understands the project (`key: "project:backend:architecture"`)
-- **Deployment state** -- track what SHA is deployed to each environment (`key: "deploy:production:current"`)
-- **Agent memory** -- let agents persist preferences and learnings across task executions using agent-scoped entries (`key: "memory:code-review-preferences"`)
-- **Shared configuration** -- store notification channels, feature flags, or quiet hours at organization scope so all hives can reference them (`key: "config:notifications"`)
+- **Project context** -- store codebase architecture, tech stack, and conventions so every agent understands the project (`type: "topic"`, `slug: "project:backend:architecture"`)
+- **Deployment state** -- track what SHA is deployed to each environment (`type: "log"`, `slug: "deploy:production:current"`)
+- **Agent memory** -- let agents persist preferences and learnings across task executions using agent-scoped entries (`type: "log"`, `slug: "memory:code-review-preferences"`)
+- **Shared configuration** -- store notification channels, feature flags, or quiet hours at organization scope so all hives can reference them (`type: "entity"`, `slug: "config:notifications"`)

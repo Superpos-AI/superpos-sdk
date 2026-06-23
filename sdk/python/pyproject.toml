@@ -33,6 +33,7 @@ github = ["httpx>=0.27,<1"]
 slack = ["httpx>=0.27,<1"]
 gmail = ["google-api-python-client>=2.0", "google-auth>=2.0"]
 sheets = ["google-api-python-client>=2.0", "google-auth>=2.0"]
+gitlab = ["httpx>=0.27,<1"]
 jira = ["httpx>=0.27,<1"]
 sql = ["sqlalchemy>=2.0"]
 workers = [
@@ -52,6 +53,7 @@ dev = [
 
 [project.scripts]
 superpos-gh-token = "superpos_sdk.gh_token:main"
+superpos-gl-token = "superpos_sdk.gl_token:main"
 
 [project.urls]
 Homepage = "https://github.com/Superpos-AI/superpos-sdk"

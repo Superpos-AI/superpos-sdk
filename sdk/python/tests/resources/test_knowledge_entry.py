@@ -52,7 +52,14 @@ def _sample_entry() -> dict[str, Any]:
     return {
         "id": "entry-1",
         "key": "release.v2.date",
-        "value": {"date": "2026-05-01"},
+        "type": "note",
+        "slug": "release-v2-date",
+        "title": "Release v2 date",
+        "body": "Ships on 2026-05-01.",
+        "summary": "Ship date for v2.",
+        "frontmatter": {"owner": "release-team"},
+        "tags": ["release", "v2"],
+        "source_ids": ["src-1", "src-2"],
         "scope": "hive",
         "visibility": "public",
         "version": 1,
@@ -67,11 +74,42 @@ class TestConstruction:
         e = KnowledgeEntry(_sample_entry(), ctx)
         assert e.id == "entry-1"
         assert e.key == "release.v2.date"
-        assert e.value == {"date": "2026-05-01"}
         assert e.scope == "hive"
         assert e.visibility == "public"
         assert e.version == 1
         assert e.deleted is False
+
+    def test_typed_accessors(self):
+        ctx = ContextStub()
+        e = KnowledgeEntry(_sample_entry(), ctx)
+        assert e.type == "note"
+        assert e.slug == "release-v2-date"
+        assert e.title == "Release v2 date"
+        assert e.body == "Ships on 2026-05-01."
+        assert e.summary == "Ship date for v2."
+        assert e.frontmatter == {"owner": "release-team"}
+        assert e.tags == ["release", "v2"]
+        assert e.source_ids == ["src-1", "src-2"]
+
+    def test_typed_accessor_defaults_when_absent(self):
+        ctx = ContextStub()
+        e = KnowledgeEntry({"id": "entry-1"}, ctx)
+        assert e.type is None
+        assert e.slug is None
+        assert e.title is None
+        assert e.body is None
+        assert e.summary is None
+        assert e.frontmatter == {}
+        assert e.tags == []
+        assert e.source_ids == []
+
+    def test_value_alias_is_deprecated(self):
+        ctx = ContextStub()
+        # Typed responses no longer carry `value`; the alias returns None.
+        assert KnowledgeEntry(_sample_entry(), ctx).value is None
+        # If a legacy payload still includes `value`, the alias surfaces it.
+        legacy = KnowledgeEntry({"id": "entry-1", "value": {"x": 1}}, ctx)
+        assert legacy.value == {"x": 1}
 
     def test_to_dict_shallow_copy(self):
         ctx = ContextStub()
@@ -104,13 +142,17 @@ class TestRead:
         ctx.returns["get_knowledge"] = {
             "id": "entry-1",
             "version": 5,
-            "value": {"date": "2026-05-02"},
+            "body": "Ships on 2026-05-02.",
+            "tags": ["release", "v2", "ga"],
         }
         e = KnowledgeEntry(_sample_entry(), ctx)
         result = e.refresh()
         assert result is e
         assert e.version == 5
-        assert e.value == {"date": "2026-05-02"}
+        assert e.body == "Ships on 2026-05-02."
+        assert e.tags == ["release", "v2", "ga"]
+        # Untouched typed fields survive the merge.
+        assert e.title == "Release v2 date"
         name, args, _ = ctx.calls[-1]
         assert name == "get_knowledge"
         assert args == ("entry-1",)
@@ -134,17 +176,19 @@ class TestWrite:
         ctx = ContextStub()
         ctx.returns["update_knowledge"] = {
             "id": "entry-1",
-            "value": {"date": "2026-05-15"},
+            "body": "Ships on 2026-05-15.",
+            "summary": "Slipped a fortnight.",
             "version": 2,
         }
         e = KnowledgeEntry(_sample_entry(), ctx)
-        e.update({"date": "2026-05-15"})
+        e.update(body="Ships on 2026-05-15.")
         assert e.version == 2
-        assert e.value == {"date": "2026-05-15"}
+        assert e.body == "Ships on 2026-05-15."
+        assert e.summary == "Slipped a fortnight."
         name, args, kwargs = ctx.calls[-1]
         assert name == "update_knowledge"
         assert args == ("entry-1",)
-        assert kwargs["value"] == {"date": "2026-05-15"}
+        assert kwargs["body"] == "Ships on 2026-05-15."
 
     def test_delete_marks_entry_dead(self):
         ctx = ContextStub()

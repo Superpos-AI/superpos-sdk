@@ -96,6 +96,11 @@ superpos_oc_knowledge_get() {
 # superpos_oc_knowledge_set KEY VALUE_JSON [SCOPE] [VISIBILITY]
 #   Creates a new knowledge entry, or updates the existing entry if the
 #   key already exists (idempotent "set" semantics).
+#
+#   The server now speaks the typed page contract: KEY maps to the typed
+#   `slug`, VALUE maps to the typed `body`, and a default `type` of `topic`
+#   (the general free-form page type) is supplied. The legacy `key`/`value`
+#   write shape has been removed server-side.
 superpos_oc_knowledge_set() {
     local key="${1:?usage: superpos_oc_knowledge_set KEY VALUE_JSON [SCOPE] [VISIBILITY]}"
     local value="${2:?usage: superpos_oc_knowledge_set KEY VALUE_JSON [SCOPE] [VISIBILITY]}"
@@ -103,8 +108,8 @@ superpos_oc_knowledge_set() {
     local visibility="${4:-}"
     local hive_id="${SUPERPOS_HIVE_ID:?SUPERPOS_HIVE_ID must be set}"
 
-    local -a create_args=(-k "$key" -v "$value")
-    [[ -n "$scope" ]] && create_args+=(-s "$scope")
+    local -a create_args=(-t topic -s "$key" -b "$value")
+    [[ -n "$scope" ]] && create_args+=(-S "$scope")
     [[ -n "$visibility" ]] && create_args+=(-V "$visibility")
 
     # Try create first
@@ -112,23 +117,25 @@ superpos_oc_knowledge_set() {
     result=$(superpos_create_knowledge "$hive_id" "${create_args[@]}" 2>&1) || rc=$?
 
     if [[ $rc -eq "${SUPERPOS_ERR_CONFLICT}" ]]; then
-        # Key exists — look up entry by exact key+scope, then update
+        # Slug exists — look up entry by exact slug+scope, then update
         local entries entry_id effective_scope
         effective_scope="${scope:-hive}"
         local -a list_args=(-k "$key")
         [[ -n "$scope" ]] && list_args+=(-s "$scope")
         entries=$(superpos_list_knowledge "$hive_id" "${list_args[@]}") || return $?
-        # Filter for exact key AND exact scope (API key filter is pattern-based)
+        # Filter for exact slug AND exact scope (API key filter is pattern-based).
+        # Typed entries expose `slug`; fall back to the legacy `key` field so a
+        # mixed-vintage store still resolves.
         entry_id=$(echo "$entries" | jq -r \
             --arg k "$key" --arg s "$effective_scope" \
-            '[.[] | select(.key == $k and ((.scope // "hive") == $s))] | .[0].id // empty' 2>/dev/null)
+            '[.[] | select(((.slug // .key) == $k) and ((.scope // "hive") == $s))] | .[0].id // empty' 2>/dev/null)
 
         if [[ -z "$entry_id" ]]; then
             echo "Knowledge key '$key' conflict but no exact match found (key='$key', scope='$effective_scope')." >&2
             return "$SUPERPOS_ERR"
         fi
 
-        local -a update_args=(-v "$value")
+        local -a update_args=(-b "$value")
         [[ -n "$visibility" ]] && update_args+=(-V "$visibility")
 
         result=$(superpos_update_knowledge "$hive_id" "$entry_id" "${update_args[@]}") || return $?

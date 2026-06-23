@@ -125,12 +125,24 @@ class LargeResultDelivery:
         key: str | None = None,
     ) -> str:
         """Write *data* to the Knowledge Store and return the entry ID."""
-        entry_key = key or f"task-result:{task_id}"
+        entry_slug = key or f"task-result:{task_id}"
+
+        # Use the typed page contract directly (the server rejects the legacy
+        # `key`/`value` shape). The result payload is serialized into `body`
+        # and preserved verbatim under `frontmatter` so callers can recover the
+        # structured value.
+        body = data if isinstance(data, str) else json.dumps(data, ensure_ascii=False)
+        frontmatter = {"task_id": task_id}
+        if isinstance(data, (dict, list)):
+            frontmatter["result"] = data
 
         entry = self._client.create_knowledge(
             hive_id,
-            key=entry_key,
-            value=data,
+            type="topic",
+            slug=entry_slug,
+            title=f"Task result: {task_id}",
+            body=body,
+            frontmatter=frontmatter,
             scope="hive",
             visibility="public",
         )

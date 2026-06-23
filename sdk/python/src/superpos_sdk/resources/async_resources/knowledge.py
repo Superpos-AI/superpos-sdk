@@ -42,8 +42,53 @@ class AsyncKnowledgeEntry:
         return self._data.get("key")
 
     @property
+    def type(self) -> str | None:
+        """Typed-page kind (e.g. ``proposal``, ``note``)."""
+        return self._data.get("type")
+
+    @property
+    def slug(self) -> str | None:
+        """Typed-page slug."""
+        return self._data.get("slug")
+
+    @property
+    def title(self) -> str | None:
+        """Typed-page title."""
+        return self._data.get("title")
+
+    @property
+    def body(self) -> str | None:
+        """Typed-page body (full content)."""
+        return self._data.get("body")
+
+    @property
+    def summary(self) -> str | None:
+        """Typed-page summary / excerpt."""
+        return self._data.get("summary")
+
+    @property
+    def frontmatter(self) -> dict[str, Any]:
+        """Typed-page frontmatter mapping (defaults to ``{}``)."""
+        return self._data.get("frontmatter") or {}
+
+    @property
+    def tags(self) -> list[str]:
+        """Typed-page tags (defaults to ``[]``)."""
+        return self._data.get("tags") or []
+
+    @property
+    def source_ids(self) -> list[str]:
+        """IDs of the entry's source references (defaults to ``[]``)."""
+        return self._data.get("source_ids") or []
+
+    @property
     def value(self) -> Any:
-        """Knowledge entry value (opaque JSON)."""
+        """Deprecated legacy ``value`` field (removed from the API response).
+
+        Retained only as a backward-compatibility alias; it returns whatever
+        ``value`` is present in the underlying dict (``None`` for modern typed
+        responses). Use the typed accessors (``body``/``title``/…) instead.
+        """
         return self._data.get("value")
 
     @property
@@ -141,18 +186,37 @@ class AsyncKnowledgeEntry:
 
     async def update(
         self,
-        value: Any,
+        value: Any = None,
         *,
+        type: str | None = None,
+        slug: str | None = None,
+        title: str | None = None,
+        body: str | None = None,
+        summary: str | None = None,
+        frontmatter: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
         visibility: str | None = None,
         ttl: str | None = None,
     ) -> AsyncKnowledgeEntry:
-        """Update the entry's value. Merges the response back into state."""
+        """Update the entry. Merges the response back into state.
+
+        Prefer the typed fields (``body``/``title``/…). The positional
+        ``value`` argument is deprecated; it is converted to the typed ``body``
+        field before sending.
+        """
         self._check_alive()
         updated = await self._ctx.update_knowledge(
             self.id,
-            value=value,
+            type=type,
+            slug=slug,
+            title=title,
+            body=body,
+            summary=summary,
+            frontmatter=frontmatter,
+            tags=tags,
             visibility=visibility,
             ttl=ttl,
+            value=value,
         )
         if isinstance(updated, dict):
             self._data.update(updated)

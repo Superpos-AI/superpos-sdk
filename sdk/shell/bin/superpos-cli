@@ -306,14 +306,14 @@ case "$command" in
         ;;
     knowledge-create)
         if [[ $# -lt 1 ]]; then
-            echo "Usage: superpos-cli knowledge-create HIVE_ID -k KEY -v VALUE_JSON [-s SCOPE] [-V VISIBILITY] [-t TTL]" >&2
+            echo "Usage: superpos-cli knowledge-create HIVE_ID -t TYPE -s SLUG [--title TITLE] [-b BODY] [--summary SUMMARY] [--tags TAGS_JSON] [--frontmatter FRONTMATTER_JSON] [-S SCOPE] [-V VISIBILITY] [--ttl TTL]" >&2
             return 1
         fi
         superpos_create_knowledge "$@"
         ;;
     knowledge-update)
         if [[ $# -lt 2 ]]; then
-            echo "Usage: superpos-cli knowledge-update HIVE_ID ENTRY_ID -v VALUE_JSON [-V VISIBILITY] [-t TTL]" >&2
+            echo "Usage: superpos-cli knowledge-update HIVE_ID ENTRY_ID [--title TITLE] [-b BODY] [--summary SUMMARY] [--tags TAGS_JSON] [--frontmatter FRONTMATTER_JSON] [-V VISIBILITY] [--ttl TTL]" >&2
             return 1
         fi
         superpos_update_knowledge "$@"

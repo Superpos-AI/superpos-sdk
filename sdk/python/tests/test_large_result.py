@@ -103,7 +103,11 @@ class TestLargeResultDeliveryDeliver:
 
         requests = httpx_mock.get_requests()
         body = json.loads(requests[0].content)
-        assert body["key"] == f"task-result:{TASK_ID}"
+        # Typed page contract: the task ID lands in `slug`, never the legacy `key`.
+        assert body["slug"] == f"task-result:{TASK_ID}"
+        assert body["type"] == "topic"
+        assert "key" not in body
+        assert "value" not in body
 
     def test_custom_key_is_used(self, httpx_mock):
         """A custom key overrides the default ``task-result:<id>`` pattern."""
@@ -120,7 +124,9 @@ class TestLargeResultDeliveryDeliver:
 
         requests = httpx_mock.get_requests()
         body = json.loads(requests[0].content)
-        assert body["key"] == "my-custom-key"
+        assert body["slug"] == "my-custom-key"
+        assert "key" not in body
+        assert "value" not in body
 
     def test_threshold_override_respected(self, httpx_mock):
         """A custom threshold triggers offloading at a lower byte count."""
@@ -357,7 +363,11 @@ class TestScalarResultWrapping:
         assert result["delivery_mode"] == "knowledge"
         requests = httpx_mock.get_requests()
         body = json.loads(requests[0].content)
-        assert body["value"] == {"__value": "a large string result"}
+        # Typed contract: the wrapped scalar is serialized into `body` and kept
+        # verbatim under `frontmatter.result`; no legacy `value` is sent.
+        assert "value" not in body
+        assert body["frontmatter"]["result"] == {"__value": "a large string result"}
+        assert json.loads(body["body"]) == {"__value": "a large string result"}
 
     def test_int_scalar_large_payload_wrapped_in_knowledge(self, httpx_mock):
         """An integer result above the threshold is wrapped as {"__value": int} in the knowledge
@@ -376,7 +386,9 @@ class TestScalarResultWrapping:
         assert result["delivery_mode"] == "knowledge"
         requests = httpx_mock.get_requests()
         body = json.loads(requests[0].content)
-        assert body["value"] == {"__value": 99}
+        assert "value" not in body
+        assert body["frontmatter"]["result"] == {"__value": 99}
+        assert json.loads(body["body"]) == {"__value": 99}
 
     def test_complete_task_large_string_scalar_inline_is_wrapped(self, httpx_mock):
         """complete_task_large() wraps a string scalar in {"__value": ...} for the inline path."""
