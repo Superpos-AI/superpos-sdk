@@ -111,8 +111,13 @@ from superpos_sdk import AgentContext
 
 ctx = AgentContext.from_env()
 ctx.create_knowledge(
-    key="release.v2.date",
-    value={"date": "2026-05-01", "confidence": "high"},
+    type="topic",           # entity | topic | trend | source_page | log | procedure
+    slug="release.v2.date",
+    title="Release v2 date",
+    body="Release v2 is scheduled for 2026-05-01 (high confidence).",
+    summary="Planned release date for v2",
+    frontmatter={"date": "2026-05-01", "confidence": "high"},
+    tags=["release"],
     scope="hive",           # or superpos_sdk.agent_scope(ctx.agent_id) for private
     visibility="public",
 )
@@ -201,14 +206,18 @@ ctx = AgentContext.from_env()
 
 # Create + wrap.
 entry = ctx.create_knowledge_obj(
-    key="release.v2.date",
-    value={"date": "2026-05-01", "confidence": "high"},
+    type="topic",
+    slug="release.v2.date",
+    title="Release v2 date",
+    body="Release v2 is scheduled for 2026-05-01 (high confidence).",
+    frontmatter={"date": "2026-05-01", "confidence": "high"},
     scope="hive",
     visibility="public",
 )
 
-# Later — bump the value and create a link.
-entry.update({"date": "2026-05-15", "confidence": "medium"})
+# Later — bump the body and create a link.
+entry.update(body="Release v2 moved to 2026-05-15 (medium confidence).",
+             frontmatter={"date": "2026-05-15", "confidence": "medium"})
 assert entry.version == 2
 
 other_id = "01HXYZ_RELEASE_NOTES_ENTRY"
@@ -269,11 +278,14 @@ Knowledge wrappers look the same, just awaited:
 ```python
 async with AsyncAgentContext.from_env() as ctx:
     entry = await ctx.create_knowledge_obj(
-        key="release.v2.date",
-        value={"date": "2026-05-01"},
+        type="topic",
+        slug="release.v2.date",
+        body="Release v2 is scheduled for 2026-05-01.",
+        frontmatter={"date": "2026-05-01"},
         scope="hive",
     )
-    await entry.update({"date": "2026-05-15"})
+    await entry.update(body="Release v2 moved to 2026-05-15.",
+                       frontmatter={"date": "2026-05-15"})
     await entry.delete()
 ```
 

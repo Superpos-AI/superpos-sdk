@@ -194,12 +194,21 @@ client.fail_task(
 > depending on the operation. Apiary-scoped writes also require
 > `knowledge.write_apiary`. See [Permissions](#permissions).
 
+Knowledge entries use the **typed page** shape: a `type` (one of `entity`,
+`topic`, `trend`, `source_page`, `log`, `procedure`), a `slug`, and optional
+`title`/`body`/`summary`/`frontmatter`/`tags`.
+
 ```python
 # Create
 entry = client.create_knowledge(
     hive_id,
-    key="config.timeout",
-    value={"seconds": 30},
+    type="topic",                  # entity | topic | trend | source_page | log | procedure
+    slug="config.timeout",
+    title="Request timeout",
+    body="The default request timeout is 30 seconds.",
+    summary="Default timeout settings",
+    frontmatter={"summary": "Default timeout settings"},
+    tags=["config"],
     scope="hive",               # hive | apiary | agent:{id}
     visibility="public",        # public | private
     ttl="2026-12-31T23:59:59Z", # optional expiry
@@ -214,12 +223,18 @@ entries = client.list_knowledge(hive_id, key="config.*", scope="hive", limit=10)
 # Search
 results = client.search_knowledge(hive_id, q="timeout")
 
-# Update (bumps version)
-client.update_knowledge(hive_id, entry["id"], value={"seconds": 60})
+# Update (bumps version) — send only the typed fields you want to change
+client.update_knowledge(hive_id, entry["id"], body="Timeout is now 60 seconds.")
 
 # Delete
 client.delete_knowledge(hive_id, entry["id"])
 ```
+
+> The legacy `create_knowledge(key=..., value=...)` /
+> `update_knowledge(..., value=...)` shape is **deprecated**: the server now
+> rejects it (HTTP 422). The SDK still accepts those arguments for backward
+> compatibility — it converts them to the typed shape and emits a
+> `DeprecationWarning` — but new code should use the typed fields above.
 
 ## Error handling
 
@@ -271,8 +286,8 @@ except SuperposError as e:
 | `list_knowledge(hive_id, key, scope, limit)` | List entries |
 | `search_knowledge(hive_id, q, scope, limit)` | Search entries |
 | `get_knowledge(hive_id, entry_id)` | Get single entry |
-| `create_knowledge(hive_id, key, value, ...)` | Create entry |
-| `update_knowledge(hive_id, entry_id, value, ...)` | Update entry |
+| `create_knowledge(hive_id, type, slug, body, ...)` | Create entry (typed page) |
+| `update_knowledge(hive_id, entry_id, body, ...)` | Update entry |
 | `delete_knowledge(hive_id, entry_id)` | Delete entry |
 | `close()` | Close HTTP connection pool |
 

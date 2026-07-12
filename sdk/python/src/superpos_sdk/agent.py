@@ -497,20 +497,40 @@ class AgentContext:
     def create_knowledge(
         self,
         *,
-        key: str,
-        value: Any,
+        type: str | None = None,
+        slug: str | None = None,
+        title: str | None = None,
+        body: str | None = None,
+        summary: str | None = None,
+        frontmatter: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
         scope: str | None = None,
         visibility: str | None = None,
         ttl: str | None = None,
+        # ---- deprecated legacy params ----------------------------------
+        key: str | None = None,
+        value: Any = None,
     ) -> dict[str, Any]:
-        """Create a knowledge entry. Requires ``knowledge.write``."""
+        """Create a knowledge entry. Requires ``knowledge.write``.
+
+        Prefer the typed ``type``/``slug``/``body`` fields. The legacy
+        ``key``/``value`` pair is deprecated (see
+        :meth:`superpos_sdk.client.SuperposClient.create_knowledge`).
+        """
         return self._client.create_knowledge(
             self._require_hive(),
-            key=key,
-            value=value,
+            type=type,
+            slug=slug,
+            title=title,
+            body=body,
+            summary=summary,
+            frontmatter=frontmatter,
+            tags=tags,
             scope=scope,
             visibility=visibility,
             ttl=ttl,
+            key=key,
+            value=value,
         )
 
     def get_knowledge(self, entry_id: str) -> dict[str, Any]:
@@ -521,17 +541,36 @@ class AgentContext:
         self,
         entry_id: str,
         *,
-        value: Any,
+        type: str | None = None,
+        slug: str | None = None,
+        title: str | None = None,
+        body: str | None = None,
+        summary: str | None = None,
+        frontmatter: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
         visibility: str | None = None,
         ttl: str | None = None,
+        # ---- deprecated legacy params ----------------------------------
+        value: Any = None,
     ) -> dict[str, Any]:
-        """Update a knowledge entry (bumps version). Requires ``knowledge.write``."""
+        """Update a knowledge entry (bumps version). Requires ``knowledge.write``.
+
+        Prefer the typed fields. The legacy ``value`` param is deprecated (see
+        :meth:`superpos_sdk.client.SuperposClient.update_knowledge`).
+        """
         return self._client.update_knowledge(
             self._require_hive(),
             entry_id,
-            value=value,
+            type=type,
+            slug=slug,
+            title=title,
+            body=body,
+            summary=summary,
+            frontmatter=frontmatter,
+            tags=tags,
             visibility=visibility,
             ttl=ttl,
+            value=value,
         )
 
     def delete_knowledge(self, entry_id: str) -> None:
@@ -763,21 +802,39 @@ class AgentContext:
     def create_knowledge_obj(
         self,
         *,
-        key: str,
-        value: Any,
+        type: str | None = None,
+        slug: str | None = None,
+        title: str | None = None,
+        body: str | None = None,
+        summary: str | None = None,
+        frontmatter: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
         scope: str | None = None,
         visibility: str | None = None,
         ttl: str | None = None,
+        # ---- deprecated legacy params ----------------------------------
+        key: str | None = None,
+        value: Any = None,
     ) -> KnowledgeEntry:
-        """Create a knowledge entry and return it wrapped as a :class:`KnowledgeEntry`."""
+        """Create a knowledge entry and return it wrapped as a :class:`KnowledgeEntry`.
+
+        Prefer the typed fields; the legacy ``key``/``value`` pair is deprecated.
+        """
         from superpos_sdk.resources import KnowledgeEntry  # noqa: PLC0415
 
         data = self.create_knowledge(
-            key=key,
-            value=value,
+            type=type,
+            slug=slug,
+            title=title,
+            body=body,
+            summary=summary,
+            frontmatter=frontmatter,
+            tags=tags,
             scope=scope,
             visibility=visibility,
             ttl=ttl,
+            key=key,
+            value=value,
         )
         return KnowledgeEntry(data, self)
 

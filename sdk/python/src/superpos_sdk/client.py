@@ -6,6 +6,7 @@ from typing import Any
 
 import httpx
 
+from superpos_sdk._knowledge import build_create_payload, build_update_payload
 from superpos_sdk.constants import CHANNEL_TYPES as _CHANNEL_TYPES_TUPLE
 from superpos_sdk.exceptions import SuperposError, raise_for_status
 from superpos_sdk.models import Event, SubAgent, SubAgentDefinition, SubAgentSummary
@@ -809,38 +810,81 @@ class SuperposClient:
         self,
         hive_id: str,
         *,
-        key: str,
-        value: Any,
+        type: str | None = None,
+        slug: str | None = None,
+        title: str | None = None,
+        body: str | None = None,
+        summary: str | None = None,
+        frontmatter: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
         scope: str | None = None,
         visibility: str | None = None,
         ttl: str | None = None,
+        # ---- deprecated legacy params ----------------------------------
+        key: str | None = None,
+        value: Any = None,
     ) -> dict[str, Any]:
-        """Create a new knowledge entry."""
-        body: dict[str, Any] = {"key": key, "value": value}
-        if scope is not None:
-            body["scope"] = scope
-        if visibility is not None:
-            body["visibility"] = visibility
-        if ttl is not None:
-            body["ttl"] = ttl
-        return self._request("POST", f"/api/v1/hives/{hive_id}/knowledge", json=body)
+        """Create a new knowledge entry using the typed page shape.
+
+        Prefer the typed fields (``type``/``slug``/``body``/…). The legacy
+        ``key``/``value`` pair is accepted for backward compatibility but
+        deprecated: it is converted to the typed shape before sending and
+        emits a :class:`DeprecationWarning`. The request body never carries
+        ``key``/``value``.
+        """
+        payload = build_create_payload(
+            type=type,
+            slug=slug,
+            title=title,
+            body=body,
+            summary=summary,
+            frontmatter=frontmatter,
+            tags=tags,
+            scope=scope,
+            visibility=visibility,
+            ttl=ttl,
+            key=key,
+            value=value,
+        )
+        return self._request("POST", f"/api/v1/hives/{hive_id}/knowledge", json=payload)
 
     def update_knowledge(
         self,
         hive_id: str,
         entry_id: str,
         *,
-        value: Any,
+        type: str | None = None,
+        slug: str | None = None,
+        title: str | None = None,
+        body: str | None = None,
+        summary: str | None = None,
+        frontmatter: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
         visibility: str | None = None,
         ttl: str | None = None,
+        # ---- deprecated legacy params ----------------------------------
+        value: Any = None,
     ) -> dict[str, Any]:
-        """Update an existing knowledge entry (bumps version)."""
-        body: dict[str, Any] = {"value": value}
-        if visibility is not None:
-            body["visibility"] = visibility
-        if ttl is not None:
-            body["ttl"] = ttl
-        return self._request("PUT", f"/api/v1/hives/{hive_id}/knowledge/{entry_id}", json=body)
+        """Update an existing knowledge entry (bumps version).
+
+        Only the provided typed fields are sent. The legacy ``value`` param is
+        accepted for backward compatibility but deprecated: it is converted to
+        the typed ``body`` field before sending and emits a
+        :class:`DeprecationWarning`. The request body never carries ``value``.
+        """
+        payload = build_update_payload(
+            type=type,
+            slug=slug,
+            title=title,
+            body=body,
+            summary=summary,
+            frontmatter=frontmatter,
+            tags=tags,
+            visibility=visibility,
+            ttl=ttl,
+            value=value,
+        )
+        return self._request("PUT", f"/api/v1/hives/{hive_id}/knowledge/{entry_id}", json=payload)
 
     def delete_knowledge(self, hive_id: str, entry_id: str) -> None:
         """Delete a knowledge entry."""

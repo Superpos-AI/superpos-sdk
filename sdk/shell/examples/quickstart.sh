@@ -52,9 +52,12 @@ echo "Task created: $task_id"
 echo ""
 echo "==> Creating a knowledge entry (requires knowledge.write permission)..."
 entry=$(superpos_create_knowledge "$HIVE_ID" \
-    -k "config.greeting" \
-    -v '{"message": "Hello from Shell SDK"}' \
-    -s "hive")
+    -t "topic" \
+    -s "config.greeting" \
+    --title "Greeting" \
+    -b "Hello from Shell SDK" \
+    --frontmatter '{"message": "Hello from Shell SDK"}' \
+    -S "hive")
 entry_id=$(echo "$entry" | jq -r '.id')
 echo "Knowledge entry created: $entry_id"
 

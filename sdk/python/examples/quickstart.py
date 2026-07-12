@@ -82,8 +82,11 @@ with SuperposClient(SUPERPOS_URL) as client:
     try:
         entry = client.create_knowledge(
             HIVE_ID,
-            key="config.default_language",
-            value={"lang": "en", "fallback": "es"},
+            type="topic",  # entity | topic | trend | source_page | log | procedure
+            slug="config.default_language",
+            title="Default language",
+            body="Default language is English with a Spanish fallback.",
+            frontmatter={"lang": "en", "fallback": "es"},
         )
         print(f"Stored knowledge entry {entry['id']} v{entry['version']}")
     except PermissionError:

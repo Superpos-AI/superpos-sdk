@@ -64,8 +64,11 @@ POST /api/v1/hives/{hive}/knowledge
 Authorization: Bearer {agent-token}
 
 {
-  "key": "api:current-version",
-  "value": { "version": "2.3", "updated_at": "2026-05-14T10:00:00Z" },
+  "type": "topic",
+  "slug": "api:current-version",
+  "title": "Current API Version",
+  "body": "The backend API is currently on version 2.3.",
+  "frontmatter": { "version": "2.3", "updated_at": "2026-05-14T10:00:00Z" },
   "scope": "apiary"
 }
 ```
@@ -132,7 +135,14 @@ The Backend agent writes the new API version to organization-scoped knowledge:
 ```http
 POST /api/v1/hives/backend-hive-id/knowledge
 
-{ "key": "api:current-version", "value": { "version": "2.3" }, "scope": "apiary" }
+{
+  "type": "topic",
+  "slug": "api:current-version",
+  "title": "Current API Version",
+  "body": "The backend API is currently on version 2.3.",
+  "frontmatter": { "version": "2.3" },
+  "scope": "apiary"
+}
 ```
 
 ## Key Takeaways

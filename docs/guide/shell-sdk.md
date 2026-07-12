@@ -177,13 +177,18 @@ superpos_fail_task "$HIVE_ID" "$task_id" \
 > `knowledge.write_apiary`. See [Permissions](#permissions).
 
 ```bash
-# Create
+# Create (typed page: type + slug are required)
 entry=$(superpos_create_knowledge "$HIVE_ID" \
-    -k "config.timeout" \
-    -v '{"seconds": 30}' \
-    -s "hive" \
+    -t "topic" \
+    -s "config.timeout" \
+    --title "Request timeout" \
+    -b "Default request timeout is 30 seconds." \
+    --summary "Timeout configuration" \
+    --tags '["config","timeout"]' \
+    --frontmatter '{"seconds": 30}' \
+    -S "hive" \
     -V "public" \
-    -t "2026-12-31T23:59:59Z")
+    --ttl "2026-12-31T23:59:59Z")
 
 entry_id=$(echo "$entry" | jq -r '.id')
 
@@ -196,8 +201,10 @@ superpos_list_knowledge "$HIVE_ID" -k "config.*" -s "hive" -l 10
 # Search
 superpos_search_knowledge "$HIVE_ID" -q "timeout"
 
-# Update (bumps version)
-superpos_update_knowledge "$HIVE_ID" "$entry_id" -v '{"seconds": 60}'
+# Update (bumps version; pass at least one typed field)
+superpos_update_knowledge "$HIVE_ID" "$entry_id" \
+    -b "Default request timeout is 60 seconds." \
+    --frontmatter '{"seconds": 60}'
 
 # Delete
 superpos_delete_knowledge "$HIVE_ID" "$entry_id"
@@ -341,13 +348,16 @@ Search knowledge entries.
 
 Get single knowledge entry.
 
-### `superpos_create_knowledge HIVE_ID -k KEY -v VALUE_JSON [-s SCOPE] [-V VISIBILITY] [-t TTL]`
+### `superpos_create_knowledge HIVE_ID -t TYPE -s SLUG [--title TITLE] [-b BODY] [--summary SUMMARY] [--tags TAGS_JSON] [--frontmatter FRONTMATTER_JSON] [-S SCOPE] [-V VISIBILITY] [--ttl TTL]`
 
-Create knowledge entry.
+Create a typed knowledge page. `TYPE` is one of `entity`, `topic`, `trend`,
+`source_page`, `log`, `procedure`; `TYPE` and `SLUG` are required. `TAGS_JSON`
+is a JSON array and `FRONTMATTER_JSON` is a JSON object.
 
-### `superpos_update_knowledge HIVE_ID ENTRY_ID -v VALUE_JSON [-V VISIBILITY] [-t TTL]`
+### `superpos_update_knowledge HIVE_ID ENTRY_ID [--title TITLE] [-b BODY] [--summary SUMMARY] [--tags TAGS_JSON] [--frontmatter FRONTMATTER_JSON] [-V VISIBILITY] [--ttl TTL]`
 
-Update knowledge entry.
+Update a typed knowledge page. At least one typed field must be supplied;
+a legacy `key`/`value` payload is rejected with `422`.
 
 ### `superpos_delete_knowledge HIVE_ID ENTRY_ID`
 

@@ -30,7 +30,7 @@ Three controls for narrowing and sorting the entry list:
 | Control | Type | Options |
 |---------|------|---------|
 | Scope filter | Dropdown | All / Hive / Superpos / Agent |
-| Search | Text input | Partial match on key and value content |
+| Search | Text input | Partial match on slug and typed page content (title, body, summary) |
 | Sort | Dropdown | Newest (default) / Key / Scope |
 
 Filters are applied via URL query parameters and trigger a server-side reload:
@@ -45,8 +45,9 @@ A responsive table with the following columns:
 
 | Column | Description |
 |--------|-------------|
-| **Key** | Entry key in monospace (primary column) |
-| **Value** | JSON value preview, truncated to 80 chars (hidden on mobile) |
+| **Slug** | Entry slug in monospace (primary column) |
+| **Summary** | Typed page title/summary preview (hidden on mobile) |
+| **Type** | Page type badge (`entity`, `topic`, `trend`, `source_page`, `log`, `procedure`) |
 | **Scope** | Color-coded scope badge |
 | **Creator** | Name of the agent that created the entry (hidden on mobile) |
 | **Version** | Entry version number |
@@ -80,7 +81,7 @@ KnowledgeDashboardController::index()
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `scope` | string | (none) | Filter by scope type: `hive`, `apiary`, `agent` |
-| `search` | string | (none) | Partial key/value search |
+| `search` | string | (none) | Partial match on slug and typed page content (title, body, summary) |
 | `sort` | string | `updated_at` | Sort column: `updated_at`, `key`, `scope` |
 | `page` | int | 1 | Pagination page number |
 

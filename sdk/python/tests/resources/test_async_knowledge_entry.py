@@ -52,7 +52,14 @@ def _sample_entry() -> dict[str, Any]:
     return {
         "id": "k-1",
         "key": "release.v2.date",
-        "value": {"date": "2026-05-01"},
+        "type": "note",
+        "slug": "release-v2-date",
+        "title": "Release v2 date",
+        "body": "Ships on 2026-05-01.",
+        "summary": "Ship date for v2.",
+        "frontmatter": {"owner": "release-team"},
+        "tags": ["release", "v2"],
+        "source_ids": ["src-1", "src-2"],
         "scope": "hive",
         "visibility": "public",
         "version": 1,
@@ -68,9 +75,40 @@ class TestConstruction:
         e = AsyncKnowledgeEntry(_sample_entry(), ctx)
         assert e.id == "k-1"
         assert e.key == "release.v2.date"
-        assert e.value == {"date": "2026-05-01"}
         assert e.version == 1
         assert e.deleted is False
+
+    def test_typed_accessors(self):
+        ctx = AsyncContextStub()
+        e = AsyncKnowledgeEntry(_sample_entry(), ctx)
+        assert e.type == "note"
+        assert e.slug == "release-v2-date"
+        assert e.title == "Release v2 date"
+        assert e.body == "Ships on 2026-05-01."
+        assert e.summary == "Ship date for v2."
+        assert e.frontmatter == {"owner": "release-team"}
+        assert e.tags == ["release", "v2"]
+        assert e.source_ids == ["src-1", "src-2"]
+
+    def test_typed_accessor_defaults_when_absent(self):
+        ctx = AsyncContextStub()
+        e = AsyncKnowledgeEntry({"id": "k-1"}, ctx)
+        assert e.type is None
+        assert e.slug is None
+        assert e.title is None
+        assert e.body is None
+        assert e.summary is None
+        assert e.frontmatter == {}
+        assert e.tags == []
+        assert e.source_ids == []
+
+    def test_value_alias_is_deprecated(self):
+        ctx = AsyncContextStub()
+        # Typed responses no longer carry `value`; the alias returns None.
+        assert AsyncKnowledgeEntry(_sample_entry(), ctx).value is None
+        # Legacy payloads with `value` still surface through the alias.
+        legacy = AsyncKnowledgeEntry({"id": "k-1", "value": {"x": 1}}, ctx)
+        assert legacy.value == {"x": 1}
 
     def test_repr(self):
         ctx = AsyncContextStub()
@@ -92,13 +130,15 @@ class TestWrites:
         ctx = AsyncContextStub()
         ctx.returns["update_knowledge"] = {
             "id": "k-1",
-            "value": {"date": "2026-05-15"},
+            "body": "Ships on 2026-05-15.",
+            "summary": "Slipped a fortnight.",
             "version": 2,
         }
         e = AsyncKnowledgeEntry(_sample_entry(), ctx)
-        await e.update({"date": "2026-05-15"})
+        await e.update(body="Ships on 2026-05-15.")
         assert e.version == 2
-        assert e.value == {"date": "2026-05-15"}
+        assert e.body == "Ships on 2026-05-15."
+        assert e.summary == "Slipped a fortnight."
 
     async def test_delete_marks_sticky(self):
         ctx = AsyncContextStub()
@@ -136,10 +176,17 @@ class TestWrites:
 class TestRead:
     async def test_refresh_merges(self):
         ctx = AsyncContextStub()
-        ctx.returns["get_knowledge"] = {"id": "k-1", "version": 5}
+        ctx.returns["get_knowledge"] = {
+            "id": "k-1",
+            "version": 5,
+            "body": "Ships on 2026-05-02.",
+        }
         e = AsyncKnowledgeEntry(_sample_entry(), ctx)
         await e.refresh()
         assert e.version == 5
+        assert e.body == "Ships on 2026-05-02."
+        # Untouched typed fields survive the merge.
+        assert e.title == "Release v2 date"
 
     async def test_links_calls_raw(self):
         ctx = AsyncContextStub()

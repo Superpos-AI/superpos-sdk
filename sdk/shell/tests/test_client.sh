@@ -511,13 +511,13 @@ set -e
 assert_ne "$rc" "0" "heartbeat fails when build_json fails (invalid metadata JSON)"
 assert_eq "$(mock_was_called)" "false" "heartbeat does not send request when build_json fails"
 
-# create_knowledge with invalid value JSON — should fail before sending
+# create_knowledge with invalid frontmatter JSON — should fail before sending
 mock_reset
 set +e
-superpos_create_knowledge "$HIVE" -k "mykey" -v "{broken" >/dev/null 2>/dev/null
+superpos_create_knowledge "$HIVE" -t "topic" -s "myslug" --frontmatter "{broken" >/dev/null 2>/dev/null
 rc=$?
 set -e
-assert_ne "$rc" "0" "create_knowledge fails when build_json fails (invalid value JSON)"
+assert_ne "$rc" "0" "create_knowledge fails when build_json fails (invalid frontmatter JSON)"
 assert_eq "$(mock_was_called)" "false" "create_knowledge does not send request when build_json fails"
 
 # ── JSON build failure in non-errexit shell ──────────────────────

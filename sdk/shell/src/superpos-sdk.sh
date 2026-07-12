@@ -1154,65 +1154,95 @@ superpos_get_knowledge() {
     _superpos_request GET "/api/v1/hives/${hive_id}/knowledge/${entry_id}"
 }
 
-# superpos_create_knowledge — create a knowledge entry.
-#   HIVE_ID  -k KEY  -v VALUE_JSON  [-s SCOPE] [-V VISIBILITY] [-t TTL]
+# superpos_create_knowledge — create a knowledge entry (typed contract).
+#   HIVE_ID  -t TYPE  -s SLUG  [--title TITLE] [-b BODY] [--summary SUMMARY]
+#           [--tags TAGS_JSON] [--frontmatter FRONTMATTER_JSON]
+#           [-S SCOPE] [-V VISIBILITY] [--ttl TTL]
+#   TYPE is one of: entity, topic, trend, source_page, log, procedure.
+#   TAGS_JSON / FRONTMATTER_JSON are raw JSON (array / object).
 superpos_create_knowledge() {
-    local hive_id="${1:?usage: superpos_create_knowledge HIVE_ID -k KEY -v VALUE_JSON}"
+    local hive_id="${1:?usage: superpos_create_knowledge HIVE_ID -t TYPE -s SLUG [...]}"
     shift
-    local key="" value="" scope="" visibility="" ttl=""
-    local OPTIND OPTARG opt
-    while getopts "k:v:s:V:t:" opt; do
-        case "$opt" in
-            k) key="$OPTARG" ;;
-            v) value="$OPTARG" ;;
-            s) scope="$OPTARG" ;;
-            V) visibility="$OPTARG" ;;
-            t) ttl="$OPTARG" ;;
-            *) _superpos_err "create_knowledge: unknown option -$opt"; return $SUPERPOS_ERR ;;
+    local type="" slug="" title="" body="" summary="" tags="" frontmatter="" scope="" visibility="" ttl=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -t|--type)        type="$2"; shift 2 ;;
+            -s|--slug)        slug="$2"; shift 2 ;;
+            --title)          title="$2"; shift 2 ;;
+            -b|--body)        body="$2"; shift 2 ;;
+            --summary)        summary="$2"; shift 2 ;;
+            --tags)           tags="$2"; shift 2 ;;
+            --frontmatter)    frontmatter="$2"; shift 2 ;;
+            -S|--scope)       scope="$2"; shift 2 ;;
+            -V|--visibility)  visibility="$2"; shift 2 ;;
+            --ttl)            ttl="$2"; shift 2 ;;
+            *) _superpos_err "create_knowledge: unknown option $1"; return $SUPERPOS_ERR ;;
         esac
     done
 
-    if [[ -z "$key" || -z "$value" ]]; then
-        _superpos_err "create_knowledge: -k KEY and -v VALUE_JSON are required"
+    if [[ -z "$type" || -z "$slug" ]]; then
+        _superpos_err "create_knowledge: -t TYPE and -s SLUG are required"
         return $SUPERPOS_ERR
     fi
 
-    local body
-    body=$(_superpos_build_json \
-        "key" "$key" \
-        "value" "$value" \
+    local body_json
+    body_json=$(_superpos_build_json \
+        "type" "$type" \
+        "slug" "$slug" \
+        "title" "$title" \
+        "body" "$body" \
+        "summary" "$summary" \
+        "tags" "$tags" \
+        "frontmatter" "$frontmatter" \
         "scope" "$scope" \
         "visibility" "$visibility" \
         "ttl" "$ttl"
     ) || return $SUPERPOS_ERR
-    _superpos_request POST "/api/v1/hives/${hive_id}/knowledge" "$body"
+    _superpos_request POST "/api/v1/hives/${hive_id}/knowledge" "$body_json"
 }
 
-# superpos_update_knowledge — update an existing knowledge entry.
-#   HIVE_ID  ENTRY_ID  -v VALUE_JSON  [-V VISIBILITY] [-t TTL]
+# superpos_update_knowledge — update an existing knowledge entry (typed contract).
+#   HIVE_ID  ENTRY_ID  [--title TITLE] [-b BODY] [--summary SUMMARY]
+#           [--tags TAGS_JSON] [--frontmatter FRONTMATTER_JSON]
+#           [-V VISIBILITY] [--ttl TTL]
+#   At least one typed field must be supplied. TAGS_JSON / FRONTMATTER_JSON are
+#   raw JSON (array / object).
 superpos_update_knowledge() {
-    local hive_id="${1:?usage: superpos_update_knowledge HIVE_ID ENTRY_ID -v VALUE_JSON}"
-    local entry_id="${2:?usage: superpos_update_knowledge HIVE_ID ENTRY_ID -v VALUE_JSON}"
+    local hive_id="${1:?usage: superpos_update_knowledge HIVE_ID ENTRY_ID [...]}"
+    local entry_id="${2:?usage: superpos_update_knowledge HIVE_ID ENTRY_ID [...]}"
     shift 2
-    local value="" visibility="" ttl=""
-    local OPTIND OPTARG opt
-    while getopts "v:V:t:" opt; do
-        case "$opt" in
-            v) value="$OPTARG" ;;
-            V) visibility="$OPTARG" ;;
-            t) ttl="$OPTARG" ;;
-            *) _superpos_err "update_knowledge: unknown option -$opt"; return $SUPERPOS_ERR ;;
+    local title="" body="" summary="" tags="" frontmatter="" visibility="" ttl=""
+    local ttl_set=false
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --title)          title="$2"; shift 2 ;;
+            -b|--body)        body="$2"; shift 2 ;;
+            --summary)        summary="$2"; shift 2 ;;
+            --tags)           tags="$2"; shift 2 ;;
+            --frontmatter)    frontmatter="$2"; shift 2 ;;
+            -V|--visibility)  visibility="$2"; shift 2 ;;
+            --ttl)            ttl="$2"; ttl_set=true; shift 2 ;;
+            *) _superpos_err "update_knowledge: unknown option $1"; return $SUPERPOS_ERR ;;
         esac
     done
 
-    if [[ -z "$value" ]]; then
-        _superpos_err "update_knowledge: -v VALUE_JSON is required"
+    if [[ -z "$title" && -z "$body" && -z "$summary" && -z "$tags" \
+          && -z "$frontmatter" && -z "$visibility" && "$ttl_set" == false ]]; then
+        _superpos_err "update_knowledge: at least one typed field is required"
         return $SUPERPOS_ERR
     fi
 
-    local body
-    body=$(_superpos_build_json "value" "$value" "visibility" "$visibility" "ttl" "$ttl") || return $SUPERPOS_ERR
-    _superpos_request PUT "/api/v1/hives/${hive_id}/knowledge/${entry_id}" "$body"
+    local body_json
+    body_json=$(_superpos_build_json \
+        "title" "$title" \
+        "body" "$body" \
+        "summary" "$summary" \
+        "tags" "$tags" \
+        "frontmatter" "$frontmatter" \
+        "visibility" "$visibility" \
+        "ttl" "$ttl"
+    ) || return $SUPERPOS_ERR
+    _superpos_request PUT "/api/v1/hives/${hive_id}/knowledge/${entry_id}" "$body_json"
 }
 
 # superpos_delete_knowledge — delete a knowledge entry.

@@ -41,6 +41,16 @@ assert_contains "$output" "ke-001" "output contains new entry ID"
 # Verify the POST was sent
 assert_eq "$(mock_last_method)" "POST" "sends POST request"
 
+# Verify the POST body uses the typed contract (type/slug/body), NOT key/value
+create_body=$(mock_last_body)
+assert_contains "$create_body" '"type"' "create body includes typed type"
+assert_contains "$create_body" '"topic"' "create body defaults type to topic"
+assert_contains "$create_body" '"slug"' "create body includes typed slug"
+assert_contains "$create_body" '"my-key"' "create body maps key to slug"
+assert_contains "$create_body" '"body"' "create body includes typed body"
+assert_not_contains "$create_body" '"key"' "create body omits legacy key field"
+assert_not_contains "$create_body" '"value"' "create body omits legacy value field"
+
 # ── Test: create-or-update on existing key (409 → lookup → PUT) ───
 
 describe "Knowledge set — existing key (409 → update)"
@@ -67,6 +77,12 @@ set -e
 assert_eq "$rc" "0" "returns 0 after create-then-update fallback"
 assert_contains "$output" "updated" "output says updated"
 assert_contains "$output" "ke-existing-99" "output contains existing entry ID"
+
+# Verify the PUT (update) body uses the typed contract, NOT legacy value
+update_body=$(mock_last_body)
+assert_contains "$update_body" '"body"' "update body includes typed body"
+assert_contains "$update_body" 'new-val' "update body maps value to body"
+assert_not_contains "$update_body" '"value"' "update body omits legacy value field"
 
 # ── Test: non-conflict error propagates ───────────────────────────
 

@@ -131,7 +131,7 @@ Issue states: `open`, `in_progress`, `blocked`, `awaiting_review`, `done`, `canc
 | open → in_progress | first Task starts, or manual claim | agent / system |
 | open → cancelled | manual cancel | human |
 | in_progress → blocked | agent emits "blocked-on-human" w/ ApprovalRequest | agent / system |
-| in_progress → awaiting_review | agent claims work is done, policy != self_close | agent |
+| in_progress → awaiting_review | human hands finished work to human review | human (per #67 / AG-9 — agents are rejected with `actor_not_allowed`) |
 | in_progress → done | agent closes & policy = agent_self_close & trust allows | agent (gated) |
 | in_progress → cancelled | manual cancel | human |
 | blocked → in_progress | ApprovalRequest approved (auto-resume) | system |
@@ -147,7 +147,7 @@ Invalid transitions return 422. All transitions emit an `ActivityLog` entry with
 
 `IssueType.closure_policy`:
 - `agent_self_close` — agent may close without human, subject to agent trust modifier and hive policy.
-- `human_required` — only a human can transition issue to `done`. Agent moves to `awaiting_review`.
+- `human_required` — only a human can transition issue to `done`. An agent's close is routed to a closure `ApprovalRequest` and the issue is parked in `blocked` (per #67 / AG-9 — an agent close never auto-lands in `awaiting_review`).
 - `gated_by_approval` — closure creates an ApprovalRequest; approval transitions to `done`.
 
 **Agent trust modifier** — integer 0–100 on `agents` (new column `issue_trust_score`, default 50). Rules:
@@ -160,11 +160,13 @@ Invalid transitions return 422. All transitions emit an `ActivityLog` entry with
 | Hive policy | IssueType policy | Agent trust | Result |
 |---|---|---|---|
 | allow_self_close | agent_self_close | ≥ threshold | allow |
-| allow_self_close | agent_self_close | < threshold | block → awaiting_review |
-| allow_self_close | human_required | any | block → awaiting_review |
+| allow_self_close | agent_self_close | < threshold | block → ApprovalRequest |
+| allow_self_close | human_required | any | block → ApprovalRequest |
 | allow_self_close | gated_by_approval | any | create ApprovalRequest |
 | require_approval (hive-wide) | any | any | create ApprovalRequest |
-| disallow_self_close (hive-wide) | any | any | block → awaiting_review |
+| disallow_self_close (hive-wide) | any | any | block → ApprovalRequest |
+
+> Per #67 / AG-9, an agent-driven close is never auto-landed in `awaiting_review`; every blocked-close path routes through a closure `ApprovalRequest` (issue → `blocked`) so a human decides. `awaiting_review` is reachable only by a human via `/transition`.
 
 Every auto-close emits an `issue.closed.auto` audit event including resolved policy, agent trust, and rule path used. This is the primary signal for trust-model debugging.
 

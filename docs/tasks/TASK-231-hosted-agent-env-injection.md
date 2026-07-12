@@ -59,6 +59,17 @@ schema and never persisted to novps outside of this single deploy call.
   The reserved-prefix validation at create time (FEATURE §4.3) means
   layers 1-3 cannot legally contain `SUPERPOS_*` keys; the final-write
   ordering here is a defence-in-depth backstop.
+- [ ] FR-6a: `${KEY}` reference expansion (final pass, after the four
+  layers merge). One env may reuse another's resolved value so a secret is
+  entered only once — e.g. a `WEB_SEARCH_MCP` server config that reuses the
+  model auth key via `"Bearer ${ANTHROPIC_API_KEY}"`. Strict subset of POSIX
+  shell expansion: `${KEY}` substitutes the resolved value (left literal when
+  unset/empty so typos fail loudly, never silently blanked); `${KEY:-default}`
+  falls back to the literal default; self-references and bare `$WORD` are left
+  untouched. Single non-recursive pass; references may target any resolved
+  key, `SUPERPOS_*` included. Because the *reference* (not the secret) lives
+  in the preset, a non-secret preset env may ship a default template like
+  `{"url":"…","headers":{"Authorization":"Bearer ${ANTHROPIC_API_KEY}"}}`.
 - [ ] FR-7: Token rotation contract — every call to `resolve()` issues a
   **new** `SUPERPOS_API_TOKEN` and revokes the previous one once the deploy
   succeeds. Revocation happens in the deploy job on `success`, not here.

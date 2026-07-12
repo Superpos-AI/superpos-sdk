@@ -462,20 +462,38 @@ class AsyncAgentContext:
     async def create_knowledge(
         self,
         *,
-        key: str,
-        value: Any,
+        type: str | None = None,
+        slug: str | None = None,
+        title: str | None = None,
+        body: str | None = None,
+        summary: str | None = None,
+        frontmatter: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
         scope: str | None = None,
         visibility: str | None = None,
         ttl: str | None = None,
+        # ---- deprecated legacy params ----------------------------------
+        key: str | None = None,
+        value: Any = None,
     ) -> dict[str, Any]:
-        """Create a knowledge entry."""
+        """Create a knowledge entry.
+
+        Prefer the typed fields; the legacy ``key``/``value`` pair is deprecated.
+        """
         return await self._client.create_knowledge(
             self._require_hive(),
-            key=key,
-            value=value,
+            type=type,
+            slug=slug,
+            title=title,
+            body=body,
+            summary=summary,
+            frontmatter=frontmatter,
+            tags=tags,
             scope=scope,
             visibility=visibility,
             ttl=ttl,
+            key=key,
+            value=value,
         )
 
     async def get_knowledge(self, entry_id: str) -> dict[str, Any]:
@@ -486,17 +504,35 @@ class AsyncAgentContext:
         self,
         entry_id: str,
         *,
-        value: Any,
+        type: str | None = None,
+        slug: str | None = None,
+        title: str | None = None,
+        body: str | None = None,
+        summary: str | None = None,
+        frontmatter: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
         visibility: str | None = None,
         ttl: str | None = None,
+        # ---- deprecated legacy params ----------------------------------
+        value: Any = None,
     ) -> dict[str, Any]:
-        """Update a knowledge entry."""
+        """Update a knowledge entry.
+
+        Prefer the typed fields; the legacy ``value`` param is deprecated.
+        """
         return await self._client.update_knowledge(
             self._require_hive(),
             entry_id,
-            value=value,
+            type=type,
+            slug=slug,
+            title=title,
+            body=body,
+            summary=summary,
+            frontmatter=frontmatter,
+            tags=tags,
             visibility=visibility,
             ttl=ttl,
+            value=value,
         )
 
     async def delete_knowledge(self, entry_id: str) -> None:
@@ -717,21 +753,39 @@ class AsyncAgentContext:
     async def create_knowledge_obj(
         self,
         *,
-        key: str,
-        value: Any,
+        type: str | None = None,
+        slug: str | None = None,
+        title: str | None = None,
+        body: str | None = None,
+        summary: str | None = None,
+        frontmatter: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
         scope: str | None = None,
         visibility: str | None = None,
         ttl: str | None = None,
+        # ---- deprecated legacy params ----------------------------------
+        key: str | None = None,
+        value: Any = None,
     ) -> AsyncKnowledgeEntry:
-        """Create a knowledge entry and return it wrapped."""
+        """Create a knowledge entry and return it wrapped.
+
+        Prefer the typed fields; the legacy ``key``/``value`` pair is deprecated.
+        """
         from superpos_sdk.resources.async_resources import AsyncKnowledgeEntry  # noqa: PLC0415
 
         data = await self.create_knowledge(
-            key=key,
-            value=value,
+            type=type,
+            slug=slug,
+            title=title,
+            body=body,
+            summary=summary,
+            frontmatter=frontmatter,
+            tags=tags,
             scope=scope,
             visibility=visibility,
             ttl=ttl,
+            key=key,
+            value=value,
         )
         return AsyncKnowledgeEntry(data, self)
 
